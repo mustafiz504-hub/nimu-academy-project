@@ -7,9 +7,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  maxWidth?: string;
 }
 
-const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }: ModalProps) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -36,7 +37,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-brand-cream rounded-3xl shadow-2xl z-[70] overflow-hidden"
+            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] md:w-full ${maxWidth} bg-brand-cream rounded-[2rem] md:rounded-[3rem] shadow-2xl z-[70] overflow-hidden flex flex-col max-h-[90vh]`}
           >
             <div className="flex items-center justify-between p-6 border-b border-brand-gold/10 bg-brand-dark text-brand-gold">
               <h3 className="text-xl font-serif font-bold tracking-wide">{title}</h3>
@@ -47,7 +48,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
                 <X size={24} />
               </button>
             </div>
-            <div className="p-6 max-h-[80vh] overflow-y-auto">
+            <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar">
               {children}
             </div>
           </motion.div>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { Instagram, Facebook, Twitter, MapPin, Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logo from '../assets/image.png';
 
 const Footer = () => {
   return (
-    <footer className="bg-[#1a110a] text-brand-cream/80 pt-20 pb-10 border-t border-brand-gold/10">
+    <footer id="footer" className="bg-[#1a110a] text-brand-cream/80 pt-20 pb-10 border-t border-brand-gold/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-1 md:col-span-1">
@@ -44,10 +45,10 @@ const Footer = () => {
           <div>
             <h4 className="text-brand-gold font-serif text-lg mb-6">Quick Links</h4>
             <ul className="space-y-3 text-sm">
-              <li><a href="#home" className="hover:text-brand-gold transition-colors">Home</a></li>
-              <li><a href="#about" className="hover:text-brand-gold transition-colors">About Us</a></li>
-              <li><a href="#academy" className="hover:text-brand-gold transition-colors">Courses</a></li>
-              <li><a href="#contact" className="hover:text-brand-gold transition-colors">Contact Us</a></li>
+              <li><a href="/#home" className="hover:text-brand-gold transition-colors">Home</a></li>
+              <li><Link to="/about" className="hover:text-brand-gold transition-colors">About Us</Link></li>
+              <li><a href="/course/basic-baking" className="hover:text-brand-gold transition-colors">Courses</a></li>
+              <li><a href="/#footer" className="hover:text-brand-gold transition-colors">Contact Us</a></li>
             </ul>
           </div>
 
