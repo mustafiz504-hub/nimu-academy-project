@@ -5,35 +5,35 @@ import Button from '../components/ui/Button';
 
 const Hero = () => {
   return (
-    <div id="home" className="relative pt-20 pb-32 flex content-center items-center justify-center min-h-screen">
-      <div className="absolute top-0 w-full h-full bg-center bg-cover"
+    <div id="home" className="relative flex items-center justify-center min-h-screen overflow-hidden bg-brand-dark">
+      <div className="absolute inset-0 bg-center bg-cover bg-no-repeat"
            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=2000')" }}>
-        <span id="blackOverlay" className="w-full h-full absolute opacity-70 bg-brand-dark"></span>
+        <div className="absolute inset-0 bg-brand-dark/70 transition-opacity duration-1000"></div>
       </div>
       <div className="container relative mx-auto px-4 z-10 text-center">
         <motion.div 
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="max-w-4xl mx-auto"
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="max-w-4xl mx-auto text-center"
         >
           <h1 className="text-brand-cream font-serif font-bold text-5xl md:text-7xl leading-tight mb-6">
-            Freshly Baked Delights & <br/> <span className="text-brand-gold">Professional Baking Classes</span>
+            Our <span className="text-brand-gold italic">Baking Academy</span>
           </h1>
-          <p className="mt-4 text-lg md:text-xl text-brand-cream/80 max-w-2xl mx-auto font-light mb-10">
-            Order premium cakes, pastries & desserts or join our expert-led baking courses online and offline at the renowned Nimu Cooking Academy, Rourkela.
+          <p className="text-lg md:text-xl text-brand-cream/80 max-w-2xl mx-auto font-light mb-10 leading-relaxed">
+            Learn from Odisha's No.1 Cooking School — where passion meets professional training under the expert guidance of Chef Muskan Naz.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
             <Link to="/shop">
-              <Button size="lg" className="px-8">
+              <Button size="lg" className="px-12 py-4 text-lg shadow-2xl">
                 Order Cakes
               </Button>
             </Link>
-            <a href="/#academy">
-              <Button variant="outline" size="lg" className="px-8">
-                Join Baking Classes
+            <Link to="/course/basic-baking">
+              <Button variant="outline" size="lg" className="px-12 py-4 text-lg border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition-all">
+                Explore Our Courses
               </Button>
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>

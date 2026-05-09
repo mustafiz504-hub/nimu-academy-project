@@ -60,6 +60,10 @@ const products = [
 ];
 
 const Shop = () => {
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);

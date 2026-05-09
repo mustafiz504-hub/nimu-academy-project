@@ -12,6 +12,10 @@
   --color-brand-light: #F9F6F0;
 }
 
+html {
+  /* scroll-behavior: smooth handled via JS for better control */
+}
+
 body {
   background-color: var(--color-brand-cream);
   color: var(--color-brand-dark);

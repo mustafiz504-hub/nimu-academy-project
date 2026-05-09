@@ -11,8 +11,8 @@ const Nav = () => {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
-    { name: 'Academy', href: '/#academy' },
-    { name: 'About', href: '/#about' },
+    { name: 'Academy', href: '/course/basic-baking' },
+    { name: 'About', href: '/about' },
   ];
 
   const isActive = (path: string) => {
@@ -56,11 +56,13 @@ const Nav = () => {
             >
               <Instagram size={20} />
             </a>
-            <button className="hover:text-brand-gold transition-colors"><ShoppingCart size={20} /></button>
+            <Link to="/shop" className="hover:text-brand-gold transition-colors"><ShoppingCart size={20} /></Link>
             <button className="hover:text-brand-gold transition-colors"><User size={20} /></button>
-            <button className="bg-brand-gold text-brand-dark px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold-muted transition-colors">
-              Book a Class
-            </button>
+            <a href="/#academy">
+              <button className="bg-brand-gold text-brand-dark px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold-muted transition-colors">
+                Book a Class
+              </button>
+            </a>
           </div>
 
           <div className="md:hidden flex items-center gap-4">
@@ -72,7 +74,7 @@ const Nav = () => {
             >
               <Instagram size={20} />
             </a>
-            <button className="text-brand-cream hover:text-brand-gold"><ShoppingCart size={20} /></button>
+            <Link to="/shop" className="text-brand-cream hover:text-brand-gold"><ShoppingCart size={20} /></Link>
             <button onClick={() => setIsOpen(!isOpen)} className="text-brand-cream hover:text-brand-gold transition-transform active:scale-95">
               {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
@@ -101,9 +103,11 @@ const Nav = () => {
             <button className="flex items-center gap-3 text-lg font-medium hover:text-brand-gold transition-colors">
               <User size={20} /> Profile
             </button>
-            <button className="w-full bg-brand-gold text-brand-dark py-4 rounded-xl font-bold text-lg hover:bg-brand-gold-muted transition-colors">
-              Book a Class
-            </button>
+            <a href="/#academy" onClick={() => setIsOpen(false)} className="w-full">
+              <button className="w-full bg-brand-gold text-brand-dark py-4 rounded-xl font-bold text-lg hover:bg-brand-gold-muted transition-colors">
+                Book a Class
+              </button>
+            </a>
           </div>
         </div>
       </motion.div>
