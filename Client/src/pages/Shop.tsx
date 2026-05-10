@@ -161,6 +161,8 @@ const Shop = () => {
                     <img 
                       src={product.image} 
                       alt={product.name} 
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                     <div className="absolute top-4 left-4">

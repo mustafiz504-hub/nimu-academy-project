@@ -6,10 +6,11 @@ import Badge from './ui/Badge';
 import Button from './ui/Button';
 import SectionHeading from './ui/SectionHeading';
 import Modal from './ui/Modal';
-import { courses, Course } from '../data/courses';
+import { Course, useGlobal } from '../context/GlobalContext';
 import { useNavigate } from 'react-router-dom';
 
 const CourseSection = () => {
+  const { courses } = useGlobal();
   const navigate = useNavigate();
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
@@ -21,7 +22,7 @@ const CourseSection = () => {
     setShowEnrollModal(true);
   };
 
-  const handleCardClick = (courseId: string) => {
+  const handleCardClick = (courseId: number | string) => {
     navigate(`/course/${courseId}`);
   };
 
@@ -42,7 +43,13 @@ const CourseSection = () => {
               <div onClick={() => handleCardClick(course.id)} className="cursor-pointer h-full group">
                 <Card className="h-full flex flex-col border-brand-gold/10 group-hover:border-brand-gold/40 transition-colors">
                   <CardHeader>
-                    <img src={course.image} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <img
+                      src={course.image}
+                      alt={course.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
                     <Badge className="absolute top-4 right-4" variant="dark">
                       {course.mode}
                     </Badge>
@@ -67,7 +74,7 @@ const CourseSection = () => {
                       </ul>
                     </div>
                     <CardFooter className="px-0 pb-0 border-t-0">
-                      <div className="text-xl font-bold text-brand-dark">{course.price}</div>
+                      <div className="text-xl font-bold text-brand-dark">₹{course.price?.replace('₹', '')}</div>
                       <Button size="sm" onClick={(e) => handleEnrollClick(e, course)}>
                         Enroll Now
                       </Button>
@@ -80,106 +87,44 @@ const CourseSection = () => {
         </div>
       </div>
 
-      {/* Enrollment Form Modal */}
+      {/* Contact Options Modal */}
       <Modal
         isOpen={showEnrollModal}
-        onClose={() => { setShowEnrollModal(false); setIsSuccess(false); }}
-        title={isSuccess ? "Success!" : `Enroll in ${selectedCourse?.title}`}
-        maxWidth="max-w-2xl"
+        onClose={() => setShowEnrollModal(false)}
+        title="Enroll in Academy"
+        maxWidth="max-w-md"
       >
-        {isSuccess ? (
-          <div className="text-center py-8 space-y-6">
-            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 size={48} />
-            </div>
-            <div>
-              <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">Registration Received!</h3>
-              <p className="text-brand-brown leading-relaxed">
-                Thank you! Your enrollment request for <span className="font-bold text-brand-gold">{selectedCourse?.title}</span> has been received.<br/>
-                Chef <span className="font-bold">Muskan Naz's</span> team will contact you within 24 hours to confirm your admission.
-              </p>
-            </div>
-            <Button className="w-full" onClick={() => setShowEnrollModal(false)}>Back to Courses</Button>
+        <div className="py-6 text-center">
+          <div className="w-20 h-20 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-6">
+            <Phone size={40} />
           </div>
-        ) : (
-          <form onSubmit={(e) => { e.preventDefault(); setIsSuccess(true); }} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Student Name *</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold" size={18} />
-                  <input required type="text" placeholder="Your Full Name" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Phone Number *</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold" size={18} />
-                  <input required type="tel" placeholder="10 Digit Number" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm" />
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold" size={18} />
-                  <input type="email" placeholder="Optional" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">City / Location *</label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold" size={18} />
-                  <input required type="text" placeholder="Your City" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm" />
-                </div>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Course Name</label>
-              <input readOnly value={selectedCourse?.title || ''} className="w-full bg-brand-gold/5 border border-brand-gold/20 rounded-xl py-3 px-4 focus:outline-none text-brand-dark text-sm font-semibold" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Preferred Batch *</label>
-                <select required className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm appearance-none cursor-pointer">
-                  <option value="">Select a Batch</option>
-                  <option>Morning Batch - 10 AM to 12 PM</option>
-                  <option>Evening Batch - 5 PM to 7 PM</option>
-                  <option>Weekend Batch - Sat-Sun 11 AM</option>
-                  <option>Online Live Batch - 8 PM to 9:30 PM</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Mode Preference *</label>
-                <div className="flex gap-4 p-2 bg-brand-light rounded-xl border border-brand-gold/10 h-[46px] items-center px-4">
-                  {['Online', 'Offline', 'Hybrid'].map(m => (
-                    <label key={m} className="flex items-center gap-2 cursor-pointer text-xs font-medium text-brand-dark">
-                      <input required type="radio" name="mode" value={m} className="accent-brand-gold w-4 h-4" /> {m}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">How did you hear about us?</label>
-              <select className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm appearance-none cursor-pointer">
-                <option value="">Select Option</option>
-                <option>Instagram</option>
-                <option>Friend / Referral</option>
-                <option>Google Search</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Message / Query (Optional)</label>
-              <textarea rows={3} placeholder="Any specific requirements?" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm resize-none" />
-            </div>
-            <Button type="submit" className="w-full mt-2">
-              Enroll Now <Send size={18} className="ml-2"/>
-            </Button>
-          </form>
-        )}
+          <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">Join {selectedCourse?.title}</h3>
+          <p className="text-brand-brown mb-8 px-4">
+            Talk to Chef <span className="font-bold">Muskan Naz's</span> team to confirm your seat and batch timings.
+          </p>
+
+          <div className="grid gap-4">
+            <a 
+              href="tel:+919777240070" 
+              className="flex items-center justify-center gap-3 w-full bg-brand-dark text-brand-gold py-4 rounded-2xl font-bold hover:bg-brand-dark/90 transition-all shadow-lg group"
+            >
+              <Phone size={20} className="group-hover:animate-bounce" /> Call Now: +91 97772 40070
+            </a>
+            
+            <a 
+              href="https://wa.me/919777240070" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 w-full bg-[#25D366] text-white py-4 rounded-2xl font-bold hover:bg-[#25D366]/90 transition-all shadow-lg group"
+            >
+              <Send size={20} className="group-hover:translate-x-1 transition-transform" /> WhatsApp Us
+            </a>
+          </div>
+          
+          <p className="mt-6 text-[10px] text-brand-brown/40 uppercase tracking-widest">
+            Available 8 AM - 10 PM IST
+          </p>
+        </div>
       </Modal>
     </section>
   );

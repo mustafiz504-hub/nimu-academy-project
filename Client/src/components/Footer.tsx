@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="col-span-1 md:col-span-1">
              <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 rounded-full bg-brand-gold/10 overflow-hidden flex items-center justify-center">
-                  <img src={logo} alt="Nimu Logo" className="w-full h-full object-cover" />
+                  <img src={logo} alt="Nimu Logo" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 </div>
                 <span className="font-serif text-2xl font-bold tracking-wider text-brand-gold uppercase">NIMU</span>
               </div>
