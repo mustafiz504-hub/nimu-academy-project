@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import Button from '../components/ui/Button';
+import Button from './ui/Button';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -67,7 +67,7 @@ const AcademyIntro = () => {
               ))}
             </div>
 
-            <Link to="/course/basic-baking">
+            <Link to="/course/1">
               <Button size="lg" className="px-10">
                 Join Now
               </Button>
@@ -81,6 +81,8 @@ const AcademyIntro = () => {
                   <motion.img 
                     key={currentImage}
                     src={images[currentImage]} 
+                    loading={currentImage === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
                     initial={{ opacity: 0, x: 100 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -100 }}

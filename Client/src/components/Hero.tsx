@@ -1,13 +1,19 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import Button from '../components/ui/Button';
+import Button from './ui/Button';
 
 const Hero = () => {
   return (
     <div id="home" className="relative flex items-center justify-center min-h-screen overflow-hidden bg-brand-dark">
-      <div className="absolute inset-0 bg-center bg-cover bg-no-repeat"
-           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=2000')" }}>
+      <div className="absolute inset-0">
+        <img
+          src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1600"
+          alt=""
+          className="h-full w-full object-cover"
+          decoding="async"
+          fetchPriority="high"
+        />
         <div className="absolute inset-0 bg-brand-dark/70 transition-opacity duration-1000"></div>
       </div>
       <div className="container relative mx-auto px-4 z-10 text-center">
@@ -29,11 +35,19 @@ const Hero = () => {
                 Order Cakes
               </Button>
             </Link>
-            <Link to="/course/basic-baking">
-              <Button variant="outline" size="lg" className="px-12 py-4 text-lg border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition-all">
-                Explore Our Courses
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="px-12 py-4 text-lg border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition-all"
+              onClick={() => {
+                const element = document.getElementById('academy');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
+              Explore Our Courses
+            </Button>
           </div>
         </motion.div>
       </div>

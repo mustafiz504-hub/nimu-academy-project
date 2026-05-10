@@ -1,36 +1,101 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   Clock, Calendar, CheckCircle2, User, BookOpen, GraduationCap, 
   ArrowLeft, ArrowRight, Phone, Mail, MapPin, Send, Star, 
-  Award, ShieldCheck, Heart
+  Award, ShieldCheck, Heart, AlertCircle
 } from 'lucide-react';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
-import { courses, Course } from '../data/courses';
+import { useGlobal } from '../context/GlobalContext';
+import { api } from '../lib/api';
 
 const CourseDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const { courses, user } = useGlobal();
   const navigate = useNavigate();
-  const [course, setCourse] = useState<Course | null>(null);
+  const course = useMemo(
+    () => courses.find(c => String(c.id) === String(id)) ?? null,
+    [courses, id]
+  );
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [enrollmentForm, setEnrollmentForm] = useState({
+    student_name: '',
+    phone: '',
+    email: '',
+    city: '',
+    batch_timing: '',
+    mode: '',
+    how_heard: 'Instagram',
+    message: '',
+  });
 
   useEffect(() => {
-    const foundCourse = courses.find(c => c.id === id);
-    if (foundCourse) {
-      setCourse(foundCourse);
+    if (course) {
       window.scrollTo(0, 0);
     } else {
       navigate('/');
     }
-  }, [id, navigate]);
+  }, [course, navigate]);
 
   if (!course) return null;
+
+  const handleEnrollSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await api.enrollments.create({
+        course_id: course.id,
+        student_name: enrollmentForm.student_name,
+        phone: enrollmentForm.phone,
+        email: enrollmentForm.email,
+        city: enrollmentForm.city,
+        batch_timing: enrollmentForm.batch_timing,
+        mode: enrollmentForm.mode || course.mode,
+        how_heard: enrollmentForm.how_heard,
+        message: enrollmentForm.message,
+      });
+
+      setIsSuccess(true);
+      setEnrollmentForm({
+        student_name: user?.name || '',
+        phone: user?.phone || '',
+        email: user?.email || '',
+        city: '',
+        batch_timing: course.batches?.[0] || '',
+        mode: course.mode,
+        how_heard: 'Instagram',
+        message: '',
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Enrollment submit nahi ho paya.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEnrollment = () => {
+    setError('');
+    setIsSuccess(false);
+    setEnrollmentForm((prev) => ({
+      ...prev,
+      student_name: prev.student_name || user?.name || '',
+      phone: prev.phone || user?.phone || '',
+      email: prev.email || user?.email || '',
+      batch_timing: prev.batch_timing || course.batches?.[0] || '',
+      mode: prev.mode || course.mode,
+    }));
+    setShowEnrollModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-brand-cream">
@@ -39,7 +104,13 @@ const CourseDetailPage = () => {
       {/* Hero Section */}
       <div className="relative pt-24 md:pt-32 pb-12 md:pb-20 overflow-hidden bg-brand-dark">
         <div className="absolute inset-0 opacity-20">
-          <img src={course.image} alt={course.title} className="w-full h-full object-cover blur-sm" />
+          <img
+            src={course.image}
+            alt={course.title}
+            className="w-full h-full object-cover blur-sm"
+            decoding="async"
+            fetchPriority="high"
+          />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-brand-dark via-brand-dark/90 to-brand-dark" />
         
@@ -110,7 +181,7 @@ const CourseDetailPage = () => {
                 What You Will Learn
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                {course.learn.map((item, i) => (
+                {(course.learn || []).map((item, i) => (
                   <motion.div 
                     key={i}
                     initial={{ opacity: 0, x: -20 }}
@@ -136,7 +207,7 @@ const CourseDetailPage = () => {
               </h2>
               <div className="bg-white rounded-3xl p-8 border border-brand-gold/10 shadow-sm">
                 <div className="grid sm:grid-cols-2 gap-y-6 gap-x-12">
-                  {course.topics.map((topic, i) => (
+                      {(course.topics || []).map((topic, i) => (
                     <div key={topic} className="flex items-center gap-4 group">
                       <span className="w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold font-bold text-sm group-hover:bg-brand-gold group-hover:text-brand-dark transition-colors">
                         {i + 1}
@@ -158,7 +229,13 @@ const CourseDetailPage = () => {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/10 rounded-full blur-3xl -mr-32 -mt-32" />
                 <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                   <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden shadow-2xl border-2 border-brand-gold/30">
-                    <img src="https://images.unsplash.com/photo-1577214224216-754688737563?auto=format&fit=crop&q=80&w=600" alt={course.instructor.name} className="w-full h-full object-cover" />
+                    <img
+                      src="https://images.unsplash.com/photo-1577214224216-754688737563?auto=format&fit=crop&q=80&w=600"
+                      alt={course.instructor.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
                     <Badge variant="gold" className="mb-4">Professional Chef</Badge>
@@ -183,7 +260,7 @@ const CourseDetailPage = () => {
                 </h4>
                 
                 <div className="mb-8">
-                   <div className="text-4xl font-bold text-brand-dark mb-1">{course.price}</div>
+                   <div className="text-4xl font-bold text-brand-dark">₹{course.price?.replace('₹', '')}</div>
                    <p className="text-brand-gold font-bold text-xs uppercase tracking-wider">EMI Options Available</p>
                 </div>
 
@@ -191,7 +268,7 @@ const CourseDetailPage = () => {
                   <div className="p-4 bg-brand-light rounded-2xl border border-brand-gold/10">
                     <p className="text-xs font-bold text-brand-gold uppercase tracking-widest mb-3">Available Batches</p>
                     <ul className="space-y-3">
-                      {course.batches.map((batch, i) => (
+                      {(course.batches || []).map((batch, i) => (
                         <li key={i} className="text-sm text-brand-dark flex items-center gap-3 font-medium">
                           <div className="w-1.5 h-1.5 bg-brand-gold rounded-full" /> {batch}
                         </li>
@@ -213,7 +290,7 @@ const CourseDetailPage = () => {
                   </div>
                 </div>
 
-                <Button className="w-full shadow-xl" size="lg" onClick={() => setShowEnrollModal(true)}>
+                <Button className="w-full shadow-xl" size="lg" onClick={openEnrollment}>
                   Enroll Now <ArrowRight className="ml-2" />
                 </Button>
                 
@@ -241,123 +318,48 @@ const CourseDetailPage = () => {
 
       <Footer />
 
-      {/* Reuse Enrollment Form Modal */}
       <Modal 
         isOpen={showEnrollModal} 
-        onClose={() => {
-          setShowEnrollModal(false);
-          setIsSuccess(false);
-        }} 
-        title={isSuccess ? "Success!" : `Enroll in ${course.title}`}
-        maxWidth="max-w-2xl"
+        onClose={() => setShowEnrollModal(false)} 
+        title="Enroll in Academy"
+        maxWidth="max-w-md"
+        headerClassName="bg-[#1a110a] text-brand-gold border-b border-white/5"
       >
-        {isSuccess ? (
-          <div className="text-center py-8 space-y-6">
-            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 size={48} />
-            </div>
-            <div>
-              <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">Registration Received!</h3>
-              <p className="text-brand-brown leading-relaxed">
-                Thank you! Your enrollment request for <span className="font-bold text-brand-gold">{course.title}</span> has been received.<br/>
-                Chef <span className="font-bold">Muskan Naz's</span> team will contact you within 24 hours to confirm your admission.
-              </p>
-            </div>
-            <Button className="w-full" onClick={() => setShowEnrollModal(false)}>
-              Back to Course Details
-            </Button>
+        <div className="py-8 px-2 text-center">
+          <div className="w-20 h-20 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-6 border border-brand-gold/20">
+            <Phone size={32} />
           </div>
-        ) : (
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              setIsSuccess(true);
-            }}
-            className="space-y-5"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Student Name *</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold" size={18} />
-                  <input required type="text" placeholder="Your Full Name" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Phone Number *</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold" size={18} />
-                  <input required type="tel" placeholder="10 Digit Number" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm" />
-                </div>
-              </div>
-            </div>
+          
+          <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">
+            Join {course.title}
+          </h3>
+          
+          <p className="text-brand-brown/70 mb-8 max-w-[280px] mx-auto text-sm leading-relaxed">
+            Talk to Chef <strong>Muskan Naz's</strong> team to confirm your seat and batch timings.
+          </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold" size={18} />
-                  <input type="email" placeholder="Optional" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">City / Location *</label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold" size={18} />
-                  <input required type="text" placeholder="Your City" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm" />
-                </div>
-              </div>
-            </div>
+          <div className="space-y-3">
+            <a 
+              href="tel:+919777240070"
+              className="flex items-center justify-center gap-3 w-full py-4 bg-[#1a110a] text-brand-gold rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
+            >
+              <Phone size={20} /> Call Now: +91 97772 40070
+            </a>
+            
+            <a 
+              href="https://wa.me/919777240070"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-green-500/20"
+            >
+              <Send size={20} className="rotate-[-45deg] translate-y-[-1px]" /> WhatsApp Us
+            </a>
+          </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Course Name</label>
-              <input readOnly value={course.title} className="w-full bg-brand-gold/5 border border-brand-gold/20 rounded-xl py-3 px-4 focus:outline-none text-brand-dark text-sm font-semibold" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Preferred Batch *</label>
-                <select required className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm appearance-none cursor-pointer">
-                  <option value="">Select a Batch</option>
-                  <option>Morning Batch - 10 AM to 12 PM</option>
-                  <option>Evening Batch - 5 PM to 7 PM</option>
-                  <option>Weekend Batch - Sat-Sun 11 AM</option>
-                  <option>Online Live Batch - 8 PM to 9:30 PM</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Mode Preference *</label>
-                <div className="flex gap-4 p-2 bg-brand-light rounded-xl border border-brand-gold/10 h-[46px] items-center px-4">
-                  {['Online', 'Offline', 'Hybrid'].map(m => (
-                    <label key={m} className="flex items-center gap-2 cursor-pointer text-xs font-medium text-brand-dark">
-                      <input required type="radio" name="mode" value={m} className="accent-brand-gold w-4 h-4" /> {m}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">How did you hear about us?</label>
-              <select className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm appearance-none cursor-pointer">
-                <option value="">Select Option</option>
-                <option>Instagram</option>
-                <option>Friend / Referral</option>
-                <option>Google Search</option>
-                <option>Other</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Message / Query (Optional)</label>
-              <textarea rows={3} placeholder="Any specific requirements?" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm resize-none" />
-            </div>
-
-            <Button type="submit" className="w-full mt-2">
-              Enroll Now <Send size={18} className="ml-2"/>
-            </Button>
-          </form>
-        )}
+          <p className="mt-8 text-[10px] text-brand-brown/40 font-black uppercase tracking-[0.2em]">
+            Available 8 AM - 10 PM IST
+          </p>
+        </div>
       </Modal>
     </div>
   );

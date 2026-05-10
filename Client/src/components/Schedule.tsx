@@ -1,6 +1,6 @@
 import React from 'react';
-import SectionHeading from '../components/ui/SectionHeading';
-import Badge from '../components/ui/Badge';
+import SectionHeading from './ui/SectionHeading';
+import Badge from './ui/Badge';
 
 const Schedule = () => {
   const schedule = [
@@ -13,11 +13,7 @@ const Schedule = () => {
   return (
     <section className="py-24 bg-brand-light">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading 
-          title="Class Schedule" 
-          subtitle="Flexible timings tailored to fit your busy lifestyle." 
-        />
-
+        <SectionHeading title="Class Schedule" subtitle="Flexible timings tailored to fit your busy lifestyle." />
         <div className="bg-white rounded-3xl shadow-xl border border-brand-gold/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -35,9 +31,7 @@ const Schedule = () => {
                     <td className="p-6 font-medium group-hover:text-brand-gold transition-colors">{row.name}</td>
                     <td className="p-6 text-brand-brown">{row.time}</td>
                     <td className="p-6">
-                      <Badge 
-                        variant={row.mode === 'Offline' ? 'gold' : row.mode === 'Online' ? 'dark' : 'outline'}
-                      >
+                      <Badge variant={row.mode === 'Offline' ? 'gold' : row.mode === 'Online' ? 'dark' : 'outline'}>
                         {row.mode}
                       </Badge>
                     </td>
