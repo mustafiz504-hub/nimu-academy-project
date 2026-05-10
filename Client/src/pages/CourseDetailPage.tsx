@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { 
   Clock, Calendar, CheckCircle2, User, BookOpen, GraduationCap, 
   ArrowLeft, ArrowRight, Phone, Mail, MapPin, Send, Star, 
-  Award, ShieldCheck, Heart
+  Award, ShieldCheck, Heart, AlertCircle
 } from 'lucide-react';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
@@ -12,10 +12,11 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import { useGlobal } from '../context/GlobalContext';
+import { api } from '../lib/api';
 
 const CourseDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { courses } = useGlobal();
+  const { courses, user } = useGlobal();
   const navigate = useNavigate();
   const course = useMemo(
     () => courses.find(c => String(c.id) === String(id)) ?? null,
@@ -23,6 +24,18 @@ const CourseDetailPage = () => {
   );
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [enrollmentForm, setEnrollmentForm] = useState({
+    student_name: '',
+    phone: '',
+    email: '',
+    city: '',
+    batch_timing: '',
+    mode: '',
+    how_heard: 'Instagram',
+    message: '',
+  });
 
   useEffect(() => {
     if (course) {
@@ -33,6 +46,56 @@ const CourseDetailPage = () => {
   }, [course, navigate]);
 
   if (!course) return null;
+
+  const handleEnrollSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await api.enrollments.create({
+        course_id: course.id,
+        student_name: enrollmentForm.student_name,
+        phone: enrollmentForm.phone,
+        email: enrollmentForm.email,
+        city: enrollmentForm.city,
+        batch_timing: enrollmentForm.batch_timing,
+        mode: enrollmentForm.mode || course.mode,
+        how_heard: enrollmentForm.how_heard,
+        message: enrollmentForm.message,
+      });
+
+      setIsSuccess(true);
+      setEnrollmentForm({
+        student_name: user?.name || '',
+        phone: user?.phone || '',
+        email: user?.email || '',
+        city: '',
+        batch_timing: course.batches?.[0] || '',
+        mode: course.mode,
+        how_heard: 'Instagram',
+        message: '',
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Enrollment submit nahi ho paya.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEnrollment = () => {
+    setError('');
+    setIsSuccess(false);
+    setEnrollmentForm((prev) => ({
+      ...prev,
+      student_name: prev.student_name || user?.name || '',
+      phone: prev.phone || user?.phone || '',
+      email: prev.email || user?.email || '',
+      batch_timing: prev.batch_timing || course.batches?.[0] || '',
+      mode: prev.mode || course.mode,
+    }));
+    setShowEnrollModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-brand-cream">
@@ -118,7 +181,7 @@ const CourseDetailPage = () => {
                 What You Will Learn
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                {course.learn.map((item, i) => (
+                {(course.learn || []).map((item, i) => (
                   <motion.div 
                     key={i}
                     initial={{ opacity: 0, x: -20 }}
@@ -144,7 +207,7 @@ const CourseDetailPage = () => {
               </h2>
               <div className="bg-white rounded-3xl p-8 border border-brand-gold/10 shadow-sm">
                 <div className="grid sm:grid-cols-2 gap-y-6 gap-x-12">
-                  {course.topics.map((topic, i) => (
+                      {(course.topics || []).map((topic, i) => (
                     <div key={topic} className="flex items-center gap-4 group">
                       <span className="w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold font-bold text-sm group-hover:bg-brand-gold group-hover:text-brand-dark transition-colors">
                         {i + 1}
@@ -205,7 +268,7 @@ const CourseDetailPage = () => {
                   <div className="p-4 bg-brand-light rounded-2xl border border-brand-gold/10">
                     <p className="text-xs font-bold text-brand-gold uppercase tracking-widest mb-3">Available Batches</p>
                     <ul className="space-y-3">
-                      {course.batches.map((batch, i) => (
+                      {(course.batches || []).map((batch, i) => (
                         <li key={i} className="text-sm text-brand-dark flex items-center gap-3 font-medium">
                           <div className="w-1.5 h-1.5 bg-brand-gold rounded-full" /> {batch}
                         </li>
@@ -227,7 +290,7 @@ const CourseDetailPage = () => {
                   </div>
                 </div>
 
-                <Button className="w-full shadow-xl" size="lg" onClick={() => setShowEnrollModal(true)}>
+                <Button className="w-full shadow-xl" size="lg" onClick={openEnrollment}>
                   Enroll Now <ArrowRight className="ml-2" />
                 </Button>
                 
@@ -255,42 +318,46 @@ const CourseDetailPage = () => {
 
       <Footer />
 
-      {/* Contact Options Modal */}
       <Modal 
         isOpen={showEnrollModal} 
         onClose={() => setShowEnrollModal(false)} 
         title="Enroll in Academy"
         maxWidth="max-w-md"
+        headerClassName="bg-[#1a110a] text-brand-gold border-b border-white/5"
       >
-        <div className="py-6 text-center">
-          <div className="w-20 h-20 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-6">
-            <Phone size={40} />
+        <div className="py-8 px-2 text-center">
+          <div className="w-20 h-20 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-6 border border-brand-gold/20">
+            <Phone size={32} />
           </div>
-          <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">Join {course.title}</h3>
-          <p className="text-brand-brown mb-8 px-4">
-            Talk to Chef <span className="font-bold">Muskan Naz's</span> team to confirm your seat and batch timings.
+          
+          <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">
+            Join {course.title}
+          </h3>
+          
+          <p className="text-brand-brown/70 mb-8 max-w-[280px] mx-auto text-sm leading-relaxed">
+            Talk to Chef <strong>Muskan Naz's</strong> team to confirm your seat and batch timings.
           </p>
 
-          <div className="grid gap-4">
+          <div className="space-y-3">
             <a 
-              href="tel:+919777240070" 
-              className="flex items-center justify-center gap-3 w-full bg-brand-dark text-brand-gold py-4 rounded-2xl font-bold hover:bg-brand-dark/90 transition-all shadow-lg group"
+              href="tel:+919777240070"
+              className="flex items-center justify-center gap-3 w-full py-4 bg-[#1a110a] text-brand-gold rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
             >
-              <Phone size={20} className="group-hover:animate-bounce" /> Call Now: +91 97772 40070
+              <Phone size={20} /> Call Now: +91 97772 40070
             </a>
             
             <a 
-              href="https://wa.me/919777240070" 
+              href="https://wa.me/919777240070"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full bg-[#25D366] text-white py-4 rounded-2xl font-bold hover:bg-[#25D366]/90 transition-all shadow-lg group"
+              className="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-green-500/20"
             >
-              <Send size={20} className="group-hover:translate-x-1 transition-transform" /> WhatsApp Us
+              <Send size={20} className="rotate-[-45deg] translate-y-[-1px]" /> WhatsApp Us
             </a>
           </div>
-          
-          <p className="mt-6 text-[10px] text-brand-brown/40 uppercase tracking-widest">
-            Available 10 AM - 8 PM IST
+
+          <p className="mt-8 text-[10px] text-brand-brown/40 font-black uppercase tracking-[0.2em]">
+            Available 8 AM - 10 PM IST
           </p>
         </div>
       </Modal>

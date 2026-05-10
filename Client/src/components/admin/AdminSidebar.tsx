@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   ShoppingBag, 
@@ -8,8 +8,11 @@ import {
   LogOut,
   ChevronRight,
   Home,
-  X
+  X,
+  GraduationCap,
+  Users
 } from 'lucide-react';
+import { useGlobal } from '../../context/GlobalContext';
 
 interface AdminSidebarProps {
   isOpen?: boolean;
@@ -18,13 +21,23 @@ interface AdminSidebarProps {
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useGlobal();
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { name: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
+    { name: 'Enrollments', icon: GraduationCap, path: '/admin/enrollments' },
     { name: 'Products', icon: Package, path: '/admin/products' },
     { name: 'Courses', icon: BookOpen, path: '/admin/courses' },
+    { name: 'Manage Admins', icon: Users, path: '/admin/users' },
   ];
+
+  const handleLogout = async () => {
+    await logout();
+    onClose?.();
+    navigate('/');
+  };
 
   return (
     <div className={`
@@ -78,7 +91,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
       </nav>
 
       <div className="border-t border-brand-gold/10 p-3 lg:p-4">
-        <button className="flex w-full items-center gap-2.5 lg:gap-3 rounded-lg px-3 lg:px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors">
+        <button onClick={handleLogout} className="flex w-full items-center gap-2.5 lg:gap-3 rounded-lg px-3 lg:px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors">
           <LogOut size={18} className="shrink-0" />
           <span className="truncate text-xs lg:text-sm font-semibold">Logout</span>
         </button>

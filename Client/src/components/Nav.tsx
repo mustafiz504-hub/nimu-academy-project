@@ -1,24 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ShoppingCart, User, Instagram, LayoutDashboard, ShieldCheck, LogOut, Package, BookOpen, UserCircle } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, Instagram, LayoutDashboard, ShieldCheck, LogOut, Package, BookOpen, UserCircle, ArrowRight, ChevronRight } from 'lucide-react';
 import logo from '../assets/image.png';
-import AuthModal from './AuthModal';
+
+import { useGlobal } from '../context/GlobalContext';
 
 const Nav = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const mobileSidebarRef = useRef<HTMLElement | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Mock User for testing (change role to "user", "admin", or "superadmin")
-  const mockUser = {
-    name: "Muskan Naz",
-    role: "superadmin",
-    isLoggedIn: true
-  };
+  const { user, logout } = useGlobal();
+  const isLoggedIn = Boolean(user);
+  console.log("Nav User State:", { user, isLoggedIn });
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -33,13 +29,19 @@ const Nav = () => {
     return false;
   };
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setIsDropdownOpen(false);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
     if (isDropdownOpen) {
-      window.addEventListener('click', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     }
-    return () => window.removeEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen]);
 
   useEffect(() => {
@@ -70,11 +72,14 @@ const Nav = () => {
 
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (mockUser.isLoggedIn) {
-      setIsDropdownOpen(!isDropdownOpen);
-    } else {
-      setIsAuthModalOpen(true);
-    }
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setIsDropdownOpen(false);
+    setIsOpen(false);
+    navigate('/');
   };
 
   return (
@@ -115,7 +120,7 @@ const Nav = () => {
             <Link to="/shop" className="hover:text-brand-gold transition-colors"><ShoppingCart size={20} /></Link>
             
             {/* User Icon & Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={handleUserClick}
                 className="hover:text-brand-gold transition-colors flex items-center gap-1"
@@ -129,60 +134,83 @@ const Nav = () => {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-4 w-56 rounded-2xl bg-brand-dark border border-brand-gold/20 shadow-2xl overflow-hidden py-2 z-[60]"
+                    className="absolute right-0 mt-4 w-60 rounded-2xl bg-brand-dark/95 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-xl z-[60]"
                   >
-                    <div className="px-4 py-2 border-b border-white/5 mb-2">
-                      <p className="text-xs text-brand-cream/40 uppercase tracking-widest font-bold">Account</p>
-                      <p className="text-sm font-semibold text-brand-gold truncate">{mockUser.name}</p>
-                    </div>
-
-                    <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors">
-                      <UserCircle size={18} className="text-brand-gold/70" /> My Profile
-                    </button>
-                    <button onClick={() => navigate('/user/orders')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors">
-                      <Package size={18} className="text-brand-gold/70" /> My Orders
-                    </button>
-                    <button onClick={() => navigate('/user/enrollments')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors">
-                      <BookOpen size={18} className="text-brand-gold/70" /> My Enrollments
-                    </button>
-
-                    {/* Admin Panel (Admin or Superadmin) */}
-                    {(mockUser.role === 'admin' || mockUser.role === 'superadmin') && (
+                    {isLoggedIn ? (
                       <>
-                        <div className="h-px bg-white/10 my-1 mx-2" />
-                        <button 
-                          onClick={() => navigate('/admin/dashboard')} 
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-brand-gold font-bold hover:bg-brand-gold/10 transition-colors"
-                        >
-                          <LayoutDashboard size={18} /> Admin Panel
-                        </button>
+                        <div className="px-5 py-4 border-b border-white/5 bg-white/5">
+                          <p className="text-[10px] text-brand-gold uppercase tracking-[0.2em] font-black mb-1">Academy Member</p>
+                          <p className="text-sm font-bold text-white truncate">{user?.name}</p>
+                        </div>
+
+                        <div className="p-2 space-y-1">
+                          <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-brand-cream/80 hover:bg-white/5 hover:text-brand-gold rounded-xl transition-all">
+                            <UserCircle size={18} className="text-brand-gold/70" /> My Profile
+                          </button>
+                          <button onClick={() => navigate('/user/orders')} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-brand-cream/80 hover:bg-white/5 hover:text-brand-gold rounded-xl transition-all">
+                            <Package size={18} className="text-brand-gold/70" /> My Orders
+                          </button>
+                          {(user?.role === 'admin' || user?.role === 'superadmin') && (
+                            <button onClick={() => navigate('/user/enrollments')} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-brand-cream/80 hover:bg-white/5 hover:text-brand-gold rounded-xl transition-all">
+                              <BookOpen size={18} className="text-brand-gold/70" /> My Enrollments
+                            </button>
+                          )}
+
+                          {(user?.role === 'admin' || user?.role === 'superadmin') && (
+                            <div className="pt-2 mt-2 border-t border-white/5">
+                              <button 
+                                onClick={() => navigate('/admin/dashboard')} 
+                                className="w-full flex items-center justify-between px-4 py-3 text-sm text-brand-gold font-bold hover:bg-brand-gold/10 rounded-xl transition-all"
+                              >
+                                <span className="flex items-center gap-3"><LayoutDashboard size={18} /> Admin Panel</span>
+                                <ArrowRight size={14} />
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="h-px bg-white/5 my-2 mx-2" />
+                          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+                            <LogOut size={18} /> Sign Out
+                          </button>
+                        </div>
                       </>
+                    ) : (
+                      <div className="p-3 space-y-2">
+                        <div className="px-3 py-2">
+                          <p className="text-[10px] text-brand-gold uppercase tracking-widest font-black mb-1">Welcome</p>
+                          <p className="text-xs text-brand-cream/40 leading-relaxed font-medium">Join the academy to start your baking journey.</p>
+                        </div>
+                        <button 
+                          onClick={() => { setIsDropdownOpen(false); navigate('/auth'); }}
+                          className="w-full py-4 rounded-xl bg-brand-gold text-brand-dark font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-gold/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        >
+                          Sign In / Join
+                        </button>
+                        <button 
+                          onClick={() => { setIsDropdownOpen(false); navigate('/auth'); }}
+                          className="w-full py-4 rounded-xl border border-white/10 text-white font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all"
+                        >
+                          Create Account
+                        </button>
+                      </div>
                     )}
-
-                    {/* Super Admin Panel */}
-                    {mockUser.role === 'superadmin' && (
-                      <button 
-                        onClick={() => navigate('/superadmin/dashboard')} 
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#a855f7] font-bold hover:bg-purple-500/10 transition-colors"
-                      >
-                        <ShieldCheck size={18} /> Super Admin Panel
-                      </button>
-                    )}
-
-                    <div className="h-px bg-white/10 my-1 mx-2" />
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
-                      <LogOut size={18} /> Logout
-                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <a href="/#academy">
-              <button className="bg-brand-gold text-brand-dark px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold-muted transition-colors">
-                Book a Class
-              </button>
-            </a>
+            <button 
+              onClick={() => {
+                if (isLoggedIn) {
+                  navigate('/course/1');
+                } else {
+                  setIsAuthModalOpen(true);
+                }
+              }}
+              className="bg-brand-gold text-brand-dark px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold-muted transition-colors"
+            >
+              Book a Class
+            </button>
           </div>
 
           <div className="md:hidden flex w-full items-center justify-between">
@@ -265,11 +293,11 @@ const Nav = () => {
                   </div>
 
                   <div className="mt-6 border-t border-brand-gold/15 pt-6">
-                    {mockUser.isLoggedIn ? (
+                    {isLoggedIn ? (
                       <>
                         <div className="mb-4 px-3">
                           <p className="text-xs uppercase tracking-widest text-brand-cream/45 font-bold">Account</p>
-                          <p className="mt-1 truncate text-sm font-semibold text-brand-gold">{mockUser.name}</p>
+                          <p className="mt-1 truncate text-sm font-semibold text-brand-gold">{user?.name}</p>
                         </div>
                         <div className="space-y-2">
                           <button onClick={() => { setIsOpen(false); navigate('/profile'); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold hover:bg-white/5 hover:text-brand-gold transition-colors">
@@ -278,20 +306,22 @@ const Nav = () => {
                           <button onClick={() => { setIsOpen(false); navigate('/user/orders'); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold hover:bg-white/5 hover:text-brand-gold transition-colors">
                             <Package size={20} /> My Orders
                           </button>
-                          <button onClick={() => { setIsOpen(false); navigate('/user/enrollments'); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold hover:bg-white/5 hover:text-brand-gold transition-colors">
-                            <BookOpen size={20} /> My Enrollments
-                          </button>
-                          {(mockUser.role === 'admin' || mockUser.role === 'superadmin') && (
+                          {(user?.role === 'admin' || user?.role === 'superadmin') && (
+                            <button onClick={() => { setIsOpen(false); navigate('/user/enrollments'); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold hover:bg-white/5 hover:text-brand-gold transition-colors">
+                              <BookOpen size={20} /> My Enrollments
+                            </button>
+                          )}
+                          {(user?.role === 'admin' || user?.role === 'superadmin') && (
                             <button onClick={() => { setIsOpen(false); navigate('/admin/dashboard'); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-bold text-brand-gold hover:bg-brand-gold/10 transition-colors">
                               <LayoutDashboard size={20} /> Admin Panel
                             </button>
                           )}
-                          {mockUser.role === 'superadmin' && (
+                          {user?.role === 'superadmin' && (
                             <button onClick={() => { setIsOpen(false); navigate('/superadmin/dashboard'); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-bold text-[#a855f7] hover:bg-purple-500/10 transition-colors">
                               <ShieldCheck size={20} /> Super Admin Panel
                             </button>
                           )}
-                          <button onClick={() => setIsOpen(false)} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold text-red-400 hover:bg-red-500/10 transition-colors">
+                          <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold text-red-400 hover:bg-red-500/10 transition-colors">
                             <LogOut size={20} /> Logout
                           </button>
                         </div>
@@ -300,7 +330,7 @@ const Nav = () => {
                       <button
                         onClick={() => {
                           setIsOpen(false);
-                          setIsAuthModalOpen(true);
+                          navigate('/auth');
                         }}
                         className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold hover:bg-white/5 hover:text-brand-gold transition-colors"
                       >
@@ -322,11 +352,6 @@ const Nav = () => {
           </div>
         )}
       </AnimatePresence>
-      {/* Optimized Auth Modal */}
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-      />
     </nav>
   );
 };

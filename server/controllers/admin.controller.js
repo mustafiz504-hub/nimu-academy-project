@@ -64,11 +64,49 @@ const getEnrollments = async (req, res) => {
 const getUsers = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email, phone, role, created_at FROM users WHERE role = 'user' ORDER BY created_at DESC"
+      "SELECT id, name, email, phone, role, created_at FROM users WHERE role != 'superadmin' ORDER BY created_at DESC"
     );
     res.status(200).json({ users: result.rows, total: result.rowCount });
   } catch (error) {
     console.error('Admin get users error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// POST /api/admin/make-admin
+const makeAdmin = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const result = await pool.query(
+      "UPDATE users SET role = 'admin' WHERE id = $1 AND role = 'user' RETURNING *",
+      [userId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found or already an admin.' });
+    }
+    await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Admin promoted user #${userId} to Admin`]);
+    res.status(200).json({ message: 'User promoted to admin successfully.', user: result.rows[0] });
+  } catch (error) {
+    console.error('Admin make admin error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// POST /api/admin/remove-admin
+const removeAdmin = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const result = await pool.query(
+      "UPDATE users SET role = 'user' WHERE id = $1 AND role = 'admin' RETURNING *",
+      [userId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found or not an admin.' });
+    }
+    await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Admin demoted user #${userId} to User`]);
+    res.status(200).json({ message: 'Admin demoted to user successfully.', user: result.rows[0] });
+  } catch (error) {
+    console.error('Admin remove admin error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -109,4 +147,13 @@ const updateEnrollmentStatus = async (req, res) => {
   }
 };
 
-module.exports = { getDashboard, getOrders, getEnrollments, getUsers, updateOrderStatus, updateEnrollmentStatus };
+module.exports = { 
+  getDashboard, 
+  getOrders, 
+  getEnrollments, 
+  getUsers, 
+  updateOrderStatus, 
+  updateEnrollmentStatus,
+  makeAdmin,
+  removeAdmin
+};

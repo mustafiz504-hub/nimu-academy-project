@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import AdminSidebar from './AdminSidebar';
 import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Navigate } from 'react-router-dom';
+import { useGlobal } from '../../context/GlobalContext';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -9,6 +11,7 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, authLoading } = useGlobal();
 
   useEffect(() => {
     document.body.style.overflow = isSidebarOpen ? 'hidden' : '';
@@ -25,6 +28,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       window.removeEventListener('keydown', handleEscape);
     };
   }, [isSidebarOpen]);
+
+  if (authLoading) {
+    return <div className="min-h-screen bg-[#0a0a0a] p-8 text-brand-gold">Loading admin session...</div>;
+  }
+
+  if (!user || !['admin', 'superadmin'].includes(user.role)) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0a] text-brand-cream font-sans selection:bg-brand-gold selection:text-brand-dark">

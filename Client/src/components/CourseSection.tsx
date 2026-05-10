@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Clock, Calendar, CheckCircle2, User, BookOpen, Phone, Mail, MapPin, Send } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, User, BookOpen, Phone, Mail, MapPin, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import Card, { CardHeader, CardContent, CardFooter } from './ui/Card';
 import Badge from './ui/Badge';
 import Button from './ui/Button';
@@ -12,9 +12,19 @@ import { useNavigate } from 'react-router-dom';
 const CourseSection = () => {
   const { courses } = useGlobal();
   const navigate = useNavigate();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = window.innerWidth > 768 ? 400 : 300;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const handleEnrollClick = (e: React.MouseEvent, course: Course) => {
     e.stopPropagation();
@@ -30,15 +40,39 @@ const CourseSection = () => {
     <section id="academy" className="py-16 md:py-24 bg-brand-cream scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading title="Our Featured Courses" />
-        <div className="flex overflow-x-auto snap-x snap-mandatory md:grid md:overflow-x-visible md:snap-none md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 scrollbar-hide">
+        
+        <div className="relative group px-0 md:px-0">
+          {/* Navigation Buttons - Optimized for Phone & Desktop */}
+          <button 
+            onClick={() => scroll('left')}
+            className="absolute left-1 md:-left-8 top-[40%] -translate-y-1/2 z-30 w-10 h-10 md:w-16 md:h-16 rounded-full bg-white/90 text-brand-gold border border-brand-gold/20 flex items-center justify-center hover:bg-brand-gold hover:text-brand-dark transition-all active:scale-90 shadow-lg md:opacity-0 md:group-hover:opacity-100"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={20} className="md:hidden" />
+            <ChevronLeft size={32} className="hidden md:block" />
+          </button>
+          
+          <button 
+            onClick={() => scroll('right')}
+            className="absolute right-1 md:-right-8 top-[40%] -translate-y-1/2 z-30 w-10 h-10 md:w-16 md:h-16 rounded-full bg-white/90 text-brand-gold border border-brand-gold/20 flex items-center justify-center hover:bg-brand-gold hover:text-brand-dark transition-all active:scale-90 shadow-lg md:opacity-0 md:group-hover:opacity-100"
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={20} className="md:hidden" />
+            <ChevronRight size={32} className="hidden md:block" />
+          </button>
+
+          <div 
+            ref={scrollRef}
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-5 md:gap-8 pb-10 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth"
+          >
           {courses.map((course, idx) => (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: idx * 0.1 }}
               key={idx}
-              className="min-w-[85vw] sm:min-w-[60vw] md:min-w-0 snap-center shrink-0 h-full"
+              className="min-w-[82vw] sm:min-w-[60vw] md:min-w-[calc(33.333%-1.5rem)] snap-center shrink-0 h-full"
             >
               <div onClick={() => handleCardClick(course.id)} className="cursor-pointer h-full group">
                 <Card className="h-full flex flex-col border-brand-gold/10 group-hover:border-brand-gold/40 transition-colors">
@@ -86,6 +120,7 @@ const CourseSection = () => {
           ))}
         </div>
       </div>
+    </div>
 
       {/* Contact Options Modal */}
       <Modal

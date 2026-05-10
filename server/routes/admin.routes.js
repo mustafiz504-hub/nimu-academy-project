@@ -1,6 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { getDashboard, getOrders, getEnrollments, getUsers, updateOrderStatus, updateEnrollmentStatus } = require('../controllers/admin.controller');
+const { 
+  getDashboard, 
+  getOrders, 
+  getEnrollments, 
+  getUsers, 
+  updateOrderStatus, 
+  updateEnrollmentStatus,
+  makeAdmin,
+  removeAdmin
+} = require('../controllers/admin.controller');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
 
@@ -69,6 +78,54 @@ router.get('/enrollments', getEnrollments);
  *         description: List of all users with 'user' role
  */
 router.get('/users', getUsers);
+
+/**
+ * @swagger
+ * /api/admin/make-admin:
+ *   post:
+ *     summary: Promote a user to admin
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userId]
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: User promoted
+ */
+router.post('/make-admin', makeAdmin);
+
+/**
+ * @swagger
+ * /api/admin/remove-admin:
+ *   post:
+ *     summary: Demote an admin to user
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userId]
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Admin demoted
+ */
+router.post('/remove-admin', removeAdmin);
 
 /**
  * @swagger
