@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Phone, MapPin, Instagram, CheckCircle2, Heart, Target } from 'lucide-react';
-import SectionHeading from '../components/ui/SectionHeading';
-import Button from '../components/ui/Button';
+import SectionHeading from './ui/SectionHeading';
+import Button from './ui/Button';
 
 const AboutSection = () => {
   const stats = [

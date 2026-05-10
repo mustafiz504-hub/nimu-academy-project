@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import Button from '../components/ui/Button';
+import Button from './ui/Button';
 
 const Hero = () => {
   return (
@@ -29,11 +29,19 @@ const Hero = () => {
                 Order Cakes
               </Button>
             </Link>
-            <Link to="/course/basic-baking">
-              <Button variant="outline" size="lg" className="px-12 py-4 text-lg border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition-all">
-                Explore Our Courses
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="px-12 py-4 text-lg border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition-all"
+              onClick={() => {
+                const element = document.getElementById('academy');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
+              Explore Our Courses
+            </Button>
           </div>
         </motion.div>
       </div>

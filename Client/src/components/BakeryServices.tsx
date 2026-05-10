@@ -2,50 +2,31 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import Button from '../components/ui/Button';
-import SectionHeading from '../components/ui/SectionHeading';
-
+import Button from './ui/Button';
+import SectionHeading from './ui/SectionHeading';
 import weddingCakeImg from '../assets/_sweetpeeps_14050219_171053089.jpg.jpeg';
 
 const BakeryServices = () => {
   const categories = [
-    { 
-      name: 'Birthday Cakes', 
-      image: 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=600' 
-    },
-    { 
-      name: 'Wedding Cakes', 
-      image: weddingCakeImg 
-    },
-    { 
-      name: 'Cupcakes', 
-      image: 'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&q=80&w=600' 
-    },
-    { 
-      name: 'Pastries', 
-      image: 'https://images.unsplash.com/photo-1549590143-d5855148a9d5?auto=format&fit=crop&q=80&w=600' 
-    },
+    { name: 'Birthday Cakes', image: 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=600' },
+    { name: 'Wedding Cakes', image: weddingCakeImg },
+    { name: 'Cupcakes', image: 'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&q=80&w=600' },
+    { name: 'Pastries', image: 'https://images.unsplash.com/photo-1549590143-d5855148a9d5?auto=format&fit=crop&q=80&w=600' },
   ];
 
   return (
     <section id="shop" className="py-12 md:py-24 bg-brand-light">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading 
-          title="Our Bakery Services" 
-          subtitle="Handcrafted with love, using only the finest ingredients." 
-        />
-        
+        <SectionHeading title="Our Bakery Services" subtitle="Handcrafted with love, using only the finest ingredients." />
         <div className="relative group">
-          <div 
-            className="flex overflow-x-auto snap-x snap-mandatory md:grid md:overflow-x-visible md:snap-none md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 scrollbar-hide"
-          >
+          <div className="flex overflow-x-auto snap-x snap-mandatory md:grid md:overflow-x-visible md:snap-none md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 scrollbar-hide">
             {categories.map((cat, index) => (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                key={cat.name} 
+                key={cat.name}
                 className="min-w-[260px] w-[70vw] md:w-auto md:min-w-0 snap-center shrink-0 group/card cursor-pointer"
               >
                 <Link to="/shop">
@@ -64,12 +45,9 @@ const BakeryServices = () => {
             ))}
           </div>
         </div>
-
         <div className="mt-8 md:mt-16 text-center">
           <Link to="/shop">
-            <Button variant="outline" className="border-brand-gold text-brand-dark hover:bg-brand-gold">
-              View All Products
-            </Button>
+            <Button variant="outline" className="border-brand-gold text-brand-dark hover:bg-brand-gold">View All Products</Button>
           </Link>
         </div>
       </div>

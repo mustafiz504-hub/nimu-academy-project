@@ -1,26 +1,22 @@
 import React from 'react';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
-import Hero from './Hero';
-import AcademyIntro from './AcademyIntro';
+import Hero from '../components/Hero';
+import AcademyIntro from '../components/AcademyIntro';
+import CourseSection from '../components/CourseSection';
+import Testimonials from '../components/Testimonials';
 
-import CourseSection from './CourseSection';
-
-import Testimonials from './Testimonials';
-
-const LandingPage = () => {
+const HomePage = () => {
   return (
     <>
       <Nav />
       <Hero />
       <AcademyIntro />
-
       <CourseSection />
-
       <Testimonials />
       <Footer />
     </>
   );
 };
 
-export default LandingPage;
+export default HomePage;

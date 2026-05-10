@@ -3,9 +3,11 @@ import { motion } from 'motion/react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ShoppingCart, User, Instagram } from 'lucide-react';
 import logo from '../assets/image.png';
+import AuthModal from './AuthModal';
 
 const Nav = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const location = useLocation();
 
   const navLinks = [
@@ -57,7 +59,12 @@ const Nav = () => {
               <Instagram size={20} />
             </a>
             <Link to="/shop" className="hover:text-brand-gold transition-colors"><ShoppingCart size={20} /></Link>
-            <button className="hover:text-brand-gold transition-colors"><User size={20} /></button>
+            <button 
+              onClick={() => setIsAuthModalOpen(true)}
+              className="hover:text-brand-gold transition-colors"
+            >
+              <User size={20} />
+            </button>
             <a href="/#academy">
               <button className="bg-brand-gold text-brand-dark px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold-muted transition-colors">
                 Book a Class
@@ -75,6 +82,12 @@ const Nav = () => {
               <Instagram size={20} />
             </a>
             <Link to="/shop" className="text-brand-cream hover:text-brand-gold"><ShoppingCart size={20} /></Link>
+            <button 
+              onClick={() => setIsAuthModalOpen(true)}
+              className="text-brand-cream hover:text-brand-gold"
+            >
+              <User size={20} />
+            </button>
             <button onClick={() => setIsOpen(!isOpen)} className="text-brand-cream hover:text-brand-gold transition-transform active:scale-95">
               {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
@@ -100,7 +113,13 @@ const Nav = () => {
             </Link>
           ))}
           <div className="pt-4 border-t border-brand-gold/10 flex flex-col gap-4">
-            <button className="flex items-center gap-3 text-lg font-medium hover:text-brand-gold transition-colors">
+            <button 
+              onClick={() => {
+                setIsOpen(false);
+                setIsAuthModalOpen(true);
+              }}
+              className="flex items-center gap-3 text-lg font-medium hover:text-brand-gold transition-colors"
+            >
               <User size={20} /> Profile
             </button>
             <a href="/#academy" onClick={() => setIsOpen(false)} className="w-full">
@@ -111,6 +130,12 @@ const Nav = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Optimized Auth Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </nav>
   );
 };

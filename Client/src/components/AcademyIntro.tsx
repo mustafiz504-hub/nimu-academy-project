@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import Button from '../components/ui/Button';
+import Button from './ui/Button';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Clock, Calendar, CheckCircle2, User, BookOpen, GraduationCap, ArrowRight, Share2, Phone, Mail, MapPin, Send } from 'lucide-react';
-import Card, { CardHeader, CardContent, CardFooter } from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
-import SectionHeading from '../components/ui/SectionHeading';
-import Modal from '../components/ui/Modal';
-
+import { Clock, Calendar, CheckCircle2, User, BookOpen, Phone, Mail, MapPin, Send } from 'lucide-react';
+import Card, { CardHeader, CardContent, CardFooter } from './ui/Card';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
+import SectionHeading from './ui/SectionHeading';
+import Modal from './ui/Modal';
 import { courses, Course } from '../data/courses';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,15 +29,14 @@ const CourseSection = () => {
     <section id="academy" className="py-16 md:py-24 bg-brand-cream scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading title="Our Featured Courses" />
-
         <div className="flex overflow-x-auto snap-x snap-mandatory md:grid md:overflow-x-visible md:snap-none md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 scrollbar-hide">
           {courses.map((course, idx) => (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
-              key={idx} 
+              key={idx}
               className="min-w-[85vw] sm:min-w-[60vw] md:min-w-0 snap-center shrink-0 h-full"
             >
               <div onClick={() => handleCardClick(course.id)} className="cursor-pointer h-full group">
@@ -51,12 +49,10 @@ const CourseSection = () => {
                   </CardHeader>
                   <CardContent>
                     <h3 className="text-xl font-serif text-brand-dark mb-3 leading-tight group-hover:text-brand-gold transition-colors">{course.title}</h3>
-                    
                     <div className="flex flex-wrap gap-3 mb-4 text-xs text-brand-brown">
                       <div className="flex items-center"><Clock size={14} className="mr-1 text-brand-gold"/> {course.duration}</div>
                       <div className="flex items-center"><Calendar size={14} className="mr-1 text-brand-gold"/> {course.timing}</div>
                     </div>
-
                     <div className="mb-4">
                       <h4 className="font-semibold text-sm text-brand-dark mb-2 flex items-center gap-2">
                         <BookOpen size={14} className="text-brand-gold"/> Topics Covered:
@@ -70,7 +66,6 @@ const CourseSection = () => {
                         {course.topics.length > 3 && <li className="text-brand-gold font-medium ml-4">+ more</li>}
                       </ul>
                     </div>
-
                     <CardFooter className="px-0 pb-0 border-t-0">
                       <div className="text-xl font-bold text-brand-dark">{course.price}</div>
                       <Button size="sm" onClick={(e) => handleEnrollClick(e, course)}>
@@ -86,12 +81,9 @@ const CourseSection = () => {
       </div>
 
       {/* Enrollment Form Modal */}
-      <Modal 
-        isOpen={showEnrollModal} 
-        onClose={() => {
-          setShowEnrollModal(false);
-          setIsSuccess(false);
-        }} 
+      <Modal
+        isOpen={showEnrollModal}
+        onClose={() => { setShowEnrollModal(false); setIsSuccess(false); }}
         title={isSuccess ? "Success!" : `Enroll in ${selectedCourse?.title}`}
         maxWidth="max-w-2xl"
       >
@@ -107,18 +99,10 @@ const CourseSection = () => {
                 Chef <span className="font-bold">Muskan Naz's</span> team will contact you within 24 hours to confirm your admission.
               </p>
             </div>
-            <Button className="w-full" onClick={() => setShowEnrollModal(false)}>
-              Back to Courses
-            </Button>
+            <Button className="w-full" onClick={() => setShowEnrollModal(false)}>Back to Courses</Button>
           </div>
         ) : (
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              setIsSuccess(true);
-            }}
-            className="space-y-5"
-          >
+          <form onSubmit={(e) => { e.preventDefault(); setIsSuccess(true); }} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Student Name *</label>
@@ -135,7 +119,6 @@ const CourseSection = () => {
                 </div>
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Email Address</label>
@@ -152,12 +135,10 @@ const CourseSection = () => {
                 </div>
               </div>
             </div>
-
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Course Name</label>
               <input readOnly value={selectedCourse?.title || ''} className="w-full bg-brand-gold/5 border border-brand-gold/20 rounded-xl py-3 px-4 focus:outline-none text-brand-dark text-sm font-semibold" />
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Preferred Batch *</label>
@@ -180,7 +161,6 @@ const CourseSection = () => {
                 </div>
               </div>
             </div>
-
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">How did you hear about us?</label>
               <select className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm appearance-none cursor-pointer">
@@ -191,12 +171,10 @@ const CourseSection = () => {
                 <option>Other</option>
               </select>
             </div>
-
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-brand-brown ml-1">Message / Query (Optional)</label>
               <textarea rows={3} placeholder="Any specific requirements?" className="w-full bg-brand-light border border-brand-gold/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-gold transition-colors text-brand-dark text-sm resize-none" />
             </div>
-
             <Button type="submit" className="w-full mt-2">
               Enroll Now <Send size={18} className="ml-2"/>
             </Button>
