@@ -1,3 +1,4 @@
+// @ts-check
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -6,6 +7,7 @@ const pool = require('./config/db');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
+/** @type {import('express').Express} */
 const app = express();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -39,7 +41,7 @@ const swaggerOptions = {
   apis: ['./routes/*.js'],
 };
 
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
+const swaggerDocs = swaggerJsdoc(/** @type {any} */ (swaggerOptions));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
@@ -62,17 +64,27 @@ app.get('/', (req, res) => {
 });
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found.' });
 });
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
+/** @type {import('express').ErrorRequestHandler} */
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ message: 'Internal server error.' });
 });
 
 // ─── DB Setup: Create Tables ──────────────────────────────────────────────────
+/**
+ * Creates database tables if they do not exist.
+ * @async
+ * @returns {Promise<void>}
+ */
 const createTables = async () => {
   try {
     await pool.query(`
@@ -162,12 +174,17 @@ const createTables = async () => {
 
     console.log('Tables Created Successfully');
   } catch (error) {
-    console.error('Error creating tables:', error.message);
+    console.error('Error creating tables:', error instanceof Error ? error.message : error);
     throw error;
   }
 };
 
 // ─── Seed Data ────────────────────────────────────────────────────────────────
+/**
+ * Seeds the database with initial data.
+ * @async
+ * @returns {Promise<void>}
+ */
 const seedData = async () => {
   try {
     // ── Seed Superadmin ──
@@ -233,7 +250,7 @@ const seedData = async () => {
       console.log('Products seeded successfully');
     }
   } catch (error) {
-    console.error('Error seeding data:', error.message);
+    console.error('Error seeding data:', error instanceof Error ? error.message : error);
   }
 };
 
@@ -260,7 +277,7 @@ const startServer = async () => {
       console.log(`\nSuperadmin: muskan@nimu.com / Nimu@2026\n`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error.message);
+    console.error('Failed to start server:', error instanceof Error ? error.message : error);
     process.exit(1);
   }
 };

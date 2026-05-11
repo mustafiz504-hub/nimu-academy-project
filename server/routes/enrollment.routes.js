@@ -6,18 +6,21 @@ const { checkRole } = require('../middleware/roleCheck');
 
 // POST /api/enrollments - Guest or logged-in user can enroll (optional auth)
 // Using optional token verification - if token present use it, else allow guest
+/** @type {import('express').RequestHandler} */
 const optionalAuth = (req, res, next) => {
+  /** @type {import('express').Request & { user?: any }} */
+  const customReq = /** @type {any} */ (req);
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const jwt = require('jsonwebtoken');
     try {
       const token = authHeader.split(' ')[1];
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
+      customReq.user = jwt.verify(token, process.env.JWT_SECRET);
     } catch (e) {
       // Invalid token - treat as guest
     }
   }
-  next();
+  return next();
 };
 
 /**

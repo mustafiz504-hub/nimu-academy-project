@@ -10,6 +10,7 @@ import {
   Home,
   X,
   GraduationCap,
+  ShieldCheck,
   Users
 } from 'lucide-react';
 import { useGlobal } from '../../context/GlobalContext';
@@ -22,15 +23,19 @@ interface AdminSidebarProps {
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useGlobal();
+  const { user, logout } = useGlobal();
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+    // Only show Superadmin Dashboard & Admin Management to superadmins
+    ...(user?.role === 'superadmin' ? [
+      { name: 'Super Dashboard', icon: ShieldCheck, path: '/superadmin/dashboard' },
+      { name: 'Manage Admins', icon: Users, path: '/admin/users' }
+    ] : []),
     { name: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
     { name: 'Enrollments', icon: GraduationCap, path: '/admin/enrollments' },
     { name: 'Products', icon: Package, path: '/admin/products' },
     { name: 'Courses', icon: BookOpen, path: '/admin/courses' },
-    { name: 'Manage Admins', icon: Users, path: '/admin/users' },
   ];
 
   const handleLogout = async () => {

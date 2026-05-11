@@ -1,6 +1,14 @@
+// @ts-check
 const pool = require('../config/db');
 
+/** @typedef {import('express').Request & { user?: any }} Request */
+/** @typedef {import('express').Response} Response */
+
 // GET /api/user/profile
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
 const getProfile = async (req, res) => {
   try {
     const result = await pool.query(
@@ -18,6 +26,10 @@ const getProfile = async (req, res) => {
 };
 
 // PUT /api/user/profile
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
 const updateProfile = async (req, res) => {
   try {
     const { name, phone } = req.body;
@@ -41,6 +53,10 @@ const updateProfile = async (req, res) => {
 };
 
 // GET /api/user/orders
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
 const getUserOrders = async (req, res) => {
   try {
     const result = await pool.query(
@@ -58,6 +74,10 @@ const getUserOrders = async (req, res) => {
 };
 
 // GET /api/user/enrollments
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
 const getUserEnrollments = async (req, res) => {
   try {
     const result = await pool.query(

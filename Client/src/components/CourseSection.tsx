@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Clock, Calendar, CheckCircle2, User, BookOpen, Phone, Mail, MapPin, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, User, BookOpen, Phone, Mail, MapPin, Send } from 'lucide-react';
 import Card, { CardHeader, CardContent, CardFooter } from './ui/Card';
 import Badge from './ui/Badge';
 import Button from './ui/Button';
@@ -15,16 +15,6 @@ const CourseSection = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const scrollAmount = window.innerWidth > 768 ? 400 : 300;
-      scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   const handleEnrollClick = (e: React.MouseEvent, course: Course) => {
     e.stopPropagation();
@@ -42,24 +32,6 @@ const CourseSection = () => {
         <SectionHeading title="Our Featured Courses" />
         
         <div className="relative group px-0 md:px-0">
-          {/* Navigation Buttons - Optimized for Phone & Desktop */}
-          <button 
-            onClick={() => scroll('left')}
-            className="absolute left-1 md:-left-8 top-[40%] -translate-y-1/2 z-30 w-10 h-10 md:w-16 md:h-16 rounded-full bg-white/90 text-brand-gold border border-brand-gold/20 flex items-center justify-center hover:bg-brand-gold hover:text-brand-dark transition-all active:scale-90 shadow-lg md:opacity-0 md:group-hover:opacity-100"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft size={20} className="md:hidden" />
-            <ChevronLeft size={32} className="hidden md:block" />
-          </button>
-          
-          <button 
-            onClick={() => scroll('right')}
-            className="absolute right-1 md:-right-8 top-[40%] -translate-y-1/2 z-30 w-10 h-10 md:w-16 md:h-16 rounded-full bg-white/90 text-brand-gold border border-brand-gold/20 flex items-center justify-center hover:bg-brand-gold hover:text-brand-dark transition-all active:scale-90 shadow-lg md:opacity-0 md:group-hover:opacity-100"
-            aria-label="Scroll right"
-          >
-            <ChevronRight size={20} className="md:hidden" />
-            <ChevronRight size={32} className="hidden md:block" />
-          </button>
 
           <div 
             ref={scrollRef}
