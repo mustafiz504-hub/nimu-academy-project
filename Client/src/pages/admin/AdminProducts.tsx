@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package, Search, Plus, Edit, Trash2, X, Save, AlertCircle } from 'lucide-react';
+import { Package, Search, Plus, Edit, Trash2, X, Save, AlertCircle, Camera, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import Button from '../../components/ui/Button';
 import { api, ApiProduct } from '../../lib/api';
@@ -19,6 +19,7 @@ const emptyProduct: Partial<ApiProduct> = {
   category: 'Cake',
   price: '',
   available: true,
+  image_url: '',
 };
 
 const money = (value: string | number) => `Rs ${Number(value || 0).toLocaleString('en-IN')}`;
@@ -30,7 +31,9 @@ const AdminProducts = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -90,6 +93,7 @@ const AdminProducts = () => {
       description: editingProduct.description || '',
       category: editingProduct.category || '',
       price: Number(editingProduct.price || 0),
+      image_url: editingProduct.image_url || '',
       available: editingProduct.available ?? true,
     };
 
@@ -108,6 +112,27 @@ const AdminProducts = () => {
       setError(err instanceof Error ? err.message : 'Product save nahi ho paya.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Local preview dikhao turant
+    const localPreview = URL.createObjectURL(file);
+    setEditingProduct((prev) => prev ? { ...prev, image_url: localPreview } : prev);
+
+    setUploading(true);
+    setError('');
+    try {
+      const response = await api.upload(file, 'products');
+      // Functional update: stale closure bug fix
+      setEditingProduct((prev) => prev ? { ...prev, image_url: response.imageUrl } : prev);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Image upload nahi ho paya.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -165,8 +190,8 @@ const AdminProducts = () => {
                 className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-brand-gold/30 transition-all"
               >
                 <div className="relative h-48 overflow-hidden">
-                  <img src={productImages[index % productImages.length]} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <img src={product.image_url || productImages[index % productImages.length]} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <div className="absolute top-2 right-2 flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleEdit(product)}
                       className="p-2 bg-white/10 backdrop-blur-md text-white rounded-lg hover:bg-brand-gold hover:text-brand-dark transition-colors"
@@ -219,11 +244,11 @@ const AdminProducts = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-brand-dark border border-brand-gold/20 rounded-3xl overflow-hidden shadow-2xl"
+              className="relative w-full max-w-md bg-brand-dark border border-brand-gold/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-8">
-                <div className="flex justify-between items-center mb-8">
+              <div className="p-5 sm:p-6 scrollbar-hide">
+                <div className="flex justify-between items-center mb-4">
                   <h2 className="text-2xl font-serif font-bold text-brand-gold">
                     {editingProduct.id === 0 ? 'Add New Product' : 'Edit Product'}
                   </h2>
@@ -232,7 +257,43 @@ const AdminProducts = () => {
                   </button>
                 </div>
 
-                <form onSubmit={handleSave} className="space-y-6">
+                <form onSubmit={handleSave} className="space-y-3">
+                  {/* Image Upload Area */}
+                  <div className="relative group/img">
+                    <div className="h-28 sm:h-32 w-full rounded-2xl overflow-hidden bg-white/5 border-2 border-dashed border-white/10 group-hover/img:border-brand-gold/30 transition-all relative">
+                      {editingProduct.image_url ? (
+                        <img src={editingProduct.image_url} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-brand-cream/20">
+                          <Camera size={48} className="mb-2" />
+                          <p className="text-xs font-bold uppercase tracking-widest">No Image Selected</p>
+                        </div>
+                      )}
+                      
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="p-3 bg-brand-gold text-brand-dark rounded-xl hover:scale-110 transition-all font-bold flex items-center gap-2"
+                        >
+                          <Upload size={20} /> {uploading ? 'Uploading...' : 'Upload'}
+                        </button>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
+                    {uploading && (
+                      <div className="absolute inset-0 bg-brand-dark/50 backdrop-blur-sm flex items-center justify-center rounded-2xl">
+                        <div className="w-8 h-8 border-4 border-brand-gold border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-brand-gold uppercase tracking-widest ml-1">Product Name</label>
                     <input

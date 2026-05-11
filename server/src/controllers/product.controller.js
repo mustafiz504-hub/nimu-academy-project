@@ -28,15 +28,15 @@ const getProductById = async (req, res) => {
 // POST /api/products (admin/superadmin)
 const createProduct = async (req, res) => {
   try {
-    const { name, description, price, category } = req.body;
+    const { name, description, price, category, image_url } = req.body;
 
     if (!name || !price) {
       return res.status(400).json({ message: 'Product name and price are required.' });
     }
 
     const result = await pool.query(
-      'INSERT INTO products (name, description, price, category) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, description || null, price, category || null]
+      'INSERT INTO products (name, description, price, category, image_url) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, description || null, price, category || null, image_url || null]
     );
 
     await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Created product: ${name}`]);
@@ -51,7 +51,7 @@ const createProduct = async (req, res) => {
 // PUT /api/products/:id (admin/superadmin)
 const updateProduct = async (req, res) => {
   try {
-    const { name, description, price, category, available } = req.body;
+    const { name, description, price, category, available, image_url } = req.body;
 
     const result = await pool.query(
       `UPDATE products SET
@@ -59,9 +59,10 @@ const updateProduct = async (req, res) => {
         description = COALESCE($2, description),
         price = COALESCE($3, price),
         category = COALESCE($4, category),
-        available = COALESCE($5, available)
-       WHERE id = $6 RETURNING *`,
-      [name, description, price, category, available, req.params.id]
+        available = COALESCE($5, available),
+        image_url = COALESCE($6, image_url)
+       WHERE id = $7 RETURNING *`,
+      [name, description, price, category, available, image_url, req.params.id]
     );
 
     if (result.rows.length === 0) {

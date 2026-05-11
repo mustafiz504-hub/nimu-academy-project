@@ -32,7 +32,7 @@ const mapProduct = (product: ApiProduct, index: number) => {
   return {
     ...product,
     category,
-    image: productImages[index % productImages.length],
+    image: product.image_url || productImages[index % productImages.length],
     priceLabel: `Starting Rs ${Number(product.price || 0).toLocaleString('en-IN')}`,
     options: optionMap[lowerCategory] || ['Freshly baked', 'Customizable'],
   };
@@ -44,19 +44,7 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<ReturnType<typeof mapProduct> | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    flavor: 'Chocolate',
-    size: '500g',
-    message: '',
-    date: '',
-    instructions: '',
-  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -76,68 +64,13 @@ const Shop = () => {
     loadProducts();
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    setFormData((prev) => ({
-      ...prev,
-      name: prev.name || user.name || '',
-      phone: prev.phone || user.phone || '',
-    }));
-  }, [user]);
 
-  const minimumDate = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   const handleOrderClick = (product: ReturnType<typeof mapProduct>) => {
     setSelectedProduct(product);
-    setError('');
-    setIsSuccess(false);
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user) {
-      setError('Order place karne ke liye pehle login karein.');
-      return;
-    }
-
-    if (!selectedProduct) return;
-
-    setSubmitting(true);
-    setError('');
-
-    try {
-      await api.orders.create({
-        product_id: selectedProduct.id,
-        customer_name: formData.name,
-        phone: formData.phone,
-        address: formData.address,
-        flavor: formData.flavor,
-        size: formData.size,
-        custom_message: formData.message,
-        delivery_date: formData.date,
-        special_instructions: formData.instructions,
-        total_price: Number(selectedProduct.price || 0),
-      });
-
-      setIsSuccess(true);
-      setFormData({
-        name: user.name || '',
-        phone: user.phone || '',
-        address: '',
-        flavor: 'Chocolate',
-        size: '500g',
-        message: '',
-        date: '',
-        instructions: '',
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Order submit nahi ho paya.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-brand-cream font-sans text-brand-dark">
@@ -182,11 +115,6 @@ const Shop = () => {
             </div>
           </div>
 
-          {error && !isModalOpen && (
-            <div className="mb-8 flex items-center gap-3 rounded-2xl border border-red-400/30 bg-red-50 px-5 py-4 text-red-700">
-              <AlertCircle size={20} /> {error}
-            </div>
-          )}
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -206,13 +134,13 @@ const Shop = () => {
                   transition={{ duration: 0.3 }}
                 >
                   <Card className="h-full flex flex-col group overflow-hidden border-brand-gold/10 hover:border-brand-gold/30 transition-all duration-500 shadow-lg hover:shadow-2xl">
-                    <CardHeader className="p-0 overflow-hidden aspect-video">
+                    <CardHeader className="p-0">
                       <img
                         src={product.image}
                         alt={product.name}
                         loading="lazy"
                         decoding="async"
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700"
                       />
                       <div className="absolute top-4 left-4">
                         <div className="bg-brand-gold text-brand-dark px-3 py-1 rounded-full text-xs font-bold shadow-lg">
@@ -220,7 +148,7 @@ const Shop = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="flex-grow p-6">
+                    <CardContent className="p-4 pt-3 -mt-4 relative z-10 bg-white shadow-[0_-6px_20px_rgba(0,0,0,0.08)]">
                       <h3 className="text-xl font-serif font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition-colors">
                         {product.name}
                       </h3>
@@ -235,7 +163,7 @@ const Shop = () => {
                         ))}
                       </div>
                     </CardContent>
-                    <CardFooter className="p-6 pt-0">
+                    <CardFooter className="px-4 pb-4 pt-0">
                       <Button
                         className="w-full rounded-2xl group-hover:bg-brand-dark group-hover:text-brand-gold transition-all"
                         onClick={() => handleOrderClick(product)}
@@ -256,137 +184,45 @@ const Shop = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={isSuccess ? 'Order Received!' : `Order ${selectedProduct?.name || ''}`}
+        title={selectedProduct ? `Order ${selectedProduct.name}` : 'Order Product'}
+        maxWidth="max-w-md"
+        headerClassName="bg-[#1a110a] text-brand-gold border-b border-white/5"
       >
-        {isSuccess ? (
-          <div className="text-center py-8">
-            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 size={48} />
-            </div>
-            <h4 className="text-2xl font-serif font-bold text-brand-dark mb-4">Thank you!</h4>
-            <p className="text-brand-brown leading-relaxed mb-6">
-              Your order has been received. Our team will contact you soon to confirm delivery.
-            </p>
-            <Button className="bg-brand-dark text-brand-gold w-full" onClick={() => setIsModalOpen(false)}>
-              Back to Shop
-            </Button>
+        <div className="py-8 px-2 text-center">
+          <div className="w-20 h-20 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-6 border border-brand-gold/20">
+            <ShoppingBag size={32} />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <AlertCircle size={18} className="mt-0.5 shrink-0" /> {error}
-              </div>
-            )}
+          
+          <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">
+            Order {selectedProduct?.name}
+          </h3>
+          
+          <p className="text-brand-brown/70 mb-8 max-w-[280px] mx-auto text-sm leading-relaxed">
+            Contact our bakery team to place your order and confirm delivery details.
+          </p>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-brand-brown mb-2">Customer Name *</label>
-                <input
-                  required
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-white border border-brand-gold/20 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-gold transition-all shadow-sm"
-                  placeholder="Enter your full name"
-                />
-              </div>
+          <div className="space-y-3">
+            <a 
+              href="tel:+919777240070"
+              className="flex items-center justify-center gap-3 w-full py-4 bg-[#1a110a] text-brand-gold rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
+            >
+              <Phone size={20} /> Call Now: +91 97772 40070
+            </a>
+            
+            <a 
+              href={`https://wa.me/919777240070?text=${encodeURIComponent(`Hi Nimu Bakery, I'd like to order ${selectedProduct?.name}.`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-green-500/20"
+            >
+              <ShoppingBag size={20} /> Order via WhatsApp
+            </a>
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-brand-brown mb-2">Phone Number *</label>
-                  <input
-                    required
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-white border border-brand-gold/20 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-gold transition-all shadow-sm"
-                    placeholder="10-digit mobile number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-brand-brown mb-2">Delivery Date *</label>
-                  <input
-                    required
-                    type="date"
-                    min={minimumDate}
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full bg-white border border-brand-gold/20 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-gold transition-all shadow-sm"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-brand-brown mb-1">Delivery Address *</label>
-              <textarea
-                required
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full bg-white border border-brand-gold/20 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-gold transition-colors h-24 resize-none"
-                placeholder="Detailed Address"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-brand-brown mb-1">Flavor</label>
-                <select
-                  value={formData.flavor}
-                  onChange={(e) => setFormData({ ...formData, flavor: e.target.value })}
-                  className="w-full bg-white border border-brand-gold/20 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-gold transition-colors"
-                >
-                  <option>Chocolate</option>
-                  <option>Vanilla</option>
-                  <option>Red Velvet</option>
-                  <option>Butterscotch</option>
-                  <option>Pineapple</option>
-                  <option>Mango</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-brand-brown mb-1">Size / Weight</label>
-                <select
-                  value={formData.size}
-                  onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                  className="w-full bg-white border border-brand-gold/20 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-gold transition-colors"
-                >
-                  <option>500g</option>
-                  <option>1kg</option>
-                  <option>1.5kg</option>
-                  <option>2kg</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-brand-brown mb-1">Message on Cake</label>
-              <input
-                type="text"
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full bg-white border border-brand-gold/20 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-gold transition-colors"
-                placeholder="e.g. Happy Birthday"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-brand-brown mb-1">Special Instructions</label>
-              <input
-                type="text"
-                value={formData.instructions}
-                onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
-                className="w-full bg-white border border-brand-gold/20 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-gold transition-colors"
-                placeholder="Any special requests"
-              />
-            </div>
-
-            <Button type="submit" disabled={submitting} className="w-full py-4 rounded-xl text-lg mt-4 shadow-lg hover:shadow-xl transition-all">
-              {submitting ? 'Placing Order...' : 'Place Order'}
-            </Button>
-          </form>
-        )}
+          <p className="mt-8 text-[10px] text-brand-brown/40 font-black uppercase tracking-[0.2em]">
+            Freshly Baked in Rourkela, Odisha
+          </p>
+        </div>
       </Modal>
     </div>
   );

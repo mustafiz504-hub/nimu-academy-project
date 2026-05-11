@@ -1,6 +1,6 @@
 {
-  "watch": ["server.js", "config/", "controllers/", "middleware/", "routes/", ".env"],
+  "watch": ["src/", ".env"],
   "ext": "js,json,env",
-  "ignore": ["node_modules/"],
-  "exec": "node server.js"
+  "ignore": ["node_modules/", "uploads/"],
+  "exec": "node src/server.js"
 }
