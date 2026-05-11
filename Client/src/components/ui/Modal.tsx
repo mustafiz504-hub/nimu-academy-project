@@ -8,9 +8,10 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   maxWidth?: string;
+  headerClassName?: string;
 }
 
-const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }: ModalProps) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', headerClassName }: ModalProps) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -39,7 +40,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }: Moda
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] md:w-full ${maxWidth} bg-brand-cream rounded-[2rem] md:rounded-[3rem] shadow-2xl z-[70] overflow-hidden flex flex-col max-h-[90vh]`}
           >
-            <div className="flex items-center justify-between p-6 border-b border-brand-gold/10 bg-brand-dark text-brand-gold">
+            <div className={`flex items-center justify-between p-6 border-b border-brand-gold/10 bg-brand-dark text-brand-gold ${headerClassName || ''}`}>
               <h3 className="text-xl font-serif font-bold tracking-wide">{title}</h3>
               <button 
                 onClick={onClose}

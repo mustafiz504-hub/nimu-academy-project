@@ -204,7 +204,7 @@ const Nav = () => {
                 if (isLoggedIn) {
                   navigate('/course/1');
                 } else {
-                  setIsAuthModalOpen(true);
+                  navigate('/auth');
                 }
               }}
               className="bg-brand-gold text-brand-dark px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold-muted transition-colors"

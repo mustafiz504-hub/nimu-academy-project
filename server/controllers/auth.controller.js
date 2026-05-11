@@ -1,8 +1,16 @@
+// @ts-check
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 
+/** @typedef {import('express').Request & { user?: any }} Request */
+/** @typedef {import('express').Response} Response */
+
 // Register
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
 const register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -53,6 +61,10 @@ const register = async (req, res) => {
 };
 
 // Login
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -101,11 +113,19 @@ const login = async (req, res) => {
 };
 
 // Logout (stateless - client discards token)
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
 const logout = async (req, res) => {
   res.status(200).json({ message: 'Logged out successfully.' });
 };
 
 // Get current user info (me)
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
 const getMe = async (req, res) => {
   try {
     const result = await pool.query(
