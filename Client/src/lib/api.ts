@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:8000/api';
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://192.168.1.140:8000/api';
 
 const TOKEN_KEY = 'nimu_auth_token';
 const USER_KEY = 'nimu_auth_user';
@@ -32,6 +32,7 @@ export interface ApiProduct {
   description?: string | null;
   price: number | string;
   category?: string | null;
+  image_url?: string | null;
   available?: boolean;
   created_at?: string;
 }
@@ -131,7 +132,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const token = getStoredToken();
   const headers = new Headers(options.headers);
 
-  if (options.body !== undefined && !headers.has('Content-Type')) {
+  const isFormData = options.body instanceof FormData;
+
+  if (options.body !== undefined && !headers.has('Content-Type') && !isFormData) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -142,7 +145,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
-    body: toJsonBody(options.body),
+    body: isFormData ? (options.body as any) : toJsonBody(options.body),
   });
 
   const contentType = response.headers.get('content-type') || '';
@@ -233,6 +236,14 @@ export const api = {
       }),
     delete: (id: number | string) =>
       request<{ message: string }>(`/enrollments/${id}`, { method: 'DELETE' }),
+  },
+  upload: async (file: File, folder: 'products' | 'users' | 'courses' | 'banners' | 'general' = 'general'): Promise<{ imageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return request<{ imageUrl: string }>(`/upload?folder=${folder}`, {
+      method: 'POST',
+      body: formData,
+    });
   },
   admin: {
     dashboard: () => request<{ stats: Record<string, number> }>('/admin/dashboard'),

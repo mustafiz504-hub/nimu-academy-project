@@ -15,11 +15,11 @@ const Card = ({ children, className = '', hoverable = true }: CardProps) => {
 };
 
 export const CardHeader = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative h-48 ${className}`}>{children}</div>
+  <div className={`relative h-64 overflow-hidden ${className}`}>{children}</div>
 );
 
 export const CardContent = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`p-6 flex flex-col h-full ${className}`}>{children}</div>
+  <div className={`p-6 flex flex-col ${className}`}>{children}</div>
 );
 
 export const CardFooter = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
