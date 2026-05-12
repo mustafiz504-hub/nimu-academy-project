@@ -1,4 +1,5 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { googleSheetsService } from './services/googleSheets';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import { GlobalProvider } from './context/GlobalContext';
@@ -16,10 +17,12 @@ const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminCourses = lazy(() => import('./pages/admin/AdminCourses'));
 const AdminGallery = lazy(() => import('./pages/admin/AdminGallery'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminCertificatesPage = lazy(() => import('./pages/admin/AdminCertificatesPage'));
 const ProfilePage = lazy(() => import('./pages/user/ProfilePage'));
 const UserOrdersPage = lazy(() => import('./pages/user/UserOrdersPage'));
 const UserEnrollmentsPage = lazy(() => import('./pages/user/UserEnrollmentsPage'));
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
+const CertificatePage = lazy(() => import('./pages/CertificatePage'));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-brand-dark text-brand-cream">
@@ -36,6 +39,10 @@ const PageSkeleton = () => (
 );
 
 function App() {
+  useEffect(() => {
+    // Connection initialized
+  }, []);
+
   return (
     <GlobalProvider>
       <Router>
@@ -54,9 +61,11 @@ function App() {
               <Route path="/admin/courses" element={<AdminCourses />} />
               <Route path="/admin/gallery" element={<AdminGallery />} />
               <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/certificates" element={<AdminCertificatesPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/user/orders" element={<UserOrdersPage />} />
               <Route path="/user/enrollments" element={<UserEnrollmentsPage />} />
+              <Route path="/certificate" element={<CertificatePage />} />
               <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
               <Route path="/course/:id" element={<CourseDetailPage />} />
               <Route path="*" element={<NotFound />} />

@@ -14,12 +14,12 @@ const Nav = () => {
   const navigate = useNavigate();
   const { user, logout } = useGlobal();
   const isLoggedIn = Boolean(user);
-  console.log("Nav User State:", { user, isLoggedIn });
 
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
     { name: 'Academy', href: '/course/1' },
+    { name: 'Certificate', href: '/certificate' },
     { name: 'About', href: '/about' },
   ];
 

@@ -163,6 +163,9 @@ const AdminDashboard = () => {
               <Link to="/admin/courses" className="block w-full border border-brand-gold text-brand-gold py-3 rounded-xl font-bold hover:bg-brand-gold/10 transition-colors text-center">
                 Manage Courses
               </Link>
+              <Link to="/admin/certificates" className="block w-full border border-blue-400 text-blue-400 py-3 rounded-xl font-bold hover:bg-blue-400/10 transition-colors text-center">
+                Manage Certificates
+              </Link>
             </div>
           </div>
 
