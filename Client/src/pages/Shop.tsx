@@ -83,34 +83,34 @@ const Shop = () => {
             subtitle="Order fresh, handcrafted cakes & pastries delivered to your doorstep."
           />
 
-          <div className="bg-brand-dark text-brand-gold rounded-3xl p-6 md:p-8 mb-16 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-brand-gold/20">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-brand-gold/20 flex items-center justify-center">
-                <Clock className="text-brand-gold" />
+          <div className="bg-brand-dark text-brand-gold rounded-xl p-6 md:p-8 mb-16 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 shadow-xl border border-brand-gold/20">
+            <div className="flex items-start md:items-center gap-4 flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-brand-gold/20 flex items-center justify-center shrink-0">
+                <Clock size={20} className="md:w-6 md:h-6" />
               </div>
               <div>
-                <p className="font-semibold text-lg">Next Day Delivery</p>
-                <p className="text-brand-cream/60 text-sm italic">Orders placed before 5 PM will be delivered next day</p>
+                <p className="font-semibold text-base md:text-lg leading-tight">Next Day Delivery</p>
+                <p className="text-brand-cream/50 text-xs md:text-sm italic mt-1">Orders before 5 PM will be delivered next day</p>
               </div>
             </div>
-            <div className="h-px w-full md:w-px md:h-12 bg-brand-gold/20" />
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-brand-gold/20 flex items-center justify-center">
-                <Phone className="text-brand-gold" />
+            <div className="h-px w-full md:w-px md:h-12 bg-brand-gold/10" />
+            <div className="flex items-start md:items-center gap-4 flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-brand-gold/20 flex items-center justify-center shrink-0">
+                <Phone size={20} className="md:w-6 md:h-6" />
               </div>
               <div>
-                <p className="font-semibold text-lg">Order via Phone</p>
-                <p className="text-brand-cream/60 text-sm">9777240070 / 8249517832</p>
+                <p className="font-semibold text-base md:text-lg leading-tight">Order via Phone</p>
+                <p className="text-brand-cream/50 text-xs md:text-sm mt-1">9777240070 / 8249517832</p>
               </div>
             </div>
-            <div className="h-px w-full md:w-px md:h-12 bg-brand-gold/20" />
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-brand-gold/20 flex items-center justify-center">
-                <MapPin className="text-brand-gold" />
+            <div className="h-px w-full md:w-px md:h-12 bg-brand-gold/10" />
+            <div className="flex items-start md:items-center gap-4 flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-brand-gold/20 flex items-center justify-center shrink-0">
+                <MapPin size={20} className="md:w-6 md:h-6" />
               </div>
               <div>
-                <p className="font-semibold text-lg">Pick-up Point</p>
-                <p className="text-brand-cream/60 text-sm">Jhirpani, Rourkela 769042, Odisha</p>
+                <p className="font-semibold text-base md:text-lg leading-tight">Pick-up Point</p>
+                <p className="text-brand-cream/50 text-xs md:text-sm mt-1">Jhirpani, Rourkela, Odisha</p>
               </div>
             </div>
           </div>
@@ -148,7 +148,8 @@ const Shop = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="p-4 pt-3 -mt-4 relative z-10 bg-white shadow-[0_-6px_20px_rgba(0,0,0,0.08)]">
+                    <CardContent className="p-5 pt-4 bg-white relative z-10">
+
                       <h3 className="text-xl font-serif font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition-colors">
                         {product.name}
                       </h3>

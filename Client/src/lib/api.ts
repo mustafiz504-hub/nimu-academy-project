@@ -37,6 +37,15 @@ export interface ApiProduct {
   created_at?: string;
 }
 
+export interface ApiGalleryImage {
+  id: number;
+  image_url: string;
+  public_id: string;
+  title?: string | null;
+  section?: string | null;
+  created_at?: string;
+}
+
 export interface ApiOrder {
   id: number;
   user_id?: number | null;
@@ -196,6 +205,13 @@ export const api = {
       request<{ message: string; course: ApiCourse }>(`/courses/${id}`, { method: 'PUT', body }),
     delete: (id: number | string) =>
       request<{ message: string }>(`/courses/${id}`, { method: 'DELETE' }),
+  },
+  gallery: {
+    list: (section?: string) => request<{ images: ApiGalleryImage[] }>(`/gallery${section ? `?section=${section}` : ''}`, { auth: false }),
+    add: (body: Partial<ApiGalleryImage>) =>
+      request<{ message: string; image: ApiGalleryImage }>('/gallery', { method: 'POST', body }),
+    delete: (id: number | string) =>
+      request<{ message: string }>(`/gallery/${id}`, { method: 'DELETE' }),
   },
   products: {
     list: () => request<{ products: ApiProduct[] }>('/products', { auth: false }),

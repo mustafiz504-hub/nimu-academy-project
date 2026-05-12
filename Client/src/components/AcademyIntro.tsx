@@ -1,11 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import Button from './ui/Button';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { api, ApiGalleryImage } from '../lib/api';
 
 const AcademyIntro = () => {
   const [currentImage, setCurrentImage] = useState(0);
+  const [galleryImages, setGalleryImages] = useState<ApiGalleryImage[]>([]);
+
+  const defaultImages = [
+    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1481391243133-f96216dcb5d2?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1605807646983-377bc5a76493?auto=format&fit=crop&q=80&w=1200"
+  ];
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const response = await api.gallery.list('academy');
+        if (response.images && response.images.length > 0) {
+          setGalleryImages(response.images);
+        }
+      } catch (err) {
+        console.error('Gallery load error:', err);
+      }
+    };
+    fetchImages();
+  }, []);
+
+  const displayImages = galleryImages.length > 0 
+    ? galleryImages.map(img => img.image_url) 
+    : defaultImages;
 
   const stats = [
     { label: "Students Trained", value: "500+" },
@@ -22,19 +49,12 @@ const AcademyIntro = () => {
     "Lifetime Community Access"
   ];
 
-  const images = [
-    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=1200",
-    "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&q=80&w=1200",
-    "https://images.unsplash.com/photo-1481391243133-f96216dcb5d2?auto=format&fit=crop&q=80&w=1200",
-    "https://images.unsplash.com/photo-1605807646983-377bc5a76493?auto=format&fit=crop&q=80&w=1200"
-  ];
-
   const nextImage = () => {
-    setCurrentImage((prev) => (prev + 1) % images.length);
+    setCurrentImage((prev) => (prev + 1) % displayImages.length);
   };
 
   const prevImage = () => {
-    setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+    setCurrentImage((prev) => (prev - 1 + displayImages.length) % displayImages.length);
   };
 
   return (
@@ -80,7 +100,7 @@ const AcademyIntro = () => {
                 <AnimatePresence mode="wait">
                   <motion.img 
                     key={currentImage}
-                    src={images[currentImage]} 
+                    src={displayImages[currentImage]} 
                     loading={currentImage === 0 ? 'eager' : 'lazy'}
                     decoding="async"
                     initial={{ opacity: 0, x: 100 }}
@@ -110,7 +130,7 @@ const AcademyIntro = () => {
 
                 {/* Progress Indicators */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                   {images.map((_, i) => (
+                   {displayImages.map((_, i) => (
                      <div 
                       key={i} 
                       className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImage ? 'w-8 bg-brand-gold' : 'w-2 bg-brand-cream/30'}`}

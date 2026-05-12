@@ -2,13 +2,14 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import Button from './ui/Button';
+import heroBg from '../assets/photo-1578985545062-69928b1d9587.avif';
 
 const Hero = () => {
   return (
     <div id="home" className="relative flex items-center justify-center min-h-screen overflow-hidden bg-brand-dark">
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1600"
+          src={heroBg}
           alt=""
           className="h-full w-full object-cover"
           decoding="async"

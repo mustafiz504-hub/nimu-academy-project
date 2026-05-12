@@ -11,7 +11,8 @@ import {
   X,
   GraduationCap,
   ShieldCheck,
-  Users
+  Users,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useGlobal } from '../../context/GlobalContext';
 
@@ -36,6 +37,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Enrollments', icon: GraduationCap, path: '/admin/enrollments' },
     { name: 'Products', icon: Package, path: '/admin/products' },
     { name: 'Courses', icon: BookOpen, path: '/admin/courses' },
+    { name: 'Gallery', icon: ImageIcon, path: '/admin/gallery' },
   ];
 
   const handleLogout = async () => {
