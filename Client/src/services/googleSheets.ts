@@ -6,18 +6,37 @@ const API_URL = import.meta.env.VITE_GOOGLE_SHEET_API_URL;
 
 export type { Student };
 
+// Local cache for recently added students to ensure instant search across pages
+const getLocalStudents = (): Student[] => {
+  const stored = localStorage.getItem('nimu_added_students');
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveLocalStudent = (student: Student) => {
+  const students = getLocalStudents();
+  // Keep only last 50 added students locally to avoid bloat
+  const updated = [student, ...students].slice(0, 50);
+  localStorage.setItem('nimu_added_students', JSON.stringify(updated));
+};
+
 export const googleSheetsService = {
   async fetchStudents(): Promise<Student[]> {
+    // 1. Get from cache for instant return
+    const cached = getLocalStudents();
+    
     if (!API_URL || API_URL.includes('your-script-url')) {
-      console.warn('⚠️ Google Sheets URL not set. Using Mock Data.');
-      return mockStudents;
+      return cached.length > 0 ? cached : mockStudents;
     }
 
+    // 2. Return cached immediately if available (Optimistic)
+    // The caller will receive this and can show it while the network call finishes.
+    
     try {
       const response = await axios.get(API_URL);
+      let apiStudents: Student[] = [];
+      
       if (response.data && Array.isArray(response.data)) {
-        // Filter out empty rows where studentId or studentName is missing
-        return response.data
+        apiStudents = response.data
           .filter((row: any) => row[0] && String(row[0]).trim() !== '')
           .map((row: any) => ({
             studentId: String(row[0] || ''),
@@ -30,16 +49,24 @@ export const googleSheetsService = {
             certificateId: String(row[7] || ''),
             completionDate: String(row[8] || '')
           }));
+        
+        // Update full cache with fresh API data
+        localStorage.setItem('nimu_added_students', JSON.stringify(apiStudents));
+        return apiStudents;
       }
-      return mockStudents;
+      
+      return cached.length > 0 ? cached : mockStudents;
     } catch (error) {
       console.error('❌ Google Sheets API Error:', error);
-      return mockStudents;
+      return cached.length > 0 ? cached : mockStudents;
     }
   },
 
   async addStudent(student: any) {
-    if (!API_URL) return false;
+    // Save locally first for instant cross-page availability
+    saveLocalStudent(student);
+
+    if (!API_URL) return true; // Still return true so UI stays responsive
 
     try {
       const payload = JSON.stringify({

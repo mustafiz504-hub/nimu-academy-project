@@ -35,33 +35,37 @@ const CourseSection = () => {
 
           <div 
             ref={scrollRef}
-            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-5 md:gap-8 pb-10 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth"
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-5 md:gap-8 pt-4 pb-10 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth"
           >
           {courses.map((course, idx) => (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -10 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ delay: idx * 0.1 }}
+              transition={{ 
+                delay: idx * 0.1,
+                y: { duration: 0.3, ease: "easeOut" }
+              }}
               key={idx}
-              className="min-w-[82vw] sm:min-w-[60vw] md:min-w-[calc(33.333%-1.5rem)] snap-center shrink-0 h-full"
+              className="min-w-[85vw] sm:min-w-[46%] md:min-w-[46%] lg:min-w-[calc(33.333%-1.5rem)] snap-center shrink-0 h-full"
             >
-              <div onClick={() => handleCardClick(course.id)} className="cursor-pointer h-full group">
-                <Card className="h-full flex flex-col border-brand-gold/10 group-hover:border-brand-gold/40 transition-colors">
+              <div onClick={() => handleCardClick(course.id)} className="cursor-pointer h-full group/course">
+                <Card className="h-full flex flex-col border-brand-gold/10 group-hover/course:border-brand-gold/40 transition-colors">
                   <CardHeader>
                     <img
                       src={course.image}
                       alt={course.title}
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover/course:scale-110"
                     />
                     <Badge className="absolute top-4 right-4" variant="dark">
                       {course.mode}
                     </Badge>
                   </CardHeader>
                   <CardContent>
-                    <h3 className="text-xl font-serif text-brand-dark mb-3 leading-tight group-hover:text-brand-gold transition-colors">{course.title}</h3>
+                    <h3 className="text-xl font-serif text-brand-dark mb-3 leading-tight group-hover/course:text-brand-gold transition-colors">{course.title}</h3>
                     <div className="flex flex-wrap gap-3 mb-4 text-xs text-brand-brown">
                       <div className="flex items-center"><Clock size={14} className="mr-1 text-brand-gold"/> {course.duration}</div>
                       <div className="flex items-center"><Calendar size={14} className="mr-1 text-brand-gold"/> {course.timing}</div>

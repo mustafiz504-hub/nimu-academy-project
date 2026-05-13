@@ -7,8 +7,8 @@ const Footer = () => {
   return (
     <footer id="footer" className="bg-[#1a110a] text-brand-cream/80 pt-20 pb-10 border-t border-brand-gold/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="col-span-1 md:col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+          <div className="col-span-1">
              <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 rounded-full bg-brand-gold/10 overflow-hidden flex items-center justify-center">
                   <img src={logo} alt="Nimu Logo" loading="lazy" decoding="async" className="w-full h-full object-cover" />
@@ -45,25 +45,30 @@ const Footer = () => {
           <div>
             <h4 className="text-brand-gold font-serif text-lg mb-6">Quick Links</h4>
             <ul className="space-y-3 text-sm">
-              <li><a href="/#home" className="hover:text-brand-gold transition-colors">Home</a></li>
+              <li><Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-brand-gold transition-colors">Home</Link></li>
               <li><Link to="/about" className="hover:text-brand-gold transition-colors">About Us</Link></li>
-              <li><a href="/course/basic-baking" className="hover:text-brand-gold transition-colors">Courses</a></li>
-              <li><a href="/#footer" className="hover:text-brand-gold transition-colors">Contact Us</a></li>
+              <li><Link to="/course/basic-baking" className="hover:text-brand-gold transition-colors">Courses</Link></li>
+              <li><button onClick={() => document.getElementById('footer')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-brand-gold transition-colors">Contact Us</button></li>
             </ul>
           </div>
 
            <div>
             <h4 className="text-brand-gold font-serif text-lg mb-6">Legal</h4>
             <ul className="space-y-3 text-sm">
-              <li><a href="#" className="hover:text-brand-gold transition-colors">Terms of Use</a></li>
-              <li><a href="#" className="hover:text-brand-gold transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-brand-gold transition-colors">Refund Policy</a></li>
+              <li><Link to="/terms" className="hover:text-brand-gold transition-colors">Terms of Use</Link></li>
+              <li><Link to="/privacy" className="hover:text-brand-gold transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/refund" className="hover:text-brand-gold transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-brand-cream/10 pt-8 text-sm text-center">
-          <p>&copy; 2026 by Nimu Cooking Academy. All rights reserved.</p>
+          <p className="text-brand-cream/50">&copy; 2026 by Nimu Cooking Academy. All rights reserved.</p>
+          <div className="mt-4 text-[10px] uppercase tracking-[0.2em] text-brand-cream/20">
+            Designed & Developed by <span className="text-brand-gold/40 font-bold">Mustafiz</span> 
+            <span className="mx-3 opacity-50">|</span>
+            <a href="mailto:mustafiz504@gmail.com" className="hover:text-brand-gold/60 transition-colors normal-case">mustafiz504@gmail.com</a>
+          </div>
         </div>
       </div>
     </footer>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ShoppingCart, User, Instagram, LayoutDashboard, ShieldCheck, LogOut, Package, BookOpen, UserCircle, ArrowRight, ChevronRight } from 'lucide-react';
@@ -15,19 +15,20 @@ const Nav = () => {
   const { user, logout } = useGlobal();
   const isLoggedIn = Boolean(user);
 
-  const navLinks = [
+  const navLinks = useMemo(() => [
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
     { name: 'Academy', href: '/course/1' },
     { name: 'Certificate', href: '/certificate' },
     { name: 'About', href: '/about' },
-  ];
+  ], []);
 
-  const isActive = (path: string) => {
-    if (path === '/' && location.pathname === '/') return true;
-    if (path !== '/' && location.pathname.startsWith(path)) return true;
+  const isActive = useCallback((path: string) => {
+    if (path === '/' && location.pathname === '/' && !location.hash) return true;
+    if (path === '/#academy' && location.pathname === '/') return true;
+    if (path !== '/' && path !== '/#academy' && location.pathname.startsWith(path)) return true;
     return false;
-  };
+  }, [location.pathname, location.hash]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -96,28 +97,30 @@ const Nav = () => {
             </span>
           </Link>
           
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-5 lg:space-x-8">
             {navLinks.map(link => (
               <Link 
                 key={link.name} 
                 to={link.href} 
-                className={`text-sm font-medium transition-colors ${isActive(link.href) ? 'text-brand-gold' : 'hover:text-brand-gold'}`}
+                className={`text-[13px] lg:text-sm font-medium transition-colors ${isActive(link.href) ? 'text-brand-gold' : 'hover:text-brand-gold'}`}
               >
                 {link.name}
               </Link>
             ))}
           </div>
 
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
             <a 
               href="https://www.instagram.com/nimu.cooking/" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="hover:text-brand-gold transition-colors"
             >
-              <Instagram size={20} />
+              <Instagram size={18} className="lg:w-5 lg:h-5" />
             </a>
-            <Link to="/shop" className="hover:text-brand-gold transition-colors"><ShoppingCart size={20} /></Link>
+            <Link to="/shop" className="hover:text-brand-gold transition-colors">
+              <ShoppingCart size={18} className="lg:w-5 lg:h-5" />
+            </Link>
             
             {/* User Icon & Dropdown */}
             <div className="relative" ref={dropdownRef}>
@@ -125,7 +128,7 @@ const Nav = () => {
                 onClick={handleUserClick}
                 className="hover:text-brand-gold transition-colors flex items-center gap-1"
               >
-                <User size={20} />
+                <User size={18} className="lg:w-5 lg:h-5" />
               </button>
 
               <AnimatePresence>
@@ -184,7 +187,7 @@ const Nav = () => {
                           onClick={() => { setIsDropdownOpen(false); navigate('/auth'); }}
                           className="w-full py-4 rounded-xl bg-brand-gold text-brand-dark font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-gold/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
-                          Sign In / Join
+                          Sign In
                         </button>
                         <button 
                           onClick={() => { setIsDropdownOpen(false); navigate('/auth'); }}
@@ -200,14 +203,19 @@ const Nav = () => {
             </div>
 
             <button 
-              onClick={() => {
-                if (isLoggedIn) {
-                  navigate('/course/1');
+              onClick={(e) => {
+                e.preventDefault();
+                setIsOpen(false);
+                if (location.pathname === '/') {
+                  const element = document.getElementById('academy');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
                 } else {
-                  navigate('/auth');
+                  navigate('/', { state: { scrollTo: 'academy' } });
                 }
               }}
-              className="bg-brand-gold text-brand-dark px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold-muted transition-colors"
+              className="bg-brand-gold text-brand-dark px-5 py-2 rounded-full text-sm font-bold hover:bg-brand-gold-muted transition-all shadow-lg shadow-brand-gold/10 active:scale-95"
             >
               Book a Class
             </button>
@@ -256,7 +264,7 @@ const Nav = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-[2px]"
               aria-label="Close menu backdrop"
             >
               <motion.aside
@@ -264,7 +272,7 @@ const Nav = () => {
                 initial={{ x: '-100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
-                transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+                transition={{ type: 'tween', duration: 0.15, ease: 'easeInOut' }}
                 onClick={(e) => e.stopPropagation()}
                 className="fixed left-0 top-0 z-[60] flex h-dvh w-[56vw] max-w-[240px] flex-col border-r border-brand-gold/25 bg-brand-dark text-brand-cream shadow-2xl"
               >
@@ -327,25 +335,53 @@ const Nav = () => {
                         </div>
                       </>
                     ) : (
-                      <button
-                        onClick={() => {
-                          setIsOpen(false);
-                          navigate('/auth');
-                        }}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold hover:bg-white/5 hover:text-brand-gold transition-colors"
-                      >
-                        <User size={20} /> Login / Sign Up
-                      </button>
+                      <div className="space-y-3 px-1">
+                        <button
+                          onClick={() => {
+                            setIsOpen(false);
+                            navigate('/auth');
+                          }}
+                          className="flex w-full items-center justify-between rounded-xl bg-brand-gold px-4 py-2.5 text-xs font-black uppercase tracking-widest text-brand-dark shadow-lg shadow-brand-gold/20 transition-all active:scale-[0.98] hover:bg-brand-gold/90"
+                        >
+                          <span className="flex items-center gap-2">
+                            <User size={16} className="stroke-[2.5px]" /> 
+                            Sign In
+                          </span>
+                          <ChevronRight size={16} />
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setIsOpen(false);
+                            navigate('/auth');
+                          }}
+                          className="flex w-full items-center justify-center rounded-xl border border-brand-gold/30 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-brand-gold hover:bg-brand-gold/10 transition-all"
+                        >
+                          Create Account
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
 
                 <div className="border-t border-brand-gold/15 p-5">
-                  <a href="/#academy" onClick={() => setIsOpen(false)} className="block w-full">
-                    <button className="w-full rounded-lg bg-brand-gold py-4 font-bold text-brand-dark hover:bg-brand-gold-muted transition-colors">
-                      Book a Class
-                    </button>
-                  </a>
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsOpen(false);
+                      if (location.pathname === '/') {
+                        const element = document.getElementById('academy');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      } else {
+                        navigate('/', { state: { scrollTo: 'academy' } });
+                      }
+                    }}
+                    className="w-full rounded-lg bg-brand-gold py-4 font-bold text-brand-dark hover:bg-brand-gold-muted transition-colors"
+                  >
+                    Book a Class
+                  </button>
                 </div>
               </motion.aside>
             </motion.div>

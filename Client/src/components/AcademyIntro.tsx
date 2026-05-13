@@ -37,7 +37,7 @@ const AcademyIntro = () => {
   const stats = [
     { label: "Students Trained", value: "500+" },
     { label: "Years Experience", value: "5+" },
-    { label: "Industry Recognized", value: "Certificate" },
+    { label: "Academy Certified", value: "Certificate" },
     { label: "Batch Size", value: "Max 15" }
   ];
 
@@ -45,7 +45,7 @@ const AcademyIntro = () => {
     "AC Equipped Kitchen",
     "Online + Offline Classes Available",
     "Personal attention from Chef Muskan Naz",
-    "Industry Recognized Certificate",
+    "Official Academy Certificate",
     "Lifetime Community Access"
   ];
 
@@ -66,7 +66,7 @@ const AcademyIntro = () => {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid md:grid-cols-2 gap-16 items-center mb-20">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-center mb-20">
           <div>
             <h2 className="text-brand-gold font-serif text-sm uppercase tracking-widest mb-4">About Our Academy</h2>
             <h3 className="text-4xl md:text-5xl font-serif text-brand-cream mb-8 leading-tight">

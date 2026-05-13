@@ -10,6 +10,20 @@ const CertificateSearch = () => {
   const [loading, setLoading] = useState(false);
   const [student, setStudent] = useState<Student | null>(null);
   const [error, setError] = useState('');
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+
+  // Pre-fetch all students once on mount
+  React.useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const data = await googleSheetsService.fetchStudents();
+        setAllStudents(data);
+      } catch (err) {
+        console.error('Failed to pre-fetch students');
+      }
+    };
+    fetchAll();
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,11 +33,12 @@ const CertificateSearch = () => {
     setError('');
     setStudent(null);
 
-    try {
-      const allStudents = await googleSheetsService.fetchStudents();
+    // Instant local search
+    setTimeout(() => {
       const found = allStudents.find(s => 
         s.email.toLowerCase() === query.toLowerCase() || 
-        s.phone === query
+        s.phone === query ||
+        s.studentId === query
       );
 
       if (found) {
@@ -31,11 +46,8 @@ const CertificateSearch = () => {
       } else {
         setError('Hume aapki details nahi mili. Please apna correct email ya phone number check karein.');
       }
-    } catch (err) {
-      setError('Search karte waqt error aaya. Please baad mein try karein.');
-    } finally {
       setLoading(false);
-    }
+    }, 400); // Small delay for nice UX feel
   };
 
   return (
@@ -52,7 +64,7 @@ const CertificateSearch = () => {
           <div className="relative flex">
             <input 
               type="text"
-              placeholder="Enter Email or Phone Number"
+              placeholder="Enter Phone Number"
               className="w-full bg-brand-dark/50 border border-brand-gold/20 rounded-l-2xl py-5 px-6 outline-none text-brand-cream focus:border-brand-gold/50 transition-all"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

@@ -11,7 +11,7 @@ const CertificatePage = () => {
   return (
     <div className="min-h-screen bg-[#120a05] flex flex-col">
       <Nav />
-      <main className="flex-grow pt-32 pb-20 px-4">
+      <main className="flex-grow pt-32 pb-20 px-4 flex flex-col justify-center">
         <div className="max-w-4xl mx-auto">
           <Suspense fallback={<div className="h-96 flex items-center justify-center text-brand-gold animate-pulse font-serif text-2xl italic">Loading Verification System...</div>}>
             <CertificateSearch />
