@@ -115,7 +115,14 @@ const CourseDetailPage = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-brand-dark via-brand-dark/90 to-brand-dark" />
         
         <div className="container mx-auto px-4 relative z-10">
-          <Link to="/#academy" className="inline-flex items-center text-brand-gold hover:text-brand-gold-muted transition-colors mb-8 group">
+          <Link 
+            to="/" 
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/', { state: { scrollTo: 'academy' } });
+            }}
+            className="inline-flex items-center text-brand-gold hover:text-brand-gold-muted transition-colors mb-8 group"
+          >
             <ArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" size={20} />
             Back Home
           </Link>
@@ -161,7 +168,7 @@ const CourseDetailPage = () => {
                   </div>
                   <div>
                     <p className="text-xs text-brand-gold uppercase tracking-widest font-bold">Certification</p>
-                    <p className="text-lg text-brand-cream font-medium">Industry Recognized</p>
+                    <p className="text-lg text-brand-cream font-medium">Official Certificate</p>
                   </div>
                 </div>
               </div>

@@ -36,6 +36,7 @@ app.use('/api/orders',      require('./routes/order.routes'));
 app.use('/api/enrollments', require('./routes/enrollment.routes'));
 app.use('/api/courses',     require('./routes/course.routes'));
 app.use('/api/products',    require('./routes/product.routes'));
+app.use('/api/gallery',     require('./routes/gallery.routes'));
 app.use('/api/admin',       require('./routes/admin.routes'));
 app.use('/api/superadmin',  require('./routes/superadmin.routes'));
 

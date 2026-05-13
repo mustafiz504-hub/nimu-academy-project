@@ -20,7 +20,7 @@ const ChefSection = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent to-brand-dark/20" />
               </div>
-              <div className="p-8 md:p-16 space-y-8 relative z-10">
+              <div className="p-8 md:p-10 lg:p-16 space-y-8 relative z-10">
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}

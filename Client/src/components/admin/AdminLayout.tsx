@@ -61,7 +61,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-md z-[70] lg:hidden"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-[70] lg:hidden"
           />
         )}
       </AnimatePresence>

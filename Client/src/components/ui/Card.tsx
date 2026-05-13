@@ -8,7 +8,7 @@ interface CardProps {
 
 const Card = ({ children, className = '', hoverable = true }: CardProps) => {
   return (
-    <div className={`bg-white rounded-3xl overflow-hidden shadow-xl border border-brand-gold/10 transition-all duration-500 ${hoverable ? 'hover:shadow-2xl hover:-translate-y-1' : ''} ${className}`}>
+    <div className={`bg-white rounded-xl overflow-hidden shadow-xl border border-brand-gold/10 transition-all duration-500 ${hoverable ? 'hover:shadow-2xl hover:-translate-y-1' : ''} ${className}`}>
       {children}
     </div>
   );

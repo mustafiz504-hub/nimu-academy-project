@@ -19,23 +19,23 @@ const Schedule = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-brand-dark text-brand-gold">
-                  <th className="p-6 font-semibold text-sm uppercase tracking-widest">Batch</th>
-                  <th className="p-6 font-semibold text-sm uppercase tracking-widest">Timing</th>
-                  <th className="p-6 font-semibold text-sm uppercase tracking-widest">Mode</th>
-                  <th className="p-6 font-semibold text-sm uppercase tracking-widest text-center">Seats</th>
+                  <th className="p-4 md:p-6 font-semibold text-sm uppercase tracking-widest">Batch</th>
+                  <th className="p-4 md:p-6 font-semibold text-sm uppercase tracking-widest">Timing</th>
+                  <th className="p-4 md:p-6 font-semibold text-sm uppercase tracking-widest">Mode</th>
+                  <th className="p-4 md:p-6 font-semibold text-sm uppercase tracking-widest text-center">Seats</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-light text-brand-dark">
                 {schedule.map((row, i) => (
                   <tr key={i} className="hover:bg-brand-light/50 transition-colors group">
-                    <td className="p-6 font-medium group-hover:text-brand-gold transition-colors">{row.name}</td>
-                    <td className="p-6 text-brand-brown">{row.time}</td>
-                    <td className="p-6">
+                    <td className="p-4 md:p-6 font-medium group-hover:text-brand-gold transition-colors">{row.name}</td>
+                    <td className="p-4 md:p-6 text-brand-brown">{row.time}</td>
+                    <td className="p-4 md:p-6">
                       <Badge variant={row.mode === 'Offline' ? 'gold' : row.mode === 'Online' ? 'dark' : 'outline'}>
                         {row.mode}
                       </Badge>
                     </td>
-                    <td className="p-6 text-brand-brown text-center font-semibold">{row.seats}</td>
+                    <td className="p-4 md:p-6 text-brand-brown text-center font-semibold">{row.seats}</td>
                   </tr>
                 ))}
               </tbody>
