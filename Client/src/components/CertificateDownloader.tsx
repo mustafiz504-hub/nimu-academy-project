@@ -20,20 +20,31 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
   const certificateRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(0.25); // start small to avoid flash
 
   useEffect(() => {
-    const updateScale = () => {
-      if (wrapperRef.current) {
-        const containerWidth = wrapperRef.current.offsetWidth;
-        const targetWidth = 1123;
-        const newScale = Math.min((containerWidth - 20) / targetWidth, 1);
-        setScale(newScale);
-      }
+    const CERT_WIDTH = 1123;
+
+    const computeScale = () => {
+      if (!wrapperRef.current) return;
+      // Use the wrapper's actual rendered width (most reliable)
+      const w = wrapperRef.current.getBoundingClientRect().width;
+      if (w === 0) return; // not yet laid out
+      const newScale = Math.min(w / CERT_WIDTH, 1);
+      setScale(newScale);
     };
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
+
+    // ResizeObserver: fires whenever the wrapper changes size
+    const ro = new ResizeObserver(computeScale);
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
+
+    // Also run after a tick (parent padding may not be applied yet at mount)
+    const t = setTimeout(computeScale, 50);
+
+    return () => {
+      ro.disconnect();
+      clearTimeout(t);
+    };
   }, []);
 
   const formatDate = (dateStr: string): string => {
@@ -93,27 +104,33 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full">
-      {/* Responsive wrapper — height matches the scaled certificate */}
+    <div className="flex flex-col items-center gap-5 w-full">
+      {/* Responsive wrapper — clips the scaled certificate, out-of-flow so no page scroll */}
       <div
         ref={wrapperRef}
-        className="w-full flex justify-center items-start bg-[#111] rounded-2xl overflow-hidden"
-        style={{ minHeight: `${Math.round(794 * scale)}px` }}
+        className="w-full relative"
+        style={{
+          height: `${Math.round(794 * scale)}px`,
+          overflow: 'hidden',
+        }}
       >
-        {/* Certificate canvas — always 1123×794, scaled down via CSS transform */}
+        {/* Certificate canvas — position:absolute keeps it out of layout flow,
+            so the 1123px width never causes horizontal page overflow.
+            scale = wrapperWidth/1123, so scaled width = wrapperWidth exactly. */}
         <div
           ref={certificateRef}
           data-cert-root
-          className="relative shrink-0"
           style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
             width: '1123px',
             height: '794px',
             backgroundImage: "url('/certificate-template2.png')",
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat',
             transform: `scale(${scale})`,
-            transformOrigin: 'top center',
-            marginBottom: `-${Math.round(794 * (1 - scale))}px`,
+            transformOrigin: 'top left',
           }}
         >
           {/* Load cursive font for student name */}
@@ -129,8 +146,9 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
             className="absolute left-0 w-full flex justify-center"
             style={{ top: '336px' }}
           >
+            {/* Added a subtle white background to cover any placeholder name on the template */}
             <span
-              className="cert-name"
+              className="cert-name relative inline-block"
               style={{
                 fontSize: '82px',
                 color: '#000000',
@@ -167,11 +185,11 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
       <Button
         onClick={handleDownload}
         disabled={downloading}
-        className="px-16 py-5 text-lg bg-[#D4AF37] text-[#1E120A] rounded-2xl shadow-xl hover:scale-105 transition-all border-none font-bold tracking-wide"
+        className="w-full md:w-auto md:px-16 py-4 md:py-5 text-sm md:text-lg bg-[#D4AF37] text-[#1E120A] rounded-2xl shadow-xl hover:scale-105 transition-all border-none font-bold tracking-wide"
       >
         {downloading
-          ? <Loader2 className="animate-spin mr-2 inline" size={20} />
-          : <Download size={20} className="mr-2 inline" />}
+          ? <Loader2 className="animate-spin mr-2 inline" size={18} />
+          : <Download size={18} className="mr-2 inline" />}
         {downloading ? 'Downloading...' : 'Download Certificate'}
       </Button>
     </div>

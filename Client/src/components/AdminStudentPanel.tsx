@@ -448,7 +448,7 @@ const AdminStudentPanel: React.FC = () => {
                         {/* Delete */}
                         <button
                           onClick={() => setDeleteConfirm(student.id)}
-                          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-red-400 hover:bg-red-500/10"
+                          className="ml-auto p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-all active:scale-95"
                           title="Delete student"
                         >
                           <Trash2 size={15} />

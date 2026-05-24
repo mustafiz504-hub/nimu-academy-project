@@ -26,6 +26,20 @@ const CourseSection = () => {
     navigate(`/course/${courseId}`);
   };
 
+  const containerVariants = {
+    hidden: {},
+    show: {
+      transition: {
+        staggerChildren: 0.15
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
+  };
+
   return (
     <section id="academy" className="py-16 md:py-24 bg-brand-cream scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,23 +55,20 @@ const CourseSection = () => {
              </div>
           </div>
 
-          <div 
+          <motion.div 
             ref={scrollRef}
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-50px" }}
             className="flex overflow-x-auto overflow-y-hidden gap-4 px-1 sm:px-2 md:justify-center scrollbar-hide snap-x snap-mandatory w-full pt-4 pb-10 overscroll-x-contain"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
           {courses.map((course, idx) => (
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -10 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ 
-                delay: idx * 0.1,
-                y: { duration: 0.3, ease: "easeOut" }
-              }}
+              variants={itemVariants}
               key={idx}
-              className="flex-shrink-0 snap-start w-[80vw] sm:w-[320px] md:w-[340px]"
+              className="flex-shrink-0 snap-start w-[65vw] sm:w-[320px] md:w-[340px] transition-transform duration-300 hover:-translate-y-2"
             >
               <div onClick={() => handleCardClick(course.id)} className="cursor-pointer h-full group/course">
                 <Card className="w-full h-full flex flex-col border-brand-gold/10 group-hover/course:border-brand-gold/40 transition-colors">
@@ -103,9 +114,9 @@ const CourseSection = () => {
               </div>
             </motion.div>
           ))}
+          </motion.div>
         </div>
       </div>
-    </div>
 
       {/* Contact Options Modal */}
       <Modal

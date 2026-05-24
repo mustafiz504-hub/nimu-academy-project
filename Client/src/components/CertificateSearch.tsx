@@ -35,46 +35,46 @@ const CertificateSearch = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-brand-gold mb-4">
+    <div className="w-full py-8">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-serif font-bold text-brand-gold mb-3">
           Download Your Certificate
         </h1>
-        <p className="text-brand-cream/60">
+        <p className="text-sm text-brand-cream/60 max-w-xs mx-auto">
           Apna registered phone number ya Student ID enter karein apna official Nimu Academy certificate pane ke liye.
         </p>
       </div>
-
+ 
       {/* Search Bar */}
-      <form onSubmit={handleSearch} className="max-w-md mx-auto mb-16 relative">
+      <form onSubmit={handleSearch} className="w-full mb-8">
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-brand-gold to-transparent rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
-          <div className="relative flex">
+          <div className="relative flex w-full">
             <input
               type="text"
-              placeholder="Phone number ya Student ID (e.g. STU-1234)"
-              className="w-full bg-brand-dark/50 border border-brand-gold/20 rounded-l-2xl py-5 px-6 outline-none text-brand-cream focus:border-brand-gold/50 transition-all"
+              placeholder="Phone ya Student ID (e.g. STU-1234)"
+              className="flex-1 min-w-0 bg-brand-dark/50 border border-brand-gold/20 rounded-l-2xl py-4 md:py-5 px-4 md:px-6 outline-none text-brand-cream text-sm md:text-base focus:border-brand-gold/50 transition-all"
               value={query}
               onChange={e => setQuery(e.target.value)}
             />
             <button
               type="submit"
               disabled={loading}
-              className="bg-brand-gold text-brand-dark px-8 rounded-r-2xl font-bold hover:bg-brand-gold/90 transition-all flex items-center gap-2 disabled:opacity-50"
+              className="bg-brand-gold text-brand-dark px-5 md:px-8 rounded-r-2xl font-bold hover:bg-brand-gold/90 transition-all flex items-center gap-1.5 md:gap-2 disabled:opacity-50 text-sm md:text-base flex-shrink-0"
             >
               {loading
-                ? <div className="w-5 h-5 border-2 border-brand-dark border-t-transparent rounded-full animate-spin" />
-                : <Search size={20} />}
+                ? <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-brand-dark border-t-transparent rounded-full animate-spin" />
+                : <Search size={18} />}
               Search
             </button>
           </div>
         </div>
-
+ 
         {error && (
           <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 text-red-400 text-sm text-center flex items-center justify-center gap-2"
+            className="mt-4 text-red-400 text-xs md:text-sm text-center flex items-center justify-center gap-2"
           >
             <AlertCircle size={14} /> {error}
           </motion.p>
@@ -88,25 +88,25 @@ const CertificateSearch = () => {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
-            className="bg-brand-dark/30 backdrop-blur-xl border border-brand-gold/10 rounded-[2.5rem] p-6 md:p-10 shadow-2xl overflow-hidden relative"
+            className="bg-brand-dark/30 backdrop-blur-xl border border-brand-gold/10 rounded-2xl p-4 shadow-2xl overflow-hidden relative w-full"
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/5 rounded-full blur-3xl -mr-32 -mt-32" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
-            <div className="relative z-10 w-full">
-              <div className="text-center mb-10">
-                <div className="flex items-center gap-3 mb-4 justify-center">
-                  <span className="text-xs font-black uppercase tracking-[0.3em] text-brand-gold bg-brand-gold/10 px-3 py-1 rounded-full">
+            <div className="relative z-10 w-full overflow-hidden">
+              <div className="text-center mb-6 md:mb-10">
+                <div className="flex flex-wrap items-center gap-2 mb-3 justify-center">
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-brand-gold bg-brand-gold/10 px-3 py-1 rounded-full">
                     {student.completed ? 'Verification Passed' : 'In Progress'}
                   </span>
-                  <span className="text-brand-cream/30 text-xs font-mono">ID: {student.student_id}</span>
+                  <span className="text-brand-cream/30 text-[10px] md:text-xs font-mono">ID: {student.student_id}</span>
                 </div>
 
-                <h2 className="text-3xl md:text-5xl font-serif font-bold text-brand-cream mb-4">
+                <h2 className="text-2xl md:text-5xl font-serif font-bold text-brand-cream mb-2 md:mb-4 break-words">
                   {student.student_name}
                 </h2>
-                <p className="text-lg md:text-xl text-brand-cream/60 font-light italic">
+                <p className="text-sm md:text-xl text-brand-cream/60 font-light italic leading-relaxed">
                   Professional certification in{' '}
-                  <span className="text-brand-gold font-medium">{student.course_name}</span>
+                  <span className="text-brand-gold font-medium break-words">{student.course_name}</span>
                 </p>
               </div>
 
@@ -124,9 +124,9 @@ const CertificateSearch = () => {
                   </div>
                 </div>
               ) : (
-                <div className="w-full">
-                  <div className="flex items-center justify-center gap-3 text-green-400 font-medium mb-8">
-                    <FileCheck size={20} /> Your official certificate is generated below
+                <div className="w-full overflow-hidden">
+                  <div className="flex items-center justify-center gap-2 text-green-400 text-xs md:text-base font-medium mb-4 md:mb-8">
+                    <FileCheck size={16} /> Your official certificate is generated below
                   </div>
                   <CertificateDownloader
                     studentName={student.student_name}
