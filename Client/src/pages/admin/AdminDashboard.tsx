@@ -17,7 +17,7 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { api, ApiEnrollment, ApiOrder } from '../../lib/api';
 import { useGlobal } from '../../context/GlobalContext';
 
-const money = (value?: number) => `Rs ${Number(value || 0).toLocaleString('en-IN')}`;
+const money = (value?: number) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
 const AdminDashboard = () => {
   const { user } = useGlobal();

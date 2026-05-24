@@ -5,11 +5,12 @@ interface SectionHeadingProps {
   title: string;
   subtitle?: string;
   dark?: boolean;
+  className?: string;
 }
 
-const SectionHeading = ({ title, subtitle, dark = false }: SectionHeadingProps) => {
+const SectionHeading = ({ title, subtitle, dark = false, className = '' }: SectionHeadingProps) => {
   return (
-    <div className="text-center mb-10 md:mb-16">
+    <div className={`text-center mb-10 md:mb-16 ${className}`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

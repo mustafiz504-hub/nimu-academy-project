@@ -32,7 +32,7 @@ const SuperAdminDashboard = () => {
       Object.entries(stats).map(([key, value]) => ({
         key,
         label: statLabels[key] || key,
-        value: key === 'totalRevenue' ? `Rs ${Number(value || 0).toLocaleString('en-IN')}` : String(value || 0),
+        value: key === 'totalRevenue' ? `₹${Number(value || 0).toLocaleString('en-IN')}` : String(value || 0),
       })),
     [stats]
   );

@@ -132,68 +132,83 @@ const AdminCourses = () => {
       {coursesLoading ? (
         <div className="text-brand-cream/40">Loading courses...</div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => (
             <motion.div
               layout
               key={course.id}
-              className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden flex flex-col md:flex-row group hover:border-brand-gold/30 transition-all"
+              className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden flex flex-col group hover:border-brand-gold/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:-translate-y-1.5 transition-all duration-300"
             >
-              <div className="md:w-48 h-48 md:h-auto overflow-hidden relative">
-                <img src={course.image || 'https://via.placeholder.com/500'} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute top-4 right-4 bg-brand-gold text-brand-dark text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter">
+              <div className="w-full h-36 sm:h-40 relative overflow-hidden shrink-0">
+                <img 
+                  src={course.image || 'https://via.placeholder.com/500'} 
+                  alt={course.title} 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                />
+                <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 bg-brand-gold text-brand-dark text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:py-1 rounded-md uppercase tracking-wider shadow-lg">
                   {course.mode}
                 </div>
               </div>
-              <div className="flex-grow p-6 flex flex-col justify-between">
+              <div className="flex-grow p-3.5 sm:p-4 flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-start gap-4 mb-2">
-                    <h3 className="text-xl font-bold text-white">{course.title || 'Untitled Course'}</h3>
-                    <span className="text-brand-gold font-bold text-lg">Rs {Number(course.price || 0).toLocaleString('en-IN')}</span>
+                  <div className="flex justify-between items-start gap-3 mb-1.5">
+                    <h3 className="text-sm sm:text-base font-serif font-bold text-white group-hover:text-brand-gold transition-colors duration-300 line-clamp-1 sm:line-clamp-2 leading-snug">
+                      {course.title || 'Untitled Course'}
+                    </h3>
+                    <span className="text-brand-gold font-bold text-sm sm:text-base shrink-0">
+                      ₹{Number(course.price || 0).toLocaleString('en-IN')}
+                    </span>
                   </div>
 
-                  <p className="text-sm text-brand-cream/45 line-clamp-2">{course.description || 'No course description added yet.'}</p>
+                  <p className="text-[11px] sm:text-xs text-brand-cream/65 line-clamp-2 leading-relaxed">
+                    {course.description || 'No course description added yet.'}
+                  </p>
 
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="flex items-center gap-2 text-xs text-brand-cream/60">
-                      <Clock size={14} className="text-brand-gold" />
-                      <span>{course.duration || 'N/A'}</span>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 bg-white/[0.02] border border-white/5 rounded-xl p-2.5">
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-brand-cream/70">
+                      <Clock size={12} className="text-brand-gold shrink-0" />
+                      <span className="truncate">{course.duration || 'N/A'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-brand-cream/60">
-                      <Calendar size={14} className="text-brand-gold" />
-                      <span>{course.days || 'N/A'}</span>
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-brand-cream/70">
+                      <Calendar size={12} className="text-brand-gold shrink-0" />
+                      <span className="truncate">{course.days || 'N/A'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-brand-cream/60 col-span-2">
-                      <Clock size={14} className="text-brand-gold" />
-                      <span>{course.timing || 'N/A'}</span>
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-brand-cream/70 col-span-2 border-t border-white/5 pt-1.5 mt-0.5">
+                      <Clock size={12} className="text-brand-gold shrink-0" />
+                      <span className="truncate">{course.timing || 'N/A'}</span>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-white/5">
-                    <p className="text-[10px] uppercase font-bold text-brand-gold mb-2 tracking-widest">Topics Covered</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(course.topics || []).slice(0, 4).map((topic) => (
-                        <span key={topic} className="text-[10px] bg-white/5 px-2 py-1 rounded-md text-brand-cream/60">
+                  <div className="mt-3 pt-2.5 border-t border-white/5">
+                    <p className="text-[9px] uppercase font-bold text-brand-gold/60 mb-1.5 tracking-wider">Topics</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(course.topics || []).slice(0, 3).map((topic) => (
+                        <span key={topic} className="text-[9px] sm:text-[10px] bg-white/5 border border-white/5 px-2 py-0.5 rounded-md text-brand-cream/65 hover:bg-brand-gold/10 hover:text-brand-gold transition-colors duration-200">
                           {topic}
                         </span>
                       ))}
+                      {course.topics && course.topics.length > 3 && (
+                        <span className="text-[9px] sm:text-[10px] bg-white/5 border border-white/5 px-2 py-0.5 rounded-md text-brand-cream/40 font-medium">
+                          +{course.topics.length - 3} more
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-white/5">
+                <div className="grid grid-cols-2 gap-2 mt-4 pt-2.5 border-t border-white/5">
                   <button
                     onClick={() => handleEdit(course)}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm transition-colors"
+                    className="flex items-center justify-center gap-1.5 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                   >
-                    <Edit size={16} className="text-brand-gold" /> Edit
+                    <Edit size={13} className="text-brand-gold" /> Edit
                   </button>
                   <button
                     onClick={() => handleDelete(course.id)}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-sm transition-colors disabled:opacity-50"
+                    className="flex items-center justify-center gap-1.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                   >
-                    <Trash2 size={16} /> Delete
+                    <Trash2 size={13} /> Delete
                   </button>
                 </div>
               </div>
@@ -251,14 +266,17 @@ const AdminCourses = () => {
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-brand-cream/60 uppercase tracking-widest">Price</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editingCourse.price}
-                    onChange={(e) => setEditingCourse({ ...editingCourse, price: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-brand-gold/50 text-white transition-colors"
-                    required
-                  />
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-gold font-bold text-lg select-none">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editingCourse.price}
+                      onChange={(e) => setEditingCourse({ ...editingCourse, price: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-9 outline-none focus:border-brand-gold/50 text-white transition-colors"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="md:col-span-2 space-y-2">

@@ -50,7 +50,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className={`
-      fixed inset-y-0 left-0 z-[80] w-[56vw] max-w-[240px] bg-[#180d07] border-r border-brand-gold/10 transform transition-transform duration-300 ease-in-out lg:relative lg:w-64 lg:max-w-none lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none
+      fixed inset-y-0 left-0 z-[80] w-[56vw] max-w-[240px] bg-[#180d07] border-r border-brand-gold/10 transform transition-transform duration-300 ease-in-out lg:relative lg:w-64 lg:h-full lg:max-w-none lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none
       ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
     `}>
       {/* Mobile Close Button */}

@@ -36,17 +36,32 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
     return () => window.removeEventListener('resize', updateScale);
   }, []);
 
+  const formatDate = (dateStr: string): string => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yyyy = date.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   const handleDownload = async () => {
     if (!certificateRef.current) return;
     setDownloading(true);
     try {
-      const originalTransform = certificateRef.current.style.transform;
-      const originalMargin = certificateRef.current.style.margin;
-      
-      certificateRef.current.style.transform = 'none';
-      certificateRef.current.style.margin = '0';
+      const el = certificateRef.current;
+      const prevTransform = el.style.transform;
+      const prevMargin = el.style.marginBottom;
 
-      const canvas = await html2canvas(certificateRef.current, {
+      el.style.transform = 'none';
+      el.style.marginBottom = '0';
+
+      const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
@@ -54,16 +69,16 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
         height: 794,
         logging: false,
         onclone: (clonedDoc) => {
-          const clonedElem = clonedDoc.querySelector('[style*="1123px"]') as HTMLElement;
-          if (clonedElem) {
-            clonedElem.style.transform = 'none';
-            clonedElem.style.margin = '0';
+          const cloned = clonedDoc.querySelector('[data-cert-root]') as HTMLElement;
+          if (cloned) {
+            cloned.style.transform = 'none';
+            cloned.style.marginBottom = '0';
           }
         }
       });
-      
-      certificateRef.current.style.transform = originalTransform;
-      certificateRef.current.style.margin = originalMargin;
+
+      el.style.transform = prevTransform;
+      el.style.marginBottom = prevMargin;
 
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1123, 794] });
@@ -71,7 +86,7 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
       pdf.save(`${studentName.replace(/\s+/g, '_')}_Certificate.pdf`);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Certificate download failed due to unsupported browser styles. Please try again or use a different browser.');
+      alert('Certificate download failed. Please try again or use a different browser.');
     } finally {
       setDownloading(false);
     }
@@ -79,60 +94,84 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-6 w-full">
-      <div 
+      {/* Responsive wrapper — height matches the scaled certificate */}
+      <div
         ref={wrapperRef}
-        className="w-full flex justify-center items-center bg-[#1a1a1a] rounded-2xl overflow-hidden min-h-[250px]"
+        className="w-full flex justify-center items-start bg-[#111] rounded-2xl overflow-hidden"
+        style={{ minHeight: `${Math.round(794 * scale)}px` }}
       >
-        <div 
+        {/* Certificate canvas — always 1123×794, scaled down via CSS transform */}
+        <div
           ref={certificateRef}
-          className="relative bg-[#ffffff] origin-center shrink-0"
-          style={{ 
+          data-cert-root
+          className="relative shrink-0"
+          style={{
             width: '1123px',
             height: '794px',
-            backgroundImage: "url('/certificate-template.png')",
+            backgroundImage: "url('/certificate-template2.png')",
             backgroundSize: '100% 100%',
+            backgroundRepeat: 'no-repeat',
             transform: `scale(${scale})`,
-            margin: `-${(794 * (1 - scale)) / 2}px -${(1123 * (1 - scale)) / 2}px`
+            transformOrigin: 'top center',
+            marginBottom: `-${Math.round(794 * (1 - scale))}px`,
           }}
         >
-          {/* 1. Date - Precisely on the line */}
-          <div className="absolute top-[82px] left-[180px] text-[#3d1a11] font-sans font-bold text-[18px]">
-            {(() => {
-              if (!completionDate) return '';
-              try {
-                const date = new Date(completionDate);
-                if (isNaN(date.getTime())) return completionDate; // Return as is if already formatted
-                return date.toLocaleDateString('en-GB', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                });
-              } catch (e) {
-                return completionDate;
-              }
-            })()}
-          </div>
-
-          {/* 2. Student Name - Centered and High (Matches Reference) */}
-          <div className="absolute top-[365px] left-0 w-full text-center px-[120px]">
-            <h1 className="text-[72px] font-serif font-bold text-[#3d1a11] uppercase tracking-[0.05em] leading-[1]">
-              {studentName}
-            </h1>
-          </div>
-
+          {/* Load cursive font for student name */}
           <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
-            .font-serif { font-family: 'Playfair Display', serif; }
+            @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+            .cert-name { font-family: 'Great Vibes', cursive; }
           `}</style>
+
+          {/* ── Student Name ──
+              Overlaid in the cursive script area, below "THIS CERTIFICATE IS PRESENTED TO"
+              and above the gold divider line. Vertically ~355–445px range.                */}
+          <div
+            className="absolute left-0 w-full flex justify-center"
+            style={{ top: '336px' }}
+          >
+            <span
+              className="cert-name"
+              style={{
+                fontSize: '82px',
+                color: '#000000',
+                lineHeight: 1,
+                letterSpacing: '0.01em',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {studentName}
+            </span>
+          </div>
+
+
+          {/* ── Date ──
+              Bottom-right corner, landing on the "Date: ____" underline in the template. */}
+          <div
+            className="absolute"
+            style={{
+              bottom: '65px',
+              right: '175px',
+              fontSize: '17px',
+              color: '#3f5a73',
+              fontWeight: 500,
+              fontFamily: 'Georgia, serif',
+              letterSpacing: '0.03em',
+            }}
+          >
+            {formatDate(completionDate)}
+          </div>
         </div>
       </div>
 
-      <Button 
-        onClick={handleDownload} 
+      {/* Download Button */}
+      <Button
+        onClick={handleDownload}
         disabled={downloading}
-        className="px-16 py-6 text-xl bg-[#D4AF37] text-[#1E120A] rounded-2xl shadow-xl hover:scale-105 transition-all border-none"
+        className="px-16 py-5 text-lg bg-[#D4AF37] text-[#1E120A] rounded-2xl shadow-xl hover:scale-105 transition-all border-none font-bold tracking-wide"
       >
-        {downloading ? <Loader2 className="animate-spin mr-2" /> : <Download size={24} className="mr-2" />}
+        {downloading
+          ? <Loader2 className="animate-spin mr-2 inline" size={20} />
+          : <Download size={20} className="mr-2 inline" />}
         {downloading ? 'Downloading...' : 'Download Certificate'}
       </Button>
     </div>

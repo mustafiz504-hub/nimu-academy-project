@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://192.168.1.140:8000/api';
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:8000/api';
 
 const TOKEN_KEY = 'nimu_auth_token';
 const USER_KEY = 'nimu_auth_user';
@@ -43,6 +43,20 @@ export interface ApiGalleryImage {
   public_id: string;
   title?: string | null;
   section?: string | null;
+  created_at?: string;
+}
+
+export interface ApiStudent {
+  id: number;
+  student_id: string;
+  student_name: string;
+  email: string;
+  phone: string;
+  course_name: string;
+  approved: boolean;
+  completed: boolean;
+  completion_date: string;
+  certificate_id: string;
   created_at?: string;
 }
 
@@ -252,6 +266,26 @@ export const api = {
       }),
     delete: (id: number | string) =>
       request<{ message: string }>(`/enrollments/${id}`, { method: 'DELETE' }),
+  },
+  students: {
+    list: () => request<{ students: ApiStudent[]; total: number }>('/students'),
+    search: (q: string) =>
+      request<{ student: ApiStudent }>(`/students/search?q=${encodeURIComponent(q)}`, { auth: false }),
+    create: (body: {
+      student_name: string;
+      phone: string;
+      email?: string;
+      course_name?: string;
+      completion_date?: string;
+    }) =>
+      request<{ message: string; student: ApiStudent }>('/students', { method: 'POST', body }),
+    update: (
+      id: number | string,
+      body: Partial<Pick<ApiStudent, 'student_name' | 'phone' | 'email' | 'course_name' | 'approved' | 'completed' | 'completion_date'>>
+    ) =>
+      request<{ message: string; student: ApiStudent }>(`/students/${id}`, { method: 'PUT', body }),
+    delete: (id: number | string) =>
+      request<{ message: string }>(`/students/${id}`, { method: 'DELETE' }),
   },
   upload: async (file: File, folder: 'products' | 'users' | 'courses' | 'banners' | 'general' = 'general'): Promise<{ imageUrl: string }> => {
     const formData = new FormData();

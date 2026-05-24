@@ -34,6 +34,17 @@ h1, h2, h3, h4, h5, h6 {
   scrollbar-width: none;
 }
 
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #F0EBE3 25%, #fdfaf5 50%, #F0EBE3 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
 @keyframes progress {
   0% { width: 0; opacity: 0; }
   20% { width: 30%; opacity: 1; }
@@ -54,4 +65,16 @@ h1, h2, h3, h4, h5, h6 {
 .backdrop-blur-fix {
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
+}
+
+/* Chrome, Safari, Edge, Opera: spinner buttons hatane ke liye */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox: spinner buttons hatane ke liye */
+input[type="number"] {
+  -moz-appearance: textfield;
 }

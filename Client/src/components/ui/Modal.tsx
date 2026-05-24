@@ -49,7 +49,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', header
                 <X size={24} />
               </button>
             </div>
-            <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar">
+            <div className="p-4 md:p-8 overflow-y-auto scrollbar-hide">
               {children}
             </div>
           </motion.div>

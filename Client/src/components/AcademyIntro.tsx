@@ -142,11 +142,11 @@ const AcademyIntro = () => {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mt-8 md:mt-0">
           {stats.map((stat, i) => (
-            <div key={i} className="bg-brand-gold/5 border border-brand-gold/10 p-8 rounded-2xl text-center hover:bg-brand-gold/10 transition-colors group">
-              <div className="text-3xl font-serif text-brand-gold font-bold mb-2 group-hover:scale-110 transition-transform">{stat.value}</div>
-              <div className="text-xs text-brand-cream/60 uppercase tracking-widest font-bold">{stat.label}</div>
+            <div key={i} className="bg-brand-gold/5 border border-brand-gold/10 p-5 md:p-8 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-brand-gold/10 transition-colors group min-h-[110px] md:min-h-0">
+              <div className="text-xl md:text-3xl font-serif text-brand-gold font-bold mb-1 md:mb-2 group-hover:scale-110 transition-transform">{stat.value}</div>
+              <div className="text-[10px] md:text-xs text-brand-cream/60 uppercase tracking-widest font-bold leading-tight">{stat.label}</div>
             </div>
           ))}
         </div>

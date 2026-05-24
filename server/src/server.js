@@ -19,6 +19,8 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:5173',
     'http://192.168.1.140:3000',
+    'http://10.224.19.66:3000',
+    'http://10.224.19.66:5173',
     'https://nimu-academy-project.vercel.app'
   ],
   credentials: true,
@@ -42,8 +44,10 @@ app.use('/api/enrollments', require('./routes/enrollment.routes'));
 app.use('/api/courses',     require('./routes/course.routes'));
 app.use('/api/products',    require('./routes/product.routes'));
 app.use('/api/gallery',     require('./routes/gallery.routes'));
+app.use('/api/students',    require('./routes/student.routes'));
 app.use('/api/admin',       require('./routes/admin.routes'));
 app.use('/api/superadmin',  require('./routes/superadmin.routes'));
+
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 /**

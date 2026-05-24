@@ -22,7 +22,7 @@ const emptyProduct: Partial<ApiProduct> = {
   image_url: '',
 };
 
-const money = (value: string | number) => `Rs ${Number(value || 0).toLocaleString('en-IN')}`;
+const money = (value: string | number) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
 const AdminProducts = () => {
   const [products, setProducts] = useState<ApiProduct[]>([]);
@@ -244,12 +244,12 @@ const AdminProducts = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-brand-dark border border-brand-gold/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+              className="relative w-[95%] sm:w-full max-w-md max-h-[90vh] bg-brand-dark border border-brand-gold/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-5 sm:p-6 scrollbar-hide">
+              <div className="p-4 sm:p-6 overflow-y-auto scrollbar-hide flex-1">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-serif font-bold text-brand-gold">
+                  <h2 className="text-xl sm:text-2xl font-serif font-bold text-brand-gold">
                     {editingProduct.id === 0 ? 'Add New Product' : 'Edit Product'}
                   </h2>
                   <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full text-brand-cream/60">
@@ -327,33 +327,43 @@ const AdminProducts = () => {
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-brand-gold uppercase tracking-widest ml-1">Price</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={editingProduct.price || ''}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-brand-gold/50 text-white"
-                        required
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-gold font-bold text-base select-none">₹</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editingProduct.price || ''}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 pl-8 outline-none focus:border-brand-gold/50 text-white"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <label className="flex items-center gap-3 text-sm text-brand-cream/70">
-                    <input
-                      type="checkbox"
-                      checked={editingProduct.available ?? true}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, available: e.target.checked })}
-                      className="h-4 w-4"
-                    />
-                    Show this product in shop
-                  </label>
-
-                  <div className="pt-4">
-                    <Button type="submit" disabled={saving} variant="primary" className="w-full py-4 flex items-center justify-center gap-2">
-                      <Save size={20} /> {saving ? 'Saving...' : 'Save Product Changes'}
-                    </Button>
-                  </div>
                 </form>
+              </div>
+
+              {/* Fixed sticky footer — scroll ke bahar */}
+              <div className="shrink-0 px-4 sm:px-6 py-4 border-t border-white/10 bg-brand-dark flex flex-col gap-3">
+                <label className="flex items-center gap-3 text-sm text-brand-cream/70 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={editingProduct.available ?? true}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, available: e.target.checked })}
+                    className="h-4 w-4 accent-brand-gold"
+                  />
+                  Show this product in shop
+                </label>
+                <Button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  variant="primary"
+                  className="w-full py-3 flex items-center justify-center gap-2"
+                >
+                  <Save size={18} /> {saving ? 'Saving...' : 'Save Product Changes'}
+                </Button>
               </div>
             </motion.div>
           </div>
