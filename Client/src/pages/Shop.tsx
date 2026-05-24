@@ -33,7 +33,7 @@ const mapProduct = (product: ApiProduct, index: number) => {
     ...product,
     category,
     image: product.image_url || productImages[index % productImages.length],
-    priceLabel: `Starting Rs ${Number(product.price || 0).toLocaleString('en-IN')}`,
+    priceLabel: `Starting ₹${Number(product.price || 0).toLocaleString('en-IN')}`,
     options: optionMap[lowerCategory] || ['Freshly baked', 'Customizable'],
   };
 };
@@ -51,13 +51,17 @@ const Shop = () => {
 
     const loadProducts = async () => {
       setLoading(true);
+      const start = Date.now();
       try {
         const response = await api.products.list();
         setProducts(response.products.map(mapProduct));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Products load nahi ho paye.');
       } finally {
-        setLoading(false);
+        // Minimum 800ms skeleton visible rahega
+        const elapsed = Date.now() - start;
+        const remaining = Math.max(0, 800 - elapsed);
+        setTimeout(() => setLoading(false), remaining);
       }
     };
 
@@ -117,23 +121,49 @@ const Shop = () => {
 
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="h-96 animate-pulse rounded-3xl bg-white/70" />
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 w-full">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-2xl sm:rounded-[2rem] overflow-hidden bg-white shadow-md sm:shadow-lg border border-brand-gold/15 flex flex-col h-full"
+                >
+                  {/* Image skeleton — matches CardHeader height */}
+                  <div className="w-full h-36 sm:h-48 relative overflow-hidden bg-[#EADCC9]/40">
+                    <div className="skeleton-shimmer absolute inset-0" />
+                    <div className="absolute top-3 left-3 h-5 w-20 sm:h-6 sm:w-28 rounded-full bg-white/60" />
+                  </div>
+                  {/* Content skeleton */}
+                  <div className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-3 flex-1 bg-white">
+                    <div className="skeleton-shimmer h-5 sm:h-6 w-3/4 rounded-lg sm:rounded-xl" />
+                    <div className="space-y-1.5">
+                      <div className="skeleton-shimmer h-3 w-full rounded" />
+                      <div className="skeleton-shimmer h-3 w-5/6 rounded" />
+                    </div>
+                    <div className="flex gap-1 sm:gap-2 mt-1">
+                      <div className="skeleton-shimmer h-4 w-12 sm:h-5 sm:w-16 rounded bg-brand-gold/10" />
+                      <div className="skeleton-shimmer h-4 w-10 sm:h-5 sm:w-12 rounded bg-brand-gold/10" />
+                    </div>
+                  </div>
+                  {/* Button skeleton */}
+                  <div className="px-3 pb-3 sm:px-4 sm:pb-4 pt-0 bg-white">
+                    <div className="skeleton-shimmer h-8 sm:h-10 w-full rounded-xl sm:rounded-2xl bg-brand-dark/10" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 w-full">
               {products.map((product) => (
                 <motion.div
                   key={product.id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  whileHover={{ y: -10 }}
+                  whileHover={{ y: -6 }}
                   transition={{ duration: 0.3 }}
+                  className="w-full min-w-0"
                 >
-                  <Card className="h-full flex flex-col group overflow-hidden border-brand-gold/10 hover:border-brand-gold/30 transition-all duration-500 shadow-lg hover:shadow-2xl">
+                  <Card className="w-full h-full flex flex-col group overflow-hidden border-brand-gold/10 hover:border-brand-gold/30 transition-all duration-500 shadow-md sm:shadow-xl hover:shadow-2xl rounded-2xl sm:rounded-[2rem]">
                     <CardHeader className="p-0">
                       <img
                         src={product.image}
@@ -142,34 +172,33 @@ const Shop = () => {
                         decoding="async"
                         className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700"
                       />
-                      <div className="absolute top-4 left-4">
-                        <div className="bg-brand-gold text-brand-dark px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                      <div className="absolute top-2.5 left-2.5 sm:top-4 sm:left-4">
+                        <div className="bg-brand-gold text-brand-dark px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-xs font-bold shadow-md sm:shadow-lg">
                           {product.priceLabel}
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="p-5 pt-4 bg-white relative z-10">
-
-                      <h3 className="text-xl font-serif font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition-colors">
+                    <CardContent className="p-3 sm:p-5 pt-3 bg-white relative z-10">
+                      <h3 className="text-sm sm:text-lg md:text-xl font-serif font-bold text-brand-dark mb-1 sm:mb-2 group-hover:text-brand-gold transition-colors line-clamp-1">
                         {product.name}
                       </h3>
-                      <p className="text-brand-brown text-sm leading-relaxed mb-4">
+                      <p className="text-brand-brown text-xs sm:text-sm leading-relaxed mb-2 sm:mb-4 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem]">
                         {product.description || 'Freshly baked with premium ingredients.'}
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.options.map((opt) => (
-                          <span key={opt} className="text-[10px] uppercase tracking-widest text-brand-gold font-bold bg-brand-gold/10 px-2 py-1 rounded">
+                      <div className="flex flex-wrap gap-1 sm:gap-2">
+                        {product.options.slice(0, 2).map((opt) => (
+                          <span key={opt} className="text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-wider text-brand-gold font-bold bg-brand-gold/10 px-1.5 py-0.5 rounded">
                             {opt}
                           </span>
                         ))}
                       </div>
                     </CardContent>
-                    <CardFooter className="px-4 pb-4 pt-0">
+                    <CardFooter className="px-3 pb-3 sm:px-4 sm:pb-4 pt-0">
                       <Button
-                        className="w-full rounded-2xl group-hover:bg-brand-dark group-hover:text-brand-gold transition-all"
+                        className="w-full py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm group-hover:bg-brand-dark group-hover:text-brand-gold transition-all"
                         onClick={() => handleOrderClick(product)}
                       >
-                        <ShoppingBag size={18} className="mr-2" /> Order Now
+                        <ShoppingBag size={14} className="mr-1 sm:mr-2 sm:w-[18px] sm:h-[18px]" /> Order Now
                       </Button>
                     </CardFooter>
                   </Card>

@@ -38,7 +38,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0a0a0a] text-brand-cream font-sans selection:bg-brand-gold selection:text-brand-dark">
+    <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-brand-cream font-sans selection:bg-brand-gold selection:text-brand-dark">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-brand-dark/95 backdrop-blur-md border-b border-white/10 z-[60] flex items-center justify-center px-6">
         <button

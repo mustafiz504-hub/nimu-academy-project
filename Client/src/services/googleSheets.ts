@@ -1,123 +1,109 @@
-import axios from 'axios';
-import { mockStudents } from '../data/students';
+/**
+ * Certificate student service — backed by Supabase/PostgreSQL via the Express API.
+ * Google Sheets has been removed. All CRUD now goes through /api/students.
+ *
+ * The exported shape (fetchStudents, addStudent, updateStudent) is kept compatible
+ * so that components that still reference googleSheetsService work without changes.
+ */
+import { api, ApiStudent } from '../lib/api';
 import { Student } from '../types/student';
-
-const API_URL = import.meta.env.VITE_GOOGLE_SHEET_API_URL;
 
 export type { Student };
 
-// Local cache for recently added students to ensure instant search across pages
-const getLocalStudents = (): Student[] => {
-  const stored = localStorage.getItem('nimu_added_students');
-  return stored ? JSON.parse(stored) : [];
-};
-
-const saveLocalStudent = (student: Student) => {
-  const students = getLocalStudents();
-  // Keep only last 50 added students locally to avoid bloat
-  const updated = [student, ...students].slice(0, 50);
-  localStorage.setItem('nimu_added_students', JSON.stringify(updated));
-};
+/** Map from DB snake_case row → frontend Student shape */
+const toStudent = (s: ApiStudent): Student => ({
+  studentId:      s.student_id,
+  studentName:    s.student_name,
+  email:          s.email,
+  phone:          s.phone,
+  courseName:     s.course_name,
+  approved:       s.approved,
+  completed:      s.completed,
+  completionDate: s.completion_date,
+  certificateId:  s.certificate_id,
+});
 
 export const googleSheetsService = {
+  /** Fetch all students — admin panel use */
   async fetchStudents(): Promise<Student[]> {
-    // 1. Get from cache for instant return
-    const cached = getLocalStudents();
-    
-    if (!API_URL || API_URL.includes('your-script-url')) {
-      return cached.length > 0 ? cached : mockStudents;
-    }
-
-    // 2. Return cached immediately if available (Optimistic)
-    // The caller will receive this and can show it while the network call finishes.
-    
     try {
-      const response = await axios.get(API_URL);
-      let apiStudents: Student[] = [];
-      
-      if (response.data && Array.isArray(response.data)) {
-        apiStudents = response.data
-          .filter((row: any) => row[0] && String(row[0]).trim() !== '')
-          .map((row: any) => ({
-            studentId: String(row[0] || ''),
-            studentName: String(row[1] || ''),
-            email: String(row[2] || ''),
-            phone: String(row[3] || ''),
-            courseName: String(row[4] || ''),
-            approved: String(row[5]).toUpperCase() === 'TRUE' || row[5] === true,
-            completed: String(row[6]).toUpperCase() === 'TRUE' || row[6] === true,
-            certificateId: String(row[7] || ''),
-            completionDate: String(row[8] || '')
-          }));
-        
-        // Update full cache with fresh API data
-        localStorage.setItem('nimu_added_students', JSON.stringify(apiStudents));
-        return apiStudents;
-      }
-      
-      return cached.length > 0 ? cached : mockStudents;
+      const { students } = await api.students.list();
+      return students.map(toStudent);
     } catch (error) {
-      console.error('❌ Google Sheets API Error:', error);
-      return cached.length > 0 ? cached : mockStudents;
+      console.error('fetchStudents error:', error);
+      return [];
     }
   },
 
-  async addStudent(student: any) {
-    // Save locally first for instant cross-page availability
-    saveLocalStudent(student);
-
-    if (!API_URL) return true; // Still return true so UI stays responsive
-
+  /**
+   * Search for a single student by phone / email / studentId.
+   * Used by CertificateSearch (public page).
+   */
+  async searchStudent(query: string): Promise<Student | null> {
     try {
-      const payload = JSON.stringify({
-        action: 'addStudent',
-        studentId: student.studentId || '',
-        studentName: student.studentName || '',
-        email: student.email || '',
-        phone: student.phone || '',
-        courseName: student.courseName || '',
-        completionDate: student.completionDate || ''
-      });
-
-      await fetch(API_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'text/plain',
-        },
-        body: payload
-      });
-      
-      return true; 
-    } catch (error) {
-      console.error('Error adding student:', error);
-      return false;
+      const { student } = await api.students.search(query);
+      return toStudent(student);
+    } catch {
+      return null;
     }
   },
 
-  async updateStudent(studentId: string, updates: Partial<Student>) {
-    if (!API_URL) return false;
-
+  /** Add a new student — admin panel "Add Student" form */
+  async addStudent(data: {
+    studentName: string;
+    phone: string;
+    email?: string;
+    courseName?: string;
+    completionDate?: string;
+  }): Promise<{ success: boolean; student?: Student }> {
     try {
-      const payload = JSON.stringify({
-        action: 'updateStudent',
-        studentId,
-        updates
+      const { student } = await api.students.create({
+        student_name:    data.studentName,
+        phone:           data.phone,
+        email:           data.email || '',
+        course_name:     data.courseName || '',
+        completion_date: data.completionDate || '',
       });
+      return { success: true, student: toStudent(student) };
+    } catch (error: any) {
+      console.error('addStudent error:', error);
+      return { success: false };
+    }
+  },
 
-      await fetch(API_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'text/plain',
-        },
-        body: payload
-      });
-      
+  /**
+   * Update student fields — used to approve / mark complete.
+   * @param dbId  numeric `id` column (not student_id string)
+   */
+  async updateStudent(
+    dbId: number,
+    updates: {
+      approved?: boolean;
+      completed?: boolean;
+      completionDate?: string;
+    }
+  ): Promise<{ success: boolean; student?: Student }> {
+    try {
+      const body: Record<string, unknown> = {};
+      if (updates.approved  !== undefined) body['approved']        = updates.approved;
+      if (updates.completed !== undefined) body['completed']       = updates.completed;
+      if (updates.completionDate)          body['completion_date'] = updates.completionDate;
+
+      const { student } = await api.students.update(dbId, body as any);
+      return { success: true, student: toStudent(student) };
+    } catch (error) {
+      console.error('updateStudent error:', error);
+      return { success: false };
+    }
+  },
+
+  /** Delete a student record — admin panel */
+  async deleteStudent(dbId: number): Promise<boolean> {
+    try {
+      await api.students.delete(dbId);
       return true;
-    } catch (error) {
-      console.error('Error updating student:', error);
+    } catch {
       return false;
     }
-  }
+  },
 };

@@ -26,14 +26,14 @@ const StudentAdmissionForm = () => {
     e.preventDefault();
     setStatus('submitting');
 
-    const studentId = `STU-${Date.now().toString().slice(-6)}`;
-    
-    const success = await googleSheetsService.addStudent({
-      ...formData,
-      studentId
+    const result = await googleSheetsService.addStudent({
+      studentName: formData.studentName,
+      email:       formData.email,
+      phone:       formData.phone,
+      courseName:  formData.courseName,
     });
 
-    if (success) {
+    if (result.success) {
       setStatus('success');
       setFormData({ studentName: '', email: '', phone: '', courseName: courses[0] });
     } else {

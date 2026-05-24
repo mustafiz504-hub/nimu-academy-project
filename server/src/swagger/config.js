@@ -26,7 +26,11 @@ const setupSwagger = (app, port) => {
         },
         {
           url: `http://192.168.1.140:${port}`,
-          description: 'Local Network Server'
+          description: 'Local Network Server (Old)'
+        },
+        {
+          url: `http://10.224.19.66:${port}`,
+          description: 'Local Network Server (Active)'
         }
       ],
       components: {

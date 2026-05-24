@@ -1,6 +1,6 @@
-import React, { Suspense, lazy, useEffect } from 'react';
-import { googleSheetsService } from './services/googleSheets';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 import ScrollToTop from './components/ScrollToTop';
 import { GlobalProvider } from './context/GlobalContext';
 
@@ -41,10 +41,6 @@ const PageSkeleton = () => (
 );
 
 function App() {
-  useEffect(() => {
-    // Connection initialized
-  }, []);
-
   return (
     <GlobalProvider>
       <Router>

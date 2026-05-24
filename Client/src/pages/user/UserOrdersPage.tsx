@@ -5,7 +5,7 @@ import Footer from '../../components/Footer';
 import { api, ApiOrder } from '../../lib/api';
 import { useGlobal } from '../../context/GlobalContext';
 
-const money = (value?: string | number | null) => `Rs ${Number(value || 0).toLocaleString('en-IN')}`;
+const money = (value?: string | number | null) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString('en-IN') : '-');
 
 const UserOrdersPage = () => {

@@ -29,13 +29,14 @@ const CertificateEnrollment = () => {
     setError('');
 
     try {
-      const studentId = `STU-${Math.floor(1000 + Math.random() * 9000)}`;
-      const success = await googleSheetsService.addStudent({
-        studentId,
-        ...formData
+      const result = await googleSheetsService.addStudent({
+        studentName: formData.studentName,
+        email:       formData.email,
+        phone:       formData.phone,
+        courseName:  formData.courseName,
       });
 
-      if (success) {
+      if (result.success) {
         setSubmitted(true);
       } else {
         setError('Submission failed. Please try again later.');
