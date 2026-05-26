@@ -141,9 +141,9 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
             transformOrigin: 'top left',
           }}
         >
-          {/* Load cursive font for student name & Poppins for date */}
+          {/* Load fonts: Great Vibes (student name cursive), Lora (body text matching template), Poppins (date) */}
           <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@400;500;600&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lora:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
             .cert-name { font-family: 'Great Vibes', cursive; }
           `}</style>
 
@@ -169,15 +169,47 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
             </span>
           </div>
 
+          {/* ── Course / Registration Details ──
+              Below gold divider line, matching the template's printed body text.
+              Lines: "Has successfully completed [course] course
+                      conducted by nimu cooking academy
+                      UDYAM-OD-30-0059753
+                      Fssai no:22026032000151"                                  */}
+          <div
+            className="absolute left-0 w-full flex flex-col items-center"
+            style={{
+              top: '430px',
+              fontFamily: "'Lora', serif",
+              color: '#2a3f5f',
+              textAlign: 'center',
+              lineHeight: 1.55,
+            }}
+          >
+            <p style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>
+              Has successfully completed{' '}
+              <span style={{ fontWeight: 700 }}>{courseName}</span>{' '}
+              course
+            </p>
+            <p style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>
+              conducted by <span style={{ fontWeight: 700 }}>nimu cooking academy</span>
+            </p>
+            <p style={{ fontSize: '20px', fontWeight: 700, margin: '4px 0 0' }}>
+              UDYAM-OD-30-0059753
+            </p>
+            <p style={{ fontSize: '20px', fontWeight: 700, margin: '2px 0 0' }}>
+              Fssai no:22026032000151
+            </p>
+          </div>
+
 
           {/* ── Date ──
               Bottom-right corner, landing on the "Date: ____" underline in the template. */}
           <div
             className="absolute"
             style={{
-              bottom: '84px',
-              right: '195px',
-              fontSize: '14px',
+              bottom: '73px',
+              right: '179px',
+              fontSize: '15px',
               color: '#3f5a73',
               fontWeight: 500,
               fontFamily: "'Poppins', sans-serif",

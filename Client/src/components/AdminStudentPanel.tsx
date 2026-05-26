@@ -217,7 +217,7 @@ const AdminStudentPanel: React.FC = () => {
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-brand-dark border border-brand-gold/20 p-8 rounded-[2rem] w-full max-w-xl shadow-2xl"
+              className="relative bg-brand-dark border border-brand-gold/20 p-6 md:p-8 rounded-[2rem] w-full max-w-xl shadow-2xl max-h-[90dvh] overflow-y-auto"
             >
               <button onClick={() => setShowAddForm(false)} className="absolute right-6 top-6 text-brand-cream/30 hover:text-white">
                 <X size={24} />
@@ -277,6 +277,7 @@ const AdminStudentPanel: React.FC = () => {
                     <input
                       required type="date"
                       className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 outline-none focus:border-brand-gold/50 text-brand-cream"
+                      style={{ colorScheme: 'dark' }}
                       value={newStudent.completion_date}
                       onChange={e => setNewStudent({ ...newStudent, completion_date: e.target.value })}
                     />
