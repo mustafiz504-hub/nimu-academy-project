@@ -65,12 +65,19 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
     if (!certificateRef.current) return;
     setDownloading(true);
     try {
+      // 1. Wait for all fonts (Great Vibes, Poppins, etc.) to be fully loaded and ready
+      await document.fonts.ready;
+
       const el = certificateRef.current;
       const prevTransform = el.style.transform;
       const prevMargin = el.style.marginBottom;
 
+      // 2. Temporarily set transform to 'none' so html2canvas can measure the 1:1 original bounding rect (1123x794)
       el.style.transform = 'none';
       el.style.marginBottom = '0';
+
+      // 3. Give the browser a brief moment (100ms) to recalculate layout and render text at 1:1 scale before canvas capture
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(el, {
         scale: 2,
@@ -88,6 +95,7 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
         }
       });
 
+      // 4. Restore original scaled styles
       el.style.transform = prevTransform;
       el.style.marginBottom = prevMargin;
 
@@ -126,16 +134,16 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
             left: 0,
             width: '1123px',
             height: '794px',
-            backgroundImage: "url('/certificate-template2.png')",
+            backgroundImage: "url('/certificate-template1.jpeg')",
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat',
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
           }}
         >
-          {/* Load cursive font for student name */}
+          {/* Load cursive font for student name & Poppins for date */}
           <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@400;500;600&display=swap');
             .cert-name { font-family: 'Great Vibes', cursive; }
           `}</style>
 
@@ -144,7 +152,7 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
               and above the gold divider line. Vertically ~355–445px range.                */}
           <div
             className="absolute left-0 w-full flex justify-center"
-            style={{ top: '336px' }}
+            style={{ top: '290px' }}
           >
             {/* Added a subtle white background to cover any placeholder name on the template */}
             <span
@@ -167,12 +175,12 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
           <div
             className="absolute"
             style={{
-              bottom: '65px',
-              right: '175px',
-              fontSize: '17px',
+              bottom: '84px',
+              right: '195px',
+              fontSize: '14px',
               color: '#3f5a73',
               fontWeight: 500,
-              fontFamily: 'Georgia, serif',
+              fontFamily: "'Poppins', sans-serif",
               letterSpacing: '0.03em',
             }}
           >
