@@ -35,7 +35,7 @@ const AcademyIntro = () => {
     : defaultImages;
 
   const stats = [
-    { label: "Students Trained", value: "500+" },
+    { label: "Students Trained", value: "200+" },
     { label: "Years Experience", value: "5+" },
     { label: "Academy Certified", value: "Certificate" },
     { label: "Batch Size", value: "Max 15" }

@@ -237,11 +237,11 @@ const CourseDetailPage = () => {
                 <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                   <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden shadow-2xl border-2 border-brand-gold/30">
                     <img
-                      src="https://images.unsplash.com/photo-1577214224216-754688737563?auto=format&fit=crop&q=80&w=600"
+                      src="/chef-muskan.jpeg"
                       alt={course.instructor.name}
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                     />
                   </div>
                   <div>
@@ -314,8 +314,8 @@ const CourseDetailPage = () => {
                 <p className="text-brand-brown text-sm font-light mb-4">
                   Have questions about the syllabus or timings? Talk to our counselor.
                 </p>
-                <a href="tel:+910000000000" className="text-brand-dark font-bold hover:text-brand-gold transition-colors">
-                  +91 00000 00000
+                <a href="tel:+919777240070" className="text-brand-dark font-bold hover:text-brand-gold transition-colors">
+                  +91 9777240070
                 </a>
               </div>
             </div>

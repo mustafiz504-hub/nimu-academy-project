@@ -25,9 +25,9 @@ const CertificateSearch = () => {
       setStudent(found);
     } catch (err: any) {
       if (err?.status === 404) {
-        setError('Hume aapki details nahi mili. Please apna correct phone number ya Student ID check karein.');
+        setError('No record found. Please check your phone number, email or NIMU Certificate ID and try again.');
       } else {
-        setError('Kuch galat ho gaya. Please thodi der baad try karein.');
+        setError('Something went wrong. Please try again later.');
       }
     } finally {
       setLoading(false);
@@ -41,7 +41,7 @@ const CertificateSearch = () => {
           Download Your Certificate
         </h1>
         <p className="text-sm text-brand-cream/60 max-w-xs mx-auto">
-          Apna registered phone number ya Student ID enter karein apna official Nimu Academy certificate pane ke liye.
+          Enter your registered phone number, email or NIMU Certificate ID to access your official Nimu Academy certificate.
         </p>
       </div>
  
@@ -52,7 +52,7 @@ const CertificateSearch = () => {
           <div className="relative flex w-full">
             <input
               type="text"
-              placeholder="Phone ya Student ID (e.g. STU-1234)"
+              placeholder="Phone, Email or NIMU ID (e.g. NIMU-43558)"
               className="flex-1 min-w-0 bg-brand-dark/50 border border-brand-gold/20 rounded-l-2xl py-4 md:py-5 px-4 md:px-6 outline-none text-brand-cream text-sm md:text-base focus:border-brand-gold/50 transition-all"
               value={query}
               onChange={e => setQuery(e.target.value)}
@@ -98,7 +98,7 @@ const CertificateSearch = () => {
                   <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-brand-gold bg-brand-gold/10 px-3 py-1 rounded-full">
                     {student.completed ? 'Verification Passed' : 'In Progress'}
                   </span>
-                  <span className="text-brand-cream/30 text-[10px] md:text-xs font-mono">ID: {student.student_id}</span>
+                  <span className="text-brand-cream/30 text-[10px] md:text-xs font-mono">NIMU ID: {student.certificate_id}</span>
                 </div>
 
                 <h2 className="text-2xl md:text-5xl font-serif font-bold text-brand-cream mb-2 md:mb-4 break-words">
@@ -118,8 +118,8 @@ const CertificateSearch = () => {
                     <h4 className="text-yellow-500 font-bold mb-1">Certificate Pending</h4>
                     <p className="text-brand-cream/50 text-sm leading-relaxed">
                       {!student.approved
-                        ? 'Aapka admission abhi approve nahi hua hai. Please academy se contact karein.'
-                        : 'Aapne abhi tak course complete nahi kiya hai. Course khatam hote hi certificate yaha available ho jayega.'}
+                        ? 'Your enrollment has not been approved yet. Please contact the academy for assistance.'
+                        : 'Your course is not yet marked as complete. Your certificate will be available here once the course is finished.'}
                     </p>
                   </div>
                 </div>

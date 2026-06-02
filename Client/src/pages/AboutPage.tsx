@@ -34,7 +34,7 @@ const AboutPage = () => {
               </h3>
               <p className="text-lg text-brand-brown leading-relaxed font-light mb-8">
                 Nimu Cooking Academy, Rourkela (Odisha) ka No.1 cooking school hai. Hamara maksad sirf baking sikhana nahi, balki students ko independent banana hai. 
-                Aaj 500+ students hamare saath jud kar apna career bana chuke hain.
+                Aaj 200+ students hamare saath jud kar apna career bana chuke hain.
               </p>
               
               <div className="space-y-6">
