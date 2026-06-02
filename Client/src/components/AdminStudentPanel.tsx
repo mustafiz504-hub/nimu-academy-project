@@ -7,14 +7,7 @@ import {
 } from 'lucide-react';
 import { api, ApiStudent } from '../lib/api';
 import Button from './ui/Button';
-
-const COURSES = [
-  'Advanced Cake Decorating',
-  'Professional Baking',
-  'Chocolate Making Masterclass',
-  'Pastry Arts Certification',
-  'Traditional Desserts Course',
-];
+import { useGlobal } from '../context/GlobalContext';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const formatDisplayDate = (raw: string): string => {
@@ -28,6 +21,11 @@ const toISODate = () => new Date().toISOString().split('T')[0];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 const AdminStudentPanel: React.FC = () => {
+  const { courses } = useGlobal();
+
+  // Derive course names from global courses (same as website)
+  const courseNames = courses.map(c => c.title);
+
   const [students, setStudents]       = useState<ApiStudent[]>([]);
   const [loading, setLoading]         = useState(true);
   const [syncing, setSyncing]         = useState(false);
@@ -44,9 +42,16 @@ const AdminStudentPanel: React.FC = () => {
   const [newStudent, setNewStudent] = useState({
     student_name:    '',
     phone:           '',
-    course_name:     COURSES[0],
+    course_name:     '',
     completion_date: toISODate(),
   });
+
+  // Sync default course_name when courseNames loads
+  useEffect(() => {
+    if (courseNames.length > 0 && !newStudent.course_name) {
+      setNewStudent(prev => ({ ...prev, course_name: courseNames[0] }));
+    }
+  }, [courseNames]);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   const fetchStudents = useCallback(async (background = false) => {
@@ -90,7 +95,7 @@ const AdminStudentPanel: React.FC = () => {
 
       setStudents(prev => [student, ...prev]);
       setShowAddForm(false);
-      setNewStudent({ student_name: '', phone: '', course_name: COURSES[0], completion_date: toISODate() });
+      setNewStudent({ student_name: '', phone: '', course_name: courseNames[0] || '', completion_date: toISODate() });
     } catch (err: any) {
       setFormError(err?.message || 'Student add karne mein error aaya. Please try again.');
     }
@@ -217,7 +222,7 @@ const AdminStudentPanel: React.FC = () => {
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-brand-dark border border-brand-gold/20 p-6 md:p-8 rounded-[2rem] w-full max-w-xl shadow-2xl max-h-[90dvh] overflow-y-auto"
+              className="relative bg-brand-dark border border-brand-gold/20 p-6 md:p-8 rounded-[2rem] w-full max-w-xl shadow-2xl max-h-[90dvh] overflow-y-auto scrollbar-hide"
             >
               <button onClick={() => setShowAddForm(false)} className="absolute right-6 top-6 text-brand-cream/30 hover:text-white">
                 <X size={24} />
@@ -264,7 +269,7 @@ const AdminStudentPanel: React.FC = () => {
                       value={newStudent.course_name}
                       onChange={e => setNewStudent({ ...newStudent, course_name: e.target.value })}
                     >
-                      {COURSES.map(c => <option key={c} value={c} className="bg-brand-dark">{c}</option>)}
+                      {courseNames.map(c => <option key={c} value={c} className="bg-brand-dark">{c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -370,14 +375,16 @@ const AdminStudentPanel: React.FC = () => {
 
       {/* ── Table ───────────────────────────────────────────────────────── */}
       <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="max-h-[520px] overflow-y-auto scrollbar-thin scrollbar-thumb-brand-gold/20 scrollbar-track-transparent">
+        <div className="admin-scroll max-h-[680px] overflow-y-auto scrollbar-thin scrollbar-thumb-brand-gold/20 scrollbar-track-transparent">
           <table className="w-full text-left border-separate border-spacing-0">
             <thead className="sticky top-0 z-20 bg-[#1a110a] backdrop-blur-md">
               <tr className="text-xs font-black uppercase tracking-widest text-brand-gold/60 border-b border-white/10">
+                <th className="px-4 py-5 border-b border-white/10 w-12 text-center">#</th>
                 <th className="px-6 py-5 border-b border-white/10">Student</th>
                 <th className="px-6 py-5 border-b border-white/10">Course</th>
                 <th className="px-6 py-5 border-b border-white/10">Status</th>
-                <th className="px-6 py-5 border-b border-white/10">Actions</th>
+                <th className="px-6 py-5 border-b border-white/10">Date</th>
+                <th className="px-6 py-5 border-b border-white/10 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -387,18 +394,20 @@ const AdminStudentPanel: React.FC = () => {
                     <td className="px-6 py-6"><div className="h-5 w-36 bg-white/10 rounded mb-2" /><div className="h-3 w-24 bg-white/5 rounded" /></td>
                     <td className="px-6 py-6"><div className="h-4 w-40 bg-white/5 rounded" /></td>
                     <td className="px-6 py-6"><div className="h-6 w-20 bg-white/5 rounded-full" /></td>
-                    <td className="px-6 py-6"><div className="h-8 w-24 bg-white/10 rounded-lg" /></td>
+                    <td className="px-6 py-6"><div className="h-4 w-24 bg-white/5 rounded" /></td>
+                    <td className="px-6 py-6 flex justify-center"><div className="h-8 w-24 bg-white/10 rounded-lg" /></td>
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-20 text-center text-brand-cream/30 italic">
-                    {searchQuery ? 'Koi student nahi mila.' : 'Abhi koi student registered nahi hai.'}
+                  <td colSpan={6} className="px-6 py-20 text-center text-brand-cream/30 italic">
+                    {searchQuery ? 'No student found matching your search.' : 'No students registered yet.'}
                   </td>
                 </tr>
               ) : (
-                filtered.map(student => (
+                filtered.map((student, idx) => (
                   <tr key={student.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="px-4 py-4 text-center text-brand-gold/50 font-mono text-sm font-bold">{idx + 1}</td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-base">{student.student_name}</div>
                       <div className="text-xs text-brand-gold font-mono">{student.phone}</div>
@@ -416,8 +425,11 @@ const AdminStudentPanel: React.FC = () => {
                         <span className="text-[10px] font-black uppercase bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full">Pending</span>
                       )}
                     </td>
+                    <td className="px-6 py-4 text-xs font-mono text-brand-cream/50">
+                      {student.completion_date || '-'}
+                    </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         {/* Approve */}
                         {!student.approved && (
                           <button
@@ -449,7 +461,7 @@ const AdminStudentPanel: React.FC = () => {
                         {/* Delete */}
                         <button
                           onClick={() => setDeleteConfirm(student.id)}
-                          className="ml-auto p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-all active:scale-95"
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-all active:scale-95"
                           title="Delete student"
                         >
                           <Trash2 size={15} />

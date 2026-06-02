@@ -87,29 +87,29 @@ const Nav = () => {
     <nav className="fixed w-full z-50 bg-brand-dark/95 backdrop-blur-md text-brand-cream border-b border-brand-gold/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20 items-center">
-          <Link to="/" className="hidden md:flex items-center gap-3">
+          <Link to="/" className="hidden lg:flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-brand-gold/10 overflow-hidden flex items-center justify-center">
                <img src={logo} alt="Nimu Logo" className="w-full h-full object-cover" />
             </div>
             <span className="font-serif text-2xl font-bold tracking-wider text-brand-gold">NIMU</span>
-            <span className="hidden lg:inline font-sans text-[10px] tracking-widest uppercase text-brand-cream/60 ml-2 border-l border-brand-cream/20 pl-3">
+            <span className="hidden xl:inline font-sans text-[10px] tracking-widest uppercase text-brand-cream/60 ml-2 border-l border-brand-cream/20 pl-3">
               Odisha's No.1 Cooking Class – Learn • Cook • Grow
             </span>
           </Link>
           
-          <div className="hidden md:flex items-center space-x-5 lg:space-x-8">
+          <div className="hidden lg:flex items-center space-x-5 xl:space-x-8">
             {navLinks.map(link => (
               <Link 
                 key={link.name} 
                 to={link.href} 
-                className={`text-[13px] lg:text-sm font-medium transition-colors ${isActive(link.href) ? 'text-brand-gold' : 'hover:text-brand-gold'}`}
+                className={`text-[13px] xl:text-sm font-medium transition-colors ${isActive(link.href) ? 'text-brand-gold' : 'hover:text-brand-gold'}`}
               >
                 {link.name}
               </Link>
             ))}
           </div>
 
-          <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
+          <div className="hidden lg:flex items-center space-x-4 xl:space-x-6">
             <a 
               href="https://www.instagram.com/nimu.cooking/" 
               target="_blank" 
@@ -221,7 +221,7 @@ const Nav = () => {
             </button>
           </div>
 
-          <div className="md:hidden flex w-full items-center justify-between">
+          <div className="lg:hidden flex w-full items-center justify-between">
             <div className="flex flex-1 items-center justify-start">
               <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -258,7 +258,7 @@ const Nav = () => {
       {/* Mobile Sidebar */}
       <AnimatePresence>
         {isOpen && (
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

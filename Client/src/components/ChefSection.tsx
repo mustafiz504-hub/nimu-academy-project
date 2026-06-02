@@ -14,9 +14,9 @@ const ChefSection = () => {
             <div className="grid md:grid-cols-2 items-center">
               <div className="h-[400px] md:h-[600px] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&q=80&w=1000"
+                  src="/chef-muskan.jpeg"
                   alt="Chef Muskan Naz"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent to-brand-dark/20" />
               </div>
@@ -31,14 +31,14 @@ const ChefSection = () => {
                   </span>
                   <h3 className="text-4xl md:text-5xl font-serif text-brand-gold font-bold mb-6">Muskan Naz</h3>
                   <p className="text-brand-cream/80 text-lg leading-relaxed font-light mb-8 italic">
-                    "Chef Muskan Naz is a professional baker with 5+ years of teaching experience. She has trained 500+ students and is the founder of Odisha's No.1 Cooking Class — Nimu Cooking Academy, Rourkela."
+                    "Chef Muskan Naz is a professional baker with 5+ years of teaching experience. She has trained 200+ students and is the founder of Odisha's No.1 Cooking Class — Nimu Cooking Academy, Rourkela."
                   </p>
                   <div className="grid grid-cols-2 gap-6 pt-6 border-t border-brand-cream/10">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold">
                         <Star size={20} />
                       </div>
-                      <span className="text-brand-cream font-medium">500+ Students</span>
+                      <span className="text-brand-cream font-medium">200+ Students</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold">

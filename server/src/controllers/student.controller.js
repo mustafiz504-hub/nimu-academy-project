@@ -21,18 +21,24 @@ const getAllStudents = async (req, res) => {
   }
 };
 
-// GET /api/students/search?q=<phone|email|studentId> — public certificate lookup
+// GET /api/students/search?q=<phone|email|nimuId> — public certificate lookup
 const searchStudent = async (req, res) => {
   try {
     const q = (req.query.q || '').toString().trim();
     if (!q) return res.status(400).json({ message: 'Search query is required.' });
 
+    console.log('[searchStudent] query:', q);
+
     const result = await pool.query(
       `SELECT * FROM students
-       WHERE phone = $1 OR email = $1 OR student_id = $1
+       WHERE phone = $1
+          OR email ILIKE $1
+          OR certificate_id ILIKE $1
        LIMIT 1`,
       [q]
     );
+
+    console.log('[searchStudent] rows found:', result.rowCount);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Student not found.' });

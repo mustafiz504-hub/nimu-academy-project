@@ -6,7 +6,7 @@ import Button from './ui/Button';
 
 const AboutSection = () => {
   const stats = [
-    { label: "Students Trained", value: "500+" },
+    { label: "Students Trained", value: "200+" },
     { label: "Years Experience", value: "5+" },
     { label: "Recipes Taught", value: "100+" },
     { label: "Success Stories", value: "50+" }
@@ -28,7 +28,7 @@ const AboutSection = () => {
           >
             <h3 className="text-3xl font-serif text-brand-dark mb-6 leading-tight">Nimu Cooking Academy ki shuruaat Chef Muskan Naz ke ek simple sapne se hui — har ghar mein ek skilled baker ho.</h3>
             <p className="text-lg text-brand-brown leading-relaxed font-light mb-8">
-              Rourkela, Odisha mein shuru hue is academy ne aaj 500+ students ko professionally trained kiya hai. Hamara focus sirf baking sikhana nahi, balki students ko itna confident banana hai ki woh apni khud ki pehchaan bana sakein.
+              Rourkela, Odisha mein shuru hue is academy ne aaj 200+ students ko professionally trained kiya hai. Hamara focus sirf baking sikhana nahi, balki students ko itna confident banana hai ki woh apni khud ki pehchaan bana sakein.
             </p>
             
             <div className="bg-brand-dark text-brand-cream p-8 rounded-3xl relative overflow-hidden group mb-8">

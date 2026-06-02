@@ -61,7 +61,7 @@ const CourseSection = () => {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-50px" }}
-            className="flex overflow-x-auto overflow-y-hidden gap-4 px-1 sm:px-2 md:justify-center scrollbar-hide snap-x snap-mandatory w-full pt-4 pb-10 overscroll-x-contain"
+            className="flex overflow-x-auto overflow-y-hidden gap-6 px-4 md:px-8 scrollbar-hide snap-x snap-mandatory w-fit mx-auto max-w-full pt-4 pb-10 overscroll-x-contain"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
           {courses.map((course, idx) => (
