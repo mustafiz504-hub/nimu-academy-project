@@ -107,6 +107,7 @@ const AdminCertificatesTable = () => {
   const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
   const [bulkDownloading, setBulkDownloading] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const cancelBulkRef = useRef(false);
 
   const fetchCertificates = useCallback(async (isBackground = false) => {
     if (!isBackground) setLoading(true);
@@ -174,13 +175,21 @@ const AdminCertificatesTable = () => {
     if (toDownload.length === 0) return;
 
     setBulkDownloading(true);
+    cancelBulkRef.current = false; // reset cancel flag
     setBulkProgress({ current: 0, total: toDownload.length });
 
     for (let i = 0; i < toDownload.length; i++) {
+      if (cancelBulkRef.current) {
+        break;
+      }
       setBulkProgress({ current: i + 1, total: toDownload.length });
       try {
         await downloadCertificatePDF(toDownload[i]);
-        await new Promise(r => setTimeout(r, 400)); // small gap between downloads
+        // Sleep for 400ms, checking for cancel periodically to abort instantly
+        for (let delay = 0; delay < 400; delay += 50) {
+          if (cancelBulkRef.current) break;
+          await new Promise(r => setTimeout(r, 50));
+        }
       } catch (err) {
         console.error(`Failed for ${toDownload[i].student_name}:`, err);
       }
@@ -217,7 +226,7 @@ const AdminCertificatesTable = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 ml-auto sm:ml-0 md:self-auto">
+          <div className="flex items-center gap-3 mr-auto sm:ml-0 md:self-auto">
             {/* Bulk Download Button */}
             <AnimatePresence>
               {selectedCount > 0 && (
@@ -283,6 +292,15 @@ const AdminCertificatesTable = () => {
                 <span className="text-xs font-black text-brand-gold/70 shrink-0">
                   {Math.round((bulkProgress.current / bulkProgress.total) * 100)}%
                 </span>
+                <button
+                  onClick={() => {
+                    cancelBulkRef.current = true;
+                  }}
+                  className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shrink-0"
+                  title="Cancel Download"
+                >
+                  Cancel
+                </button>
               </div>
             </motion.div>
           )}
@@ -306,7 +324,7 @@ const AdminCertificatesTable = () => {
         <div className="md:hidden space-y-2 z-10 relative max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-brand-gold/20">
           {/* Mobile select-all bar */}
           {filteredStudents.length > 0 && !loading && (
-            <div className="flex items-center gap-3 px-1 mb-3">
+            <div className="sticky top-0 bg-[#1a0f07] z-20 flex items-center gap-3 px-1 py-2.5 mb-2 border-b border-brand-gold/10">
               <button
                 onClick={toggleAll}
                 className="flex items-center gap-2 text-xs font-bold text-brand-gold"
