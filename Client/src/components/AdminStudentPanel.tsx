@@ -158,7 +158,7 @@ const AdminStudentPanel: React.FC = () => {
   const totalApproved  = students.filter(s => s.approved && !s.completed).length;
 
   return (
-    <div className="p-6 md:p-10 bg-[#120a05] min-h-screen text-brand-cream">
+    <div className="text-brand-cream">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">

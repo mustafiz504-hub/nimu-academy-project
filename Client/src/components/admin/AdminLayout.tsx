@@ -30,7 +30,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }, [isSidebarOpen]);
 
   if (authLoading) {
-    return <div className="min-h-screen bg-[#0a0a0a] p-8 text-brand-gold">Loading admin session...</div>;
+    return <div className="min-h-screen bg-[#120a05] p-8 text-brand-gold">Loading admin session...</div>;
   }
 
   if (!user || !['admin', 'superadmin'].includes(user.role)) {
@@ -38,7 +38,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-brand-cream font-sans selection:bg-brand-gold selection:text-brand-dark">
+    <div className="flex h-screen overflow-hidden bg-[#120a05] text-brand-cream font-sans selection:bg-brand-gold selection:text-brand-dark">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-brand-dark/95 backdrop-blur-md border-b border-white/10 z-[60] flex items-center justify-center px-6">
         <button
@@ -68,8 +68,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <main className="flex-grow p-4 md:p-8 pt-20 lg:pt-8 overflow-x-hidden overflow-y-auto">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-grow p-6 md:p-8 pt-20 lg:pt-6 overflow-x-hidden overflow-y-auto">
+        <div className="w-full">
           {children}
         </div>
       </main>

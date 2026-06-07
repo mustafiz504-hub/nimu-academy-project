@@ -35,7 +35,7 @@ const CertificateSearch = () => {
   };
 
   return (
-    <div className="w-full py-8">
+    <div className="w-full pt-6 pb-2">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-serif font-bold text-brand-gold mb-3">
           Download Your Certificate
@@ -46,7 +46,7 @@ const CertificateSearch = () => {
       </div>
  
       {/* Search Bar */}
-      <form onSubmit={handleSearch} className="w-full mb-8">
+      <form onSubmit={handleSearch} className="w-full mb-4">
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-brand-gold to-transparent rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
           <div className="relative flex w-full">

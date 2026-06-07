@@ -9,29 +9,53 @@ interface CertificateProps {
   courseName: string;
   completionDate: string;
   certificateId: string;
+  isInModal?: boolean;
 }
 
 const CertificateDownloader: React.FC<CertificateProps> = ({
   studentName,
   courseName,
   completionDate,
-  certificateId
+  certificateId,
+  isInModal = false
 }) => {
   const certificateRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [scale, setScale] = useState(0.25); // start small to avoid flash
+  const [leftOffset, setLeftOffset] = useState(0);
 
   useEffect(() => {
     const CERT_WIDTH = 1123;
 
     const computeScale = () => {
       if (!wrapperRef.current) return;
-      // Use the wrapper's actual rendered width (most reliable)
       const w = wrapperRef.current.getBoundingClientRect().width;
       if (w === 0) return; // not yet laid out
-      const newScale = Math.min(w / CERT_WIDTH, 1);
-      setScale(newScale);
+      
+      const scaleW = Math.min(w / CERT_WIDTH, 1);
+      let newScale = scaleW;
+
+      if (isInModal) {
+        // Use window.innerHeight to calculate max available height to prevent circular layout loops
+        // 230px accounts for modal margins, header, gap, download button, and vertical padding
+        const maxAvailableHeight = window.innerHeight - 230;
+        if (maxAvailableHeight > 0) {
+          const scaleH = maxAvailableHeight / 794;
+          newScale = Math.min(scaleW, scaleH);
+        }
+      }
+
+      const finalScale = Math.max(newScale, 0.2); // Keep a reasonable minimum scale
+      setScale(finalScale);
+
+      // Center horizontally if scaled certificate is narrower than container
+      const scaledWidth = CERT_WIDTH * finalScale;
+      if (w > scaledWidth) {
+        setLeftOffset((w - scaledWidth) / 2);
+      } else {
+        setLeftOffset(0);
+      }
     };
 
     // ResizeObserver: fires whenever the wrapper changes size
@@ -112,7 +136,7 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-5 w-full">
+    <div className="flex flex-col items-center gap-3 md:gap-4 w-full">
       {/* Responsive wrapper — clips the scaled certificate, out-of-flow so no page scroll */}
       <div
         ref={wrapperRef}
@@ -131,7 +155,7 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
           style={{
             position: 'absolute',
             top: 0,
-            left: 0,
+            left: `${leftOffset}px`,
             width: '1123px',
             height: '794px',
             backgroundImage: "url('/certificate-template1.jpeg')",
@@ -225,11 +249,11 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
       <Button
         onClick={handleDownload}
         disabled={downloading}
-        className="w-full md:w-auto md:px-16 py-4 md:py-5 text-sm md:text-lg bg-[#D4AF37] text-[#1E120A] rounded-2xl shadow-xl hover:scale-105 transition-all border-none font-bold tracking-wide"
+        className="w-full md:w-auto md:px-16 py-4 md:py-4.5 text-xs md:text-sm bg-gradient-to-r from-[#d4af37] via-[#f1d072] to-[#d4af37] text-[#1a0f07] rounded-xl shadow-lg hover:shadow-[0_0_25px_rgba(212,175,55,0.35)] hover:scale-[1.02] active:scale-98 transition-all border border-[#f1d072]/30 font-black uppercase tracking-widest"
       >
         {downloading
-          ? <Loader2 className="animate-spin mr-2 inline" size={18} />
-          : <Download size={18} className="mr-2 inline" />}
+          ? <Loader2 className="animate-spin mr-2 inline" size={15} />
+          : <Download size={15} className="mr-2 inline" />}
         {downloading ? 'Downloading...' : 'Download Certificate'}
       </Button>
     </div>
