@@ -25,6 +25,22 @@ const getCourseById = async (req, res) => {
   }
 };
 
+// GET /api/courses/:id/videos - Get videos for a course (must be enrolled or free video)
+const getCourseVideos = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    // For now, return all videos for this course. Real logic might check enrollment.
+    const result = await pool.query(
+      'SELECT * FROM course_videos WHERE course_id = $1 ORDER BY order_index ASC',
+      [courseId]
+    );
+    res.status(200).json({ videos: result.rows });
+  } catch (error) {
+    console.error('Get course videos error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 // POST /api/courses (admin/superadmin)
 const createCourse = async (req, res) => {
   try {
@@ -97,4 +113,54 @@ const deleteCourse = async (req, res) => {
   }
 };
 
-module.exports = { getAllCourses, getCourseById, createCourse, updateCourse, deleteCourse };
+// POST /api/courses/:id/videos (admin/superadmin) — add a video to a course
+const addVideoToCourse = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const { title, description, video_url, thumbnail_url, duration_minutes, order_index, is_free } = req.body;
+
+    if (!title || !video_url) {
+      return res.status(400).json({ message: 'Title and video_url are required.' });
+    }
+
+    // Get next order index if not provided
+    let idx = order_index;
+    if (idx === undefined || idx === null) {
+      const countResult = await pool.query('SELECT COUNT(*) FROM course_videos WHERE course_id = $1', [courseId]);
+      idx = parseInt(countResult.rows[0].count, 10) + 1;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO course_videos (course_id, title, description, video_url, thumbnail_url, duration_minutes, order_index, is_free)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [courseId, title, description || null, video_url, thumbnail_url || null, duration_minutes || 0, idx, is_free ?? false]
+    );
+
+    await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Added video "${title}" to course #${courseId}`]);
+
+    res.status(201).json({ message: 'Video added successfully.', video: result.rows[0] });
+  } catch (error) {
+    console.error('Add video error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// DELETE /api/courses/:id/videos/:videoId (admin/superadmin)
+const deleteVideo = async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM course_videos WHERE id = $1 AND course_id = $2 RETURNING id',
+      [req.params.videoId, req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Video not found.' });
+    }
+    res.status(200).json({ message: 'Video deleted successfully.' });
+  } catch (error) {
+    console.error('Delete video error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getAllCourses, getCourseById, getCourseVideos, createCourse, updateCourse, deleteCourse, addVideoToCourse, deleteVideo };

@@ -18,12 +18,22 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost:8081',   // Expo Metro bundler
+    'http://localhost:19006',  // Expo web
     'http://192.168.1.140:3000',
     'http://10.224.19.66:3000',
     'http://10.224.19.66:5173',
+    'http://10.112.198.66:8000',
+    'http://10.229.157.66:8000',
+    'http://10.31.136.66:8000',
+    'http://10.31.136.66:8081',
+    'http://10.31.136.66:3000',
+    'http://10.31.136.66:5173',
     'https://nimu-academy-project.vercel.app'
   ],
   credentials: true,
+  // Allow all origins in development (remove in production)
+  ...(process.env.NODE_ENV !== 'production' ? { origin: true } : {}),
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

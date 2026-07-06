@@ -17,6 +17,24 @@ const getAllEnrollments = async (req, res) => {
   }
 };
 
+// GET /api/enrollments/my - Get user's enrolled courses
+const getMyEnrollments = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT e.*, c.name AS course_name, c.description, c.price, c.duration
+       FROM enrollments e
+       JOIN courses c ON e.course_id = c.id
+       WHERE e.user_id = $1
+       ORDER BY e.created_at DESC`,
+      [req.user.id]
+    );
+    res.status(200).json({ enrollments: result.rows });
+  } catch (error) {
+    console.error('Get my enrollments error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 // GET /api/enrollments/:id
 const getEnrollmentById = async (req, res) => {
   try {
@@ -111,4 +129,4 @@ const deleteEnrollment = async (req, res) => {
   }
 };
 
-module.exports = { getAllEnrollments, getEnrollmentById, createEnrollment, updateEnrollmentStatus, deleteEnrollment };
+module.exports = { getAllEnrollments, getMyEnrollments, getEnrollmentById, createEnrollment, updateEnrollmentStatus, deleteEnrollment };
