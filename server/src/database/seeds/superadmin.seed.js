@@ -5,7 +5,10 @@ const bcrypt = require('bcryptjs');
  * @param {any} pool - Database connection pool
  */
 const seedSuperadmin = async (pool) => {
-  const superadminEmailsRaw = process.env.SUPERADMIN_EMAIL || 'muskan@nimu.com';
+  const superadminEmailsRaw = process.env.SUPERADMIN_EMAIL;
+  if (!superadminEmailsRaw) {
+    throw new Error('SUPERADMIN_EMAIL environment variable is missing in .env');
+  }
   const superadminEmails = superadminEmailsRaw.split(',').map(e => e.trim()).filter(Boolean);
   
   const defaultPassword = process.env.SUPERADMIN_PASSWORD;
