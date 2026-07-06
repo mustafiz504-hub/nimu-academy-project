@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/upload');
-const { uploadImage } = require('../controllers/upload.controller');
+const uploadVideo = require('../middleware/uploadVideo');
+const { uploadImage, getSignature, uploadVideoChunked } = require('../controllers/upload.controller');
+
+router.get('/signature', getSignature);
+router.post('/video', uploadVideo.single('video'), uploadVideoChunked);
 
 /**
  * @swagger

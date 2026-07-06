@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 
 // Re-export the ScheduleScreen (previously LessonsScreen)
 export default function ScheduleScreen() {
@@ -16,17 +16,9 @@ export default function ScheduleScreen() {
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
       {/* Header */}
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
-        <View style={{ width: 44, height: 44, borderRadius: 22, overflow: "hidden", borderWidth: 1, borderColor: "#FFA726", marginRight: 12 }}>
-          <Image
-            source={{ uri: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200" }}
-            style={{ width: 44, height: 44 }}
-          />
-        </View>
-        <View>
-          <Text style={{ fontSize: 16, fontWeight: "700", color: "#1E1B18" }}>Robert Fox</Text>
-          <Text style={{ fontSize: 11, color: "#FFA726", fontWeight: "600", marginTop: 2 }}>View Profile</Text>
-        </View>
+      <View style={{ marginBottom: 20 }}>
+        <Text style={{ fontSize: 28, fontWeight: "800", color: "#1E1B18" }}>Schedule</Text>
+        <Text style={{ fontSize: 14, color: "#64748B", marginTop: 4 }}>Your weekly plan</Text>
       </View>
 
       {/* Calendar Strip */}

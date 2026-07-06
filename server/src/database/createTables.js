@@ -6,6 +6,7 @@ const enrollmentsTable = require('./tables/enrollments.table');
 const activityLogsTable = require('./tables/activityLogs.table');
 const galleryTable = require('./tables/gallery.table');
 const studentsTable = require('./tables/students.table');
+const courseVideosTable = require('./tables/courseVideos.table');
 
 /**
  * Creates database tables if they do not exist.
@@ -23,6 +24,7 @@ const createTables = async (pool) => {
     await pool.query(activityLogsTable);
     await pool.query(galleryTable);
     await pool.query(studentsTable);
+    await pool.query(courseVideosTable);
 
     console.log('🚀 Database Tables Synced Successfully');
   } catch (error) {

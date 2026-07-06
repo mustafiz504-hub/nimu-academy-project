@@ -7,10 +7,10 @@ import { Platform } from "react-native";
  * iOS Simulator     → localhost
  * Physical Device   → your machine's LAN IP (auto-detected below)
  *
- * Your machine's current LAN IP: 10.67.96.66
+ * Your machine's current LAN IP: 10.31.136.66
  * If this changes (different WiFi), update MACHINE_IP below.
  */
-const MACHINE_IP = "10.67.96.66";
+const MACHINE_IP = "10.31.136.66";
 const PORT = "8000";
 
 const API_BASE_URL_MAP = {
@@ -24,9 +24,9 @@ const API_BASE_URL_MAP = {
 const isExpoGo = !__DEV__ === false; // always true in dev builds
 
 export const API_BASE_URL =
-  __DEV__
-    ? `http://${MACHINE_IP}:${PORT}/api`   // Any device on same WiFi (universal)
-    : `http://${MACHINE_IP}:${PORT}/api`;  // Replace with your production URL
+  Platform.OS === "web"
+    ? `http://localhost:${PORT}/api`
+    : `http://${MACHINE_IP}:${PORT}/api`;
 
 export const ENDPOINTS = {
   // Auth

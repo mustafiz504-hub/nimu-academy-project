@@ -18,8 +18,9 @@ import CoursesScreen from "../src/screens/courses/CoursesScreen";
 import CourseDetailScreen from "../src/screens/courses/CourseDetailScreen";
 import ScheduleScreen from "../src/screens/schedule/ScheduleScreen";
 import ProfileScreen from "../src/screens/profile/ProfileScreen";
+import AdminScreen from "../src/screens/admin/AdminScreen";
 
-// Auth store
+// Stores
 import { useAuthStore } from "../src/store/auth.store";
 
 type AuthPage = "login" | "register";
@@ -27,17 +28,19 @@ type AuthPage = "login" | "register";
 export default function Index() {
   const [currentTab, setCurrentTab] = useState<TabName>("home");
   const [authPage, setAuthPage] = useState<AuthPage>("login");
-  const [isBooting, setIsBooting] = useState(true); // splash guard
+  const [isBooting, setIsBooting] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
-  const { isAuthenticated, loadFromStorage } = useAuthStore();
+  const { isAuthenticated, user, loadFromStorage } = useAuthStore();
 
-  // On app launch — restore session from SecureStore + validate with server
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+
+  // On app launch — restore session from storage + validate with server
   useEffect(() => {
     loadFromStorage().finally(() => setIsBooting(false));
   }, []);
 
-  // ── Splash / Loading ──
+  // ── Splash / Loading ──────────────────────────────────────────────────────
   if (isBooting) {
     return (
       <View style={{ flex: 1, backgroundColor: "#FDF8F0", justifyContent: "center", alignItems: "center" }}>
@@ -45,18 +48,13 @@ export default function Index() {
         <StatusBar style="dark" />
         <View
           style={{
-            width: 80,
-            height: 80,
-            borderRadius: 40,
+            width: 80, height: 80, borderRadius: 40,
             backgroundColor: "#FF8C00",
-            justifyContent: "center",
-            alignItems: "center",
+            justifyContent: "center", alignItems: "center",
             marginBottom: 20,
             shadowColor: "#FF8C00",
             shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.3,
-            shadowRadius: 16,
-            elevation: 8,
+            shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
           }}
         >
           <ActivityIndicator color="#FFFFFF" size="large" />
@@ -65,7 +63,7 @@ export default function Index() {
     );
   }
 
-  // ── Not Authenticated → Auth screens ──
+  // ── Not Authenticated → Auth screens ─────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <>
@@ -80,7 +78,7 @@ export default function Index() {
     );
   }
 
-  // ── Authenticated → Main App ──
+  // ── Authenticated → Main App ──────────────────────────────────────────────
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FDF8F0" }}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -88,21 +86,43 @@ export default function Index() {
 
       <View style={{ flex: 1 }}>
         {selectedCourseId ? (
-          <CourseDetailScreen 
-            courseId={selectedCourseId} 
-            onBack={() => setSelectedCourseId(null)} 
+          <CourseDetailScreen
+            courseId={selectedCourseId}
+            onBack={() => setSelectedCourseId(null)}
           />
         ) : (
           <>
-            {currentTab === "home" && <HomeScreen onNavigateToTab={setCurrentTab} onCourseSelect={setSelectedCourseId} />}
-            {currentTab === "courses" && <CoursesScreen onCourseSelect={setSelectedCourseId} />}
-            {currentTab === "schedule" && <ScheduleScreen />}
-            {currentTab === "profile" && <ProfileScreen />}
+            {/* Always mounted — display:none keeps screens alive so
+                useEffect doesn't re-fire and Zustand cache works. */}
+            <View style={{ flex: 1, display: currentTab === "home" ? "flex" : "none" }}>
+              <HomeScreen onNavigateToTab={setCurrentTab} onCourseSelect={setSelectedCourseId} />
+            </View>
+            <View style={{ flex: 1, display: currentTab === "courses" ? "flex" : "none" }}>
+              <CoursesScreen onCourseSelect={setSelectedCourseId} />
+            </View>
+            <View style={{ flex: 1, display: currentTab === "schedule" ? "flex" : "none" }}>
+              <ScheduleScreen />
+            </View>
+            <View style={{ flex: 1, display: currentTab === "profile" ? "flex" : "none" }}>
+              <ProfileScreen />
+            </View>
+            {/* Admin tab — only mounted if user is admin/superadmin */}
+            {isAdmin && (
+              <View style={{ flex: 1, display: currentTab === "admin" ? "flex" : "none" }}>
+                <AdminScreen />
+              </View>
+            )}
           </>
         )}
       </View>
 
-      {!selectedCourseId && <BottomTabNavigator currentTab={currentTab} onTabChange={setCurrentTab} />}
+      {!selectedCourseId && (
+        <BottomTabNavigator
+          currentTab={currentTab}
+          onTabChange={setCurrentTab}
+          isAdmin={isAdmin}
+        />
+      )}
     </SafeAreaView>
   );
 }

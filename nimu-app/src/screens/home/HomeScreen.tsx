@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import React, { useCallback, useEffect } from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/auth.store";
-import { useCourses } from "../../hooks/useCourses";
+import { useCourseStore } from "../../store/course.store";
 import CourseCard from "../../components/course/CourseCard";
 import StudyReport from "../../components/home/StudyReport";
 
@@ -13,11 +13,15 @@ interface HomeScreenProps {
 
 export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScreenProps) {
   const { user } = useAuthStore();
-  const { courses, loading, fetchAllCourses } = useCourses();
+  const { courses, loadingCourses: loading, fetchAllCourses, refreshingCourses, refreshAllCourses } = useCourseStore();
 
   useEffect(() => {
     fetchAllCourses();
   }, [fetchAllCourses]);
+
+  const handleRefresh = useCallback(async () => {
+    await refreshAllCourses();
+  }, [refreshAllCourses]);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FDF8F0" }}>
@@ -37,7 +41,20 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshingCourses}
+            onRefresh={handleRefresh}
+            colors={["#FF8C00"]}
+            tintColor="#FF8C00"
+            title="Refreshing..."
+            titleColor="#94A3B8"
+          />
+        }
+      >
         {/* ── Search Bar ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
           <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 16, paddingHorizontal: 16, height: 52, borderWidth: 1, borderColor: "#F0E6D8" }}>

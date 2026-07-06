@@ -2,48 +2,63 @@ import React, { useRef, useEffect, useState } from "react";
 import { View, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export type TabName = "home" | "courses" | "schedule" | "profile";
+export type TabName = "home" | "courses" | "schedule" | "profile" | "admin";
+
+interface Tab {
+  key: TabName;
+  active: any;
+  inactive: any;
+}
 
 interface BottomTabNavigatorProps {
   currentTab: TabName;
   onTabChange: (tab: TabName) => void;
+  isAdmin?: boolean;
 }
 
-const TABS: TabName[] = ["home", "courses", "schedule", "profile"];
+const BASE_TABS: Tab[] = [
+  { key: "home",     active: "home",            inactive: "home-outline" },
+  { key: "courses",  active: "compass",          inactive: "compass-outline" },
+  { key: "schedule", active: "calendar",         inactive: "calendar-outline" },
+  { key: "profile",  active: "person",           inactive: "person-outline" },
+];
 
-const TAB_ICONS: Record<TabName, { active: any; inactive: any }> = {
-  home: { active: "home", inactive: "home-outline" },
-  courses: { active: "compass", inactive: "compass-outline" },
-  schedule: { active: "calendar", inactive: "calendar-outline" },
-  profile: { active: "person", inactive: "person-outline" },
-};
+const ADMIN_TAB: Tab = { key: "admin", active: "shield", inactive: "shield-outline" };
 
-export default function BottomTabNavigator({ currentTab, onTabChange }: BottomTabNavigatorProps) {
+export default function BottomTabNavigator({ currentTab, onTabChange, isAdmin = false }: BottomTabNavigatorProps) {
+  const tabs = isAdmin ? [...BASE_TABS, ADMIN_TAB] : BASE_TABS;
+  const tabCount = tabs.length;
+
   const [containerWidth, setContainerWidth] = useState(0);
   const tabX = useRef(new Animated.Value(0)).current;
 
-  const scale0 = useRef(new Animated.Value(1)).current;
-  const scale1 = useRef(new Animated.Value(1)).current;
-  const scale2 = useRef(new Animated.Value(1)).current;
-  const scale3 = useRef(new Animated.Value(1)).current;
-  const scales = [scale0, scale1, scale2, scale3];
+  // One scale per tab — support up to 5
+  const scales = useRef(Array.from({ length: 5 }, () => new Animated.Value(1))).current;
 
   useEffect(() => {
-    const index = TABS.indexOf(currentTab);
-    Animated.spring(tabX, { toValue: index, useNativeDriver: true, tension: 68, friction: 10 }).start();
+    const index = tabs.findIndex((t) => t.key === currentTab);
+    if (index < 0) return;
+
+    Animated.spring(tabX, {
+      toValue: index,
+      useNativeDriver: true,
+      tension: 68,
+      friction: 10,
+    }).start();
+
     Animated.sequence([
       Animated.timing(scales[index], { toValue: 1.25, duration: 100, useNativeDriver: true }),
       Animated.spring(scales[index], { toValue: 1, friction: 4, useNativeDriver: true }),
     ]).start();
-  }, [currentTab]);
+  }, [currentTab, tabs.length]);
 
-  const tabWidth = containerWidth / 4;
-  const pillWidth = 54;
+  const tabWidth = containerWidth / tabCount;
+  const pillWidth = 44;
   const pillHeight = 44;
 
   const translateX = tabX.interpolate({
-    inputRange: [0, 1, 2, 3],
-    outputRange: TABS.map((_, i) => tabWidth * i + (tabWidth - pillWidth) / 2),
+    inputRange: tabs.map((_, i) => i),
+    outputRange: tabs.map((_, i) => tabWidth * i + (tabWidth - pillWidth) / 2),
   });
 
   return (
@@ -68,6 +83,7 @@ export default function BottomTabNavigator({ currentTab, onTabChange }: BottomTa
         position: "relative",
       }}
     >
+      {/* Sliding pill highlight */}
       {containerWidth > 0 && (
         <Animated.View
           style={{
@@ -82,18 +98,23 @@ export default function BottomTabNavigator({ currentTab, onTabChange }: BottomTa
           }}
         />
       )}
-      {TABS.map((tab, index) => {
-        const isActive = currentTab === tab;
-        const icons = TAB_ICONS[tab];
+
+      {tabs.map((tab, index) => {
+        const isActive = currentTab === tab.key;
+        const isAdminTab = tab.key === "admin";
         return (
           <TouchableOpacity
-            key={tab}
+            key={tab.key}
             activeOpacity={0.7}
             style={{ flex: 1, height: "100%", justifyContent: "center", alignItems: "center", zIndex: 2 }}
-            onPress={() => onTabChange(tab)}
+            onPress={() => onTabChange(tab.key)}
           >
             <Animated.View style={{ transform: [{ scale: scales[index] }] }}>
-              <Ionicons name={isActive ? icons.active : icons.inactive} size={22} color={isActive ? "#FF8A00" : "#94A3B8"} />
+              <Ionicons
+                name={isActive ? tab.active : tab.inactive}
+                size={22}
+                color={isActive ? (isAdminTab ? "#EF4444" : "#FF8A00") : "#94A3B8"}
+              />
             </Animated.View>
           </TouchableOpacity>
         );

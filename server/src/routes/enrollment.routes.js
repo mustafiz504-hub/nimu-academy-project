@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllEnrollments, getEnrollmentById, createEnrollment, updateEnrollmentStatus, deleteEnrollment } = require('../controllers/enrollment.controller');
+const { getAllEnrollments, getMyEnrollments, getEnrollmentById, createEnrollment, updateEnrollmentStatus, deleteEnrollment } = require('../controllers/enrollment.controller');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
 
@@ -91,6 +91,20 @@ router.post('/', optionalAuth, createEnrollment);
  *         description: List of all enrollments (Admin/Superadmin only)
  */
 router.get('/', verifyToken, checkRole('admin', 'superadmin'), getAllEnrollments);
+
+/**
+ * @swagger
+ * /api/enrollments/my:
+ *   get:
+ *     summary: Get user's own enrollments
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's enrollments
+ */
+router.get('/my', verifyToken, getMyEnrollments);
 
 /**
  * @swagger
