@@ -236,31 +236,8 @@ export default function LoginScreen({ onGoToRegister }: LoginScreenProps) {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* OR Divider */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 24 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#F0E6D8" }} />
-            <Text style={{ fontSize: 12, color: "#94A3B8", fontWeight: "600", marginHorizontal: 12 }}>OR</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#F0E6D8" }} />
-          </View>
 
-          {/* Google Button */}
-          <TouchableOpacity
-            style={{
-              height: 56,
-              borderRadius: 18,
-              backgroundColor: "#F8F9FA",
-              borderWidth: 1.5,
-              borderColor: "#F0E6D8",
-              flexDirection: "row",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 10,
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={{ fontSize: 20 }}>🌐</Text>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: "#1E1B18" }}>Continue with Google</Text>
-          </TouchableOpacity>
+
 
           {/* Sign Up Link */}
           <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 28 }}>

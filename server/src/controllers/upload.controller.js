@@ -1,6 +1,14 @@
 const cloudinary = require('../config/cloudinary');
 const streamifier = require('streamifier');
 const fs = require('fs');
+const path = require('path');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const r2Client = require('../config/r2');
+const { v4: uuidv4 } = require('uuid');
+
+const { uploadVideoToR2 } = require('../services/r2Upload.service');
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Upload an image to Cloudinary
@@ -74,37 +82,44 @@ const uploadVideoChunked = async (req, res) => {
     const subFolder = req.query.folder || 'general';
     const folderPath = `nimu-academy/${subFolder}`;
 
-    // ── Step 2: Cloudinary upload ────────────────────────────────────────────
-    // NOTE: In Cloudinary SDK v2, upload() with chunk_size handles large files
-    // correctly. upload_large() returns undefined fields in SDK v2.
-    console.log(`\n☁️  [Cloudinary] Starting upload → folder: ${folderPath}`);
-
-    const result = await cloudinary.uploader.upload(filePath, {
-      resource_type: 'video',
-      folder: folderPath,
-      chunk_size: 6 * 1024 * 1024, // 6MB chunks
-      timeout: 300000,
-    });
-
-    // ── Step 3: Success ──────────────────────────────────────────────────────
-    console.log(`\n✅ [Cloudinary] Upload SUCCESS!`);
-    console.log(`   URL: ${result.secure_url}`);
-    console.log(`   Public ID: ${result.public_id}`);
-    console.log(`   Duration: ${result.duration}s | Format: ${result.format}`);
+    // ══════════════════════════════════════════════════════════════════════════
+    // ✅ R2 BLOCK (Currently Active)
+    // ══════════════════════════════════════════════════════════════════════════
+    const { videoUrl, key } = await uploadVideoToR2(
+      filePath,
+      req.file.originalname,
+      req.file.mimetype,
+      subFolder
+    );
 
     res.status(200).json({
-      message: 'Video uploaded successfully to Cloudinary',
-      videoUrl: result.secure_url,
-      public_id: result.public_id,
+      message: 'Video uploaded successfully',
+      videoUrl,
+      public_id: key,
     });
+    // ══════════════════════════════════════════════════════════════════════════
+    // 🔵 CLOUDINARY BLOCK (Inactive - backup)
+    // ══════════════════════════════════════════════════════════════════════════
+    // const result = await cloudinary.uploader.upload(filePath, {
+    //   resource_type: 'video',
+    //   folder: folderPath,
+    //   chunk_size: 6 * 1024 * 1024,
+    //   timeout: 300000,
+    // });
+    // res.status(200).json({
+    //   message: 'Video uploaded successfully',
+    //   videoUrl: result.secure_url,
+    //   public_id: result.public_id,
+    // });
+    // ══════════════════════════════════════════════════════════════════════════
+
   } catch (error) {
-    // ── Step 4: Error details ────────────────────────────────────────────────
-    console.error(`\n❌ [Upload] FAILED at Cloudinary step`);
+    // ── Error details ────────────────────────────────────────────────────────
+    console.error(`\n❌ [Upload] FAILED`);
     console.error(`   Error: ${error.message}`);
-    console.error(`   HTTP: ${error.http_code} | Code: ${error.error?.code}`);
     res.status(500).json({ message: 'Server error during video upload', error: error.message });
   } finally {
-    // ── Step 5: Cleanup temp file ────────────────────────────────────────────
+    // ── Cleanup temp file ────────────────────────────────────────────────────
     if (filePath && fs.existsSync(filePath)) {
       try {
         fs.unlinkSync(filePath);
@@ -116,8 +131,41 @@ const uploadVideoChunked = async (req, res) => {
   }
 };
 
+/**
+ * Generate a presigned PUT URL for direct mobile → R2 upload
+ * Mobile uses this URL to upload video directly without touching server disk
+ */
+const getR2PresignedUrl = async (req, res) => {
+  try {
+    const folder = req.query.folder || 'courses';
+    const filename = req.query.filename || 'video.mp4';
+    const mimeType = req.query.mimeType || 'video/mp4';
+
+    const ext = path.extname(filename) || '.mp4';
+    const key = `nimu-academy/${folder}/${uuidv4()}${ext}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: key,
+      ContentType: mimeType,
+    });
+
+    // Presigned URL valid for 1 hour
+    const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn: 3600 });
+    const videoUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+
+    console.log(`\n🔑 [R2 Presigned] Generated URL for key: ${key}`);
+
+    res.json({ uploadUrl, videoUrl, key });
+  } catch (error) {
+    console.error(`\n❌ [R2 Presigned] Failed: ${error.message}`);
+    res.status(500).json({ message: 'Failed to generate upload URL', error: error.message });
+  }
+};
+
 module.exports = {
   uploadImage,
   getSignature,
   uploadVideoChunked,
+  getR2PresignedUrl,
 };

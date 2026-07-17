@@ -2,6 +2,8 @@ import axios from "axios";
 import api from "./api";
 import { ENDPOINTS } from "../constants/api";
 import type { Course, CourseVideo } from "../types/course.types";
+import * as FileSystem from 'expo-file-system';
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface AdminStats {
@@ -58,6 +60,7 @@ export interface Student {
   approved: boolean;
   completed: boolean;
   student_id?: string;
+  certificate_id?: string;
 }
 
 // ── Admin API ─────────────────────────────────────────────────────────────────
@@ -155,13 +158,46 @@ export const adminService = {
   },
 
   // Upload Media
+  // - Images → Cloudinary (signed URL, direct upload)
+  // - Videos → Backend server → Cloudflare R2
   async uploadMediaToCloudinary(fileUri: string, type: 'video' | 'image', folder: string = 'courses', onProgress?: (progress: number) => void): Promise<string> {
 
     console.log(`\n🚀 [Upload] Starting ${type} upload`);
     console.log(`   URI: ${fileUri}`);
     console.log(`   Folder: ${folder}`);
 
-    // ── Step 1: Get signed upload params from server ──────────────────────────
+    // ── VIDEO: Direct upload to R2 via presigned URL ──────────────────────────
+    if (type === 'video') {
+      console.log(`\n🔑 [R2] Fetching presigned URL...`);
+
+      // 1. Get presigned PUT URL from server
+      const ext = (fileUri.split('.').pop() || 'mp4').toLowerCase();
+      const { data } = await api.get<{ uploadUrl: string; videoUrl: string; key: string }>(
+        `/upload/r2-presigned?folder=${folder}&filename=upload.${ext}&mimeType=video/mp4`
+      );
+
+      console.log(`\n☁️  [R2] Uploading binary directly to R2...`);
+      console.log(`   Key: ${data.key}`);
+
+      // 2. Upload binary file directly to R2 using expo-file-system
+      // (XHR.send({uri}) sends JSON, not binary — expo-file-system sends actual bytes)
+      const uploadResult = await FileSystem.uploadAsync(data.uploadUrl, fileUri, {
+        httpMethod: 'PUT',
+        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+        headers: { 'Content-Type': 'video/mp4' },
+        sessionType: FileSystem.FileSystemSessionType.BACKGROUND,
+      });
+
+      if (uploadResult.status !== 200) {
+        throw new Error(`R2 upload failed with status: ${uploadResult.status}`);
+      }
+
+      onProgress?.(100);
+      console.log(`\n✅ [R2] Upload SUCCESS! URL: ${data.videoUrl}`);
+      return data.videoUrl;
+    }
+
+    // ── IMAGE: Cloudinary signed URL (direct upload) ──────────────────────────
     console.log(`\n🔑 [Upload] Fetching signature from server...`);
     const { data: sig } = await api.get<{
       signature: string;
@@ -173,51 +209,40 @@ export const adminService = {
 
     console.log(`   cloudName: ${sig.cloudName}`);
     console.log(`   folder: ${sig.folder}`);
-    console.log(`   timestamp: ${sig.timestamp}`);
-    console.log(`   signature: ${sig.signature?.slice(0, 20)}...`);
 
-    const endpoint = type === 'video'
-      ? `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`
-      : `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`;
-
-    console.log(`\n☁️  [Cloudinary] Endpoint: ${endpoint}`);
+    const endpoint = `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`;
 
     const formData = new FormData();
     formData.append('file', {
       uri: fileUri,
-      type: type === 'video' ? 'video/mp4' : 'image/jpeg',
-      name: type === 'video' ? 'upload.mp4' : 'upload.jpg',
+      type: 'image/jpeg',
+      name: 'upload.jpg',
     } as any);
     formData.append('api_key', sig.apiKey);
     formData.append('timestamp', sig.timestamp.toString());
     formData.append('signature', sig.signature);
     formData.append('folder', sig.folder);
 
-    console.log(`   FormData fields: file, api_key, timestamp, signature, folder`);
-
     try {
-      console.log(`\n📤 [Cloudinary] Sending request...`);
+      console.log(`\n📤 [Cloudinary] Sending image...`);
       const res = await axios.post(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 15 * 60 * 1000,
+        timeout: 5 * 60 * 1000,
         onUploadProgress: (progressEvent) => {
           if (onProgress && progressEvent.total) {
             const pct = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             onProgress(pct);
-            if (pct % 10 === 0) console.log(`   Progress: ${pct}%`);
           }
         },
       });
-      console.log(`\n✅ [Cloudinary] SUCCESS! URL: ${res.data.secure_url}`);
+      console.log(`\n✅ [Cloudinary] Image SUCCESS! URL: ${res.data.secure_url}`);
       return res.data.secure_url;
     } catch (err: any) {
-      console.error(`\n❌ [Cloudinary] UPLOAD FAILED`);
+      console.error(`\n❌ [Cloudinary] Image UPLOAD FAILED`);
       console.error(`   HTTP Status: ${err.response?.status}`);
-      console.error(`   Error message: ${err.message}`);
-      console.error(`   Cloudinary error: ${JSON.stringify(err.response?.data)}`);
-      console.error(`   Axios code: ${err.code}`);
+      console.error(`   Error: ${err.message}`);
       throw new Error(
-        err.response?.data?.error?.message || err.message || 'Failed to upload to Cloudinary'
+        err.response?.data?.error?.message || err.message || 'Failed to upload image'
       );
     }
   },

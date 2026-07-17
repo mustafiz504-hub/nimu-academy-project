@@ -10,11 +10,16 @@ const api = axios.create({
   },
 });
 
-// Request interceptor — attach token
+// Request interceptor — attach token + fix multipart Content-Type
 api.interceptors.request.use(async (config) => {
   const token = await storage.getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // For FormData (video/image uploads), remove default Content-Type so
+  // axios can set 'multipart/form-data' with the correct boundary automatically
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
   }
   return config;
 });

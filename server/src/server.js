@@ -40,6 +40,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve Uploads - adjusted path for src/ structure
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve Public assets (certificate templates, etc.)
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // ─── Swagger Setup ────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8000;

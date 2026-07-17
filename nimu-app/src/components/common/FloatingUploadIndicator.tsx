@@ -131,7 +131,7 @@ export default function FloatingUploadIndicator() {
                     <View style={{ flex: 1, marginRight: 10 }}>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E1B18' }} numberOfLines={1}>{task.filename}</Text>
                       <Text style={{ fontSize: 12, color: task.status === 'error' ? '#EF4444' : '#64748B', marginTop: 2 }}>
-                        {task.status === 'uploading' ? `Uploading... ${task.progress}%` : task.status === 'completed' ? 'Completed' : task.error || 'Error'}
+                        {task.status === 'uploading' ? `Uploading... ${Math.min(100, task.progress)}%` : task.status === 'completed' ? 'Completed' : task.error || 'Error'}
                       </Text>
                     </View>
                     <TouchableOpacity onPress={() => removeTask(task.id)}>
@@ -142,7 +142,7 @@ export default function FloatingUploadIndicator() {
                   {/* Progress bar */}
                   <View style={{ height: 6, backgroundColor: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
                     <View style={{ 
-                      width: `${task.progress}%`, 
+                      width: `${Math.min(100, task.progress)}%`, 
                       height: '100%', 
                       backgroundColor: task.status === 'completed' ? '#16A34A' : task.status === 'error' ? '#EF4444' : '#FF8C00' 
                     }} />

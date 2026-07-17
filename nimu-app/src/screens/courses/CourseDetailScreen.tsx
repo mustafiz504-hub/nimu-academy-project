@@ -1,18 +1,17 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
-  StyleSheet,
   Alert,
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useCourseStore } from "../../store/course.store";
 import type { CourseVideo } from "../../types/course.types";
+import VideoPlayer from "../../components/common/VideoPlayer";
 
 interface CourseDetailScreenProps {
   courseId: string;
@@ -35,31 +34,24 @@ export default function CourseDetailScreen({ courseId, onBack }: CourseDetailScr
     setLastPlayedVideo,
   } = useCourseStore();
 
-  // Read from store cache
   const course = courseDetails[courseId] ?? null;
   const courseVideos = allCourseVideos[courseId] ?? [];
 
-  // activeVideo: prefer last played (from store), else first video in list
-  const [activeVideo, setActiveVideo] = useState<CourseVideo | null>(
+  const [activeVideo, setActiveVideo] = React.useState<CourseVideo | null>(
     lastPlayedVideo[courseId] ?? null
   );
-  const [isPlaying, setIsPlaying] = useState(false);
 
-  // On mount: load from cache (no-op if already cached)
   useEffect(() => {
     fetchCourseDetail(courseId);
     fetchCourseVideos(courseId);
   }, [courseId, fetchCourseDetail, fetchCourseVideos]);
 
-  // Set initial video: use last played if available, else first in list
   useEffect(() => {
     if (courseVideos.length > 0 && !activeVideo) {
-      const resumeVideo = lastPlayedVideo[courseId] ?? courseVideos[0];
-      setActiveVideo(resumeVideo);
+      setActiveVideo(lastPlayedVideo[courseId] ?? courseVideos[0]);
     }
-  }, [courseVideos, activeVideo, courseId, lastPlayedVideo]);
+  }, [courseVideos]);
 
-  // Pull-to-refresh: force re-fetch both course + videos
   const handleRefresh = useCallback(async () => {
     await Promise.all([refreshCourseDetail(courseId), refreshCourseVideos(courseId)]);
   }, [courseId, refreshCourseDetail, refreshCourseVideos]);
@@ -74,10 +66,9 @@ export default function CourseDetailScreen({ courseId, onBack }: CourseDetailScr
       return;
     }
     setActiveVideo(video);
-    setIsPlaying(true);
-    // ── Persist last played video in store ──
     setLastPlayedVideo(courseId, video);
   };
+
 
   // ── Loading skeleton (first load only) ──────────────────────────────────
   if (loadingDetail && !course) {
@@ -149,63 +140,32 @@ export default function CourseDetailScreen({ courseId, onBack }: CourseDetailScr
       </View>
 
       {/* ── Video Player Area ── */}
-      <View style={{ width: "100%", aspectRatio: 16 / 9, backgroundColor: "#000" }}>
-        {!isUnlocked && (!activeVideo || !activeVideo.is_free) ? (
-          // Lock overlay for premium courses
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#1E1B18" }}>
-            <Ionicons name="lock-closed" size={48} color="#FF8C00" />
-            <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700", marginTop: 12 }}>Premium Course</Text>
-            <Text style={{ color: "#94A3B8", fontSize: 13, marginTop: 4, textAlign: "center", paddingHorizontal: 20 }}>
-              Enroll in this course to unlock all video lessons and materials.
-            </Text>
-            <TouchableOpacity style={{ backgroundColor: "#FF8C00", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, marginTop: 20 }}>
-              <Text style={{ color: "#FFFFFF", fontWeight: "800" }}>Enroll for ₹{course.price}</Text>
-            </TouchableOpacity>
-          </View>
-        ) : activeVideo ? (
-          // Player UI
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            {activeVideo.thumbnail_url && !isPlaying ? (
-              <Image source={{ uri: activeVideo.thumbnail_url }} style={StyleSheet.absoluteFillObject} />
-            ) : null}
-            {/* Dark overlay when thumbnail shown */}
-            {!isPlaying && activeVideo.thumbnail_url && (
-              <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0,0,0,0.35)" }]} />
-            )}
+      {/* ── Video Player ── */}
+      {!isUnlocked && (!activeVideo || !activeVideo.is_free) ? (
+        <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#1E1B18', justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="lock-closed" size={48} color="#FF8C00" />
+          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginTop: 12 }}>Premium Course</Text>
+          <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 4, textAlign: 'center', paddingHorizontal: 20 }}>
+            Enroll in this course to unlock all video lessons.
+          </Text>
+          <TouchableOpacity style={{ backgroundColor: '#FF8C00', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, marginTop: 20 }}>
+            <Text style={{ color: '#FFF', fontWeight: '800' }}>Enroll for ₹{course.price}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : activeVideo?.video_url ? (
+        <VideoPlayer
+          videoUrl={activeVideo.video_url}
+          title={activeVideo.title}
+          autoPlay
+        />
+      ) : (
+        <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="film-outline" size={48} color="#333" />
+          <Text style={{ color: '#666', marginTop: 8 }}>Select a video to play</Text>
+        </View>
+      )}
 
-            <TouchableOpacity
-              onPress={() => setIsPlaying(!isPlaying)}
-              style={{ width: 64, height: 64, backgroundColor: "rgba(255, 140, 0, 0.9)", borderRadius: 32, justifyContent: "center", alignItems: "center" }}
-            >
-              <Ionicons name={isPlaying ? "pause" : "play"} size={32} color="#FFFFFF" style={{ marginLeft: isPlaying ? 0 : 4 }} />
-            </TouchableOpacity>
 
-            {/* Video title overlay */}
-            <View style={{ position: "absolute", top: 12, left: 12, right: 12 }}>
-              <Text style={{ color: "#FFF", fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
-                {activeVideo.title}
-              </Text>
-            </View>
-
-            {/* Progress bar */}
-            <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, backgroundColor: "rgba(0,0,0,0.5)", flexDirection: "row", alignItems: "center", paddingHorizontal: 16, gap: 12 }}>
-              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "600" }}>00:00</Text>
-              <View style={{ flex: 1, height: 4, backgroundColor: "rgba(255,255,255,0.3)", borderRadius: 2 }}>
-                <View style={{ width: "0%", height: "100%", backgroundColor: "#FF8C00", borderRadius: 2 }} />
-              </View>
-              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "600" }}>
-                {activeVideo.duration_minutes ? `${activeVideo.duration_minutes}:00` : "--:--"}
-              </Text>
-              <Ionicons name="expand" size={16} color="#FFF" />
-            </View>
-          </View>
-        ) : (
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <Ionicons name="film-outline" size={48} color="#333" />
-            <Text style={{ color: "#666", marginTop: 8 }}>Select a video to play</Text>
-          </View>
-        )}
-      </View>
 
       {/* ── Scrollable playlist with pull-to-refresh ── */}
       <ScrollView
