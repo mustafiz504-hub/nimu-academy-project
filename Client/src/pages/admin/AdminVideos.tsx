@@ -25,7 +25,7 @@ interface BgUpload {
   id: string;
   title: string;
   progress: number;
-  status: 'uploading' | 'saving' | 'done' | 'error';
+  status: 'uploading' | 'uploading_to_cloud' | 'saving' | 'done' | 'error';
   error?: string;
   message?: string;
 }
