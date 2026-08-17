@@ -13,24 +13,33 @@ const validate = (req, res, next) => {
   });
 };
 
-const registerValidationRules = () => {
-  return [
-    body('name').notEmpty().withMessage('Name is required'),
-    body('email').isEmail().withMessage('Enter a valid email address'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
-    body('phone').optional().isLength({ min: 10 }).withMessage('Phone number must be at least 10 digits'),
-  ];
-};
+/** Validation rules for POST /auth/signup/initiate */
+const signupInitiateRules = () => [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('email').trim().isEmail().withMessage('Enter a valid email address'),
+  body('password').trim().isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+  body('terms_agreed').custom((val) => {
+    if (!val || val === 'false' || val === false) {
+      throw new Error('You must agree to the Terms & Privacy Policy');
+    }
+    return true;
+  }),
+];
 
-const loginValidationRules = () => {
-  return [
-    body('email').isEmail().withMessage('Enter a valid email address'),
-    body('password').notEmpty().withMessage('Password is required'),
-  ];
-};
+const loginInitiateRules = () => [
+  body('email').trim().isEmail().withMessage('Enter a valid email address'),
+  body('password').trim().notEmpty().withMessage('Password is required'),
+];
+
+// ─── Legacy validators (kept for backward compat middleware references) ────────
+const registerValidationRules = () => [];
+const loginValidationRules = () => [];
 
 module.exports = {
   validate,
+  signupInitiateRules,
+  loginInitiateRules,
+  // Legacy exports (no-ops now)
   registerValidationRules,
   loginValidationRules,
 };

@@ -43,7 +43,7 @@ export default function ProfileScreen() {
           <TouchableOpacity 
             key={idx} 
             className="bg-white rounded-2xl p-4 flex-row justify-between items-center border border-[#F0E6D8]"
-            style={{ backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, flexDirection: "row", justify: "space-between", alignItems: "center", borderWidth: 1, borderColor: "#F0E6D8" }}
+            style={{ backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: "#F0E6D8" }}
           >
             <View className="flex-row items-center gap-3" style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Ionicons name={setting.icon as any} size={22} color="#FFA726" />

@@ -12,70 +12,71 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../hooks/useAuth";
+import { Image } from "expo-image";
+import { useSignupInitiateMutation } from "../../hooks/useAuthMutations";
 
 const { width } = Dimensions.get("window");
 
 interface RegisterScreenProps {
   onGoToLogin: () => void;
+  /** Called when OTP has been sent — passes email to parent for OTP screen */
+  onSignupSuccess: (session: {
+    email: string;
+    maskedEmail: string;
+    maskedPhone: string;
+    purpose: "signup";
+  }) => void;
 }
 
-export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
-  const { register, loading, error } = useAuth();
+export default function RegisterScreen({ onGoToLogin, onSignupSuccess }: RegisterScreenProps) {
+  const { mutateAsync: signupInitiate, loading, error } = useSignupInitiateMutation();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   // Focus states
   const [nameFocused, setNameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-  const [confirmFocused, setConfirmFocused] = useState(false);
 
   const btnScale = useRef(new Animated.Value(1)).current;
-
-  const pressIn = () =>
-    Animated.spring(btnScale, { toValue: 0.97, useNativeDriver: true, tension: 200, friction: 8 }).start();
-  const pressOut = () =>
-    Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 8 }).start();
-
-  // Password strength helper
-  const getPasswordStrength = (p: string): { label: string; color: string; width: string } => {
-    if (p.length === 0) return { label: "", color: "#E2E8F0", width: "0%" };
-    if (p.length < 6) return { label: "Weak", color: "#FF5252", width: "30%" };
-    if (p.length < 10) return { label: "Fair", color: "#FFA726", width: "60%" };
-    return { label: "Strong", color: "#4CAF50", width: "100%" };
-  };
-
-  const strength = getPasswordStrength(password);
+  const pressIn = () => Animated.spring(btnScale, { toValue: 0.97, useNativeDriver: true, tension: 200, friction: 8 }).start();
+  const pressOut = () => Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 8 }).start();
 
   const handleRegister = async () => {
     setLocalError(null);
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-      setLocalError("Please fill in all fields.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setLocalError("Passwords do not match.");
-      return;
-    }
-    if (password.length < 6) {
-      setLocalError("Password must be at least 6 characters.");
-      return;
-    }
+    if (!name.trim()) return setLocalError("Please enter your full name.");
+    if (!email.trim()) return setLocalError("Please enter your email address.");
+    if (!password.trim() || password.length < 6) return setLocalError("Password must be at least 6 characters.");
+    if (!termsAgreed) return setLocalError("Please agree to the Terms & Privacy Policy to continue.");
+
     try {
-      await register({ name: name.trim(), email: email.trim(), password });
+      const res = await signupInitiate({
+        name: name.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        terms_agreed: termsAgreed,
+        marketing_opt_in: marketingOptIn,
+      });
+
+      onSignupSuccess({
+        email: res.email || email.trim(),
+        maskedEmail: res.maskedEmail || email.trim(),
+        maskedPhone: res.maskedPhone || "",
+        purpose: "signup",
+      });
     } catch {
-      // handled in hook
+      // Error handled in hook
     }
   };
 
   const displayError = localError || error;
-  const canSubmit = name && email && password && confirmPassword;
+  const canSubmit = name && email && password && termsAgreed;
 
   return (
     <KeyboardAvoidingView
@@ -88,68 +89,49 @@ export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Top Hero Section ── */}
-        <View style={{ alignItems: "center", paddingTop: 50, paddingBottom: 28, position: "relative", overflow: "hidden" }}>
-          {/* Background blob */}
+        <View style={{ alignItems: "center", paddingTop: 50, paddingBottom: 24, position: "relative", overflow: "hidden" }}>
           <View
             style={{
-              position: "absolute",
-              top: -80,
-              width: width * 1.2,
-              height: width * 1.2,
+              position: "absolute", top: -80,
+              width: width * 1.2, height: width * 1.2,
               borderRadius: (width * 1.2) / 2,
-              backgroundColor: "#FFF3E0",
-              opacity: 0.8,
+              backgroundColor: "#FFF3E0", opacity: 0.8,
             }}
           />
-
-          {/* Floating decorative dots */}
+          {/* Decorative dots */}
           <View style={{ position: "absolute", top: 35, left: 32, width: 10, height: 10, borderRadius: 5, backgroundColor: "#FFA726", opacity: 0.5 }} />
           <View style={{ position: "absolute", top: 75, left: 65, width: 6, height: 6, borderRadius: 3, backgroundColor: "#FF8C00", opacity: 0.4 }} />
           <View style={{ position: "absolute", top: 25, right: 42, width: 14, height: 14, borderRadius: 7, backgroundColor: "#FFB74D", opacity: 0.4 }} />
-          <View style={{ position: "absolute", top: 85, right: 72, width: 8, height: 8, borderRadius: 4, backgroundColor: "#FFA726", opacity: 0.5 }} />
 
-          {/* Logo circle */}
+          {/* Logo */}
           <View
             style={{
-              width: 86,
-              height: 86,
-              borderRadius: 43,
-              backgroundColor: "#FF8C00",
-              justifyContent: "center",
-              alignItems: "center",
-              marginBottom: 14,
-              shadowColor: "#FF8C00",
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.35,
-              shadowRadius: 16,
-              elevation: 10,
+              width: 88, height: 88, borderRadius: 44, backgroundColor: "#FFFFFF",
+              justifyContent: "center", alignItems: "center", marginBottom: 14,
+              shadowColor: "#FF8C00", shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.35, shadowRadius: 16, elevation: 10,
+              overflow: "hidden", borderWidth: 2, borderColor: "#FF8C00",
             }}
           >
-            <Text style={{ fontSize: 38 }}>🍳</Text>
+            <Image
+              source={require("../../../assets/images/logo-round.png")}
+              style={{ width: "100%", height: "100%" }}
+              contentFit="cover"
+              transition={200}
+            />
           </View>
-
-          <Text style={{ fontSize: 24, fontWeight: "800", color: "#1E1B18", letterSpacing: -0.5 }}>
-            Nimu Academy
-          </Text>
-          <Text style={{ fontSize: 12, color: "#94A3B8", marginTop: 3, fontWeight: "500" }}>
-            Your culinary journey starts here
-          </Text>
+          <Text style={{ fontSize: 24, fontWeight: "800", color: "#1E1B18", letterSpacing: -0.5 }}>Nimu Academy</Text>
+          <Text style={{ fontSize: 12, color: "#94A3B8", marginTop: 3, fontWeight: "500" }}>Your culinary journey starts here</Text>
         </View>
 
         {/* ── Card Form Section ── */}
         <View
           style={{
-            flex: 1,
-            backgroundColor: "#FFFFFF",
-            borderTopLeftRadius: 36,
-            borderTopRightRadius: 36,
-            padding: 28,
-            paddingTop: 30,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 16,
-            elevation: 8,
+            flex: 1, backgroundColor: "#FFFFFF",
+            borderTopLeftRadius: 36, borderTopRightRadius: 36,
+            padding: 28, paddingTop: 30,
+            shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.06, shadowRadius: 16, elevation: 8,
           }}
         >
           <Text style={{ fontSize: 22, fontWeight: "800", color: "#1E1B18", marginBottom: 4 }}>
@@ -165,21 +147,17 @@ export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
           </Text>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: "row", alignItems: "center",
               backgroundColor: nameFocused ? "#FFFBF5" : "#F8F9FA",
-              borderRadius: 16,
-              borderWidth: 1.5,
+              borderRadius: 16, borderWidth: 1.5,
               borderColor: nameFocused ? "#FF8C00" : "#F0E6D8",
-              paddingHorizontal: 16,
-              marginBottom: 18,
-              height: 56,
+              paddingHorizontal: 16, marginBottom: 18, height: 56,
             }}
           >
             <Ionicons name="person-outline" size={20} color={nameFocused ? "#FF8C00" : "#94A3B8"} />
             <TextInput
               style={{ flex: 1, marginLeft: 12, fontSize: 14, color: "#1E1B18", fontWeight: "500" }}
-              placeholder="John Doe"
+              placeholder="Muskan Naz"
               placeholderTextColor="#CBD5E1"
               autoCapitalize="words"
               value={name}
@@ -195,21 +173,17 @@ export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
           </Text>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: "row", alignItems: "center",
               backgroundColor: emailFocused ? "#FFFBF5" : "#F8F9FA",
-              borderRadius: 16,
-              borderWidth: 1.5,
+              borderRadius: 16, borderWidth: 1.5,
               borderColor: emailFocused ? "#FF8C00" : "#F0E6D8",
-              paddingHorizontal: 16,
-              marginBottom: 18,
-              height: 56,
+              paddingHorizontal: 16, marginBottom: 18, height: 56,
             }}
           >
             <Ionicons name="mail-outline" size={20} color={emailFocused ? "#FF8C00" : "#94A3B8"} />
             <TextInput
               style={{ flex: 1, marginLeft: 12, fontSize: 14, color: "#1E1B18", fontWeight: "500" }}
-              placeholder="you@example.com"
+              placeholder="chef@example.com"
               placeholderTextColor="#CBD5E1"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -227,101 +201,78 @@ export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
           </Text>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: "row", alignItems: "center",
               backgroundColor: passwordFocused ? "#FFFBF5" : "#F8F9FA",
-              borderRadius: 16,
-              borderWidth: 1.5,
+              borderRadius: 16, borderWidth: 1.5,
               borderColor: passwordFocused ? "#FF8C00" : "#F0E6D8",
-              paddingHorizontal: 16,
-              marginBottom: password.length > 0 ? 8 : 18,
-              height: 56,
+              paddingHorizontal: 16, marginBottom: 18, height: 56,
             }}
           >
             <Ionicons name="lock-closed-outline" size={20} color={passwordFocused ? "#FF8C00" : "#94A3B8"} />
             <TextInput
               style={{ flex: 1, marginLeft: 12, fontSize: 14, color: "#1E1B18", fontWeight: "500" }}
-              placeholder="Min. 6 characters"
+              placeholder="Set a password (min 6 chars)"
               placeholderTextColor="#CBD5E1"
               secureTextEntry={!showPassword}
+              autoCapitalize="none"
               value={password}
               onChangeText={setPassword}
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} activeOpacity={0.7}>
-              <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#94A3B8" />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#94A3B8" />
             </TouchableOpacity>
           </View>
 
-          {/* Password Strength Meter */}
-          {password.length > 0 && (
-            <View style={{ marginBottom: 18 }}>
-              <View style={{ height: 4, backgroundColor: "#F0E6D8", borderRadius: 2, overflow: "hidden" }}>
-                <View style={{ height: "100%", width: strength.width as any, backgroundColor: strength.color, borderRadius: 2 }} />
-              </View>
-              <Text style={{ fontSize: 11, fontWeight: "700", color: strength.color, marginTop: 4 }}>
-                {strength.label} password
-              </Text>
-            </View>
-          )}
-
-          {/* Confirm Password */}
-          <Text style={{ fontSize: 12, fontWeight: "700", color: "#64748B", marginBottom: 6, letterSpacing: 0.3 }}>
-            CONFIRM PASSWORD
-          </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: confirmFocused ? "#FFFBF5" : "#F8F9FA",
-              borderRadius: 16,
-              borderWidth: 1.5,
-              borderColor:
-                confirmPassword.length > 0 && confirmPassword !== password
-                  ? "#FF5252"
-                  : confirmFocused
-                  ? "#FF8C00"
-                  : "#F0E6D8",
-              paddingHorizontal: 16,
-              marginBottom: 20,
-              height: 56,
-            }}
+          {/* Checkboxes */}
+          {/* Terms */}
+          <TouchableOpacity
+            onPress={() => setTermsAgreed(!termsAgreed)}
+            activeOpacity={0.8}
+            style={{ flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 12 }}
           >
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={20}
-              color={
-                confirmPassword.length > 0 && confirmPassword !== password
-                  ? "#FF5252"
-                  : confirmFocused
-                  ? "#FF8C00"
-                  : "#94A3B8"
-              }
-            />
-            <TextInput
-              style={{ flex: 1, marginLeft: 12, fontSize: 14, color: "#1E1B18", fontWeight: "500" }}
-              placeholder="Re-enter password"
-              placeholderTextColor="#CBD5E1"
-              secureTextEntry={!showConfirm}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              onFocus={() => setConfirmFocused(true)}
-              onBlur={() => setConfirmFocused(false)}
-            />
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              {confirmPassword.length > 0 && (
-                <Ionicons
-                  name={confirmPassword === password ? "checkmark-circle" : "close-circle"}
-                  size={18}
-                  color={confirmPassword === password ? "#4CAF50" : "#FF5252"}
-                />
-              )}
-              <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} activeOpacity={0.7}>
-                <Ionicons name={showConfirm ? "eye-outline" : "eye-off-outline"} size={20} color="#94A3B8" />
-              </TouchableOpacity>
+            <View
+              style={{
+                width: 22, height: 22, borderRadius: 6, marginTop: 1,
+                borderWidth: 2,
+                borderColor: termsAgreed ? "#FF8C00" : "#CBD5E1",
+                backgroundColor: termsAgreed ? "#FF8C00" : "#FFFFFF",
+                justifyContent: "center", alignItems: "center", flexShrink: 0,
+              }}
+            >
+              {termsAgreed && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
             </View>
-          </View>
+            <Text style={{ fontSize: 12, color: "#64748B", flex: 1, lineHeight: 18 }}>
+              I have read and agree to the{" "}
+              <Text style={{ color: "#FF8C00", fontWeight: "700" }}>Terms of Service</Text>
+              {" "}and{" "}
+              <Text style={{ color: "#FF8C00", fontWeight: "700" }}>Privacy Policy</Text>
+              <Text style={{ color: "#EF4444" }}> *</Text>
+            </Text>
+          </TouchableOpacity>
+
+          {/* Marketing */}
+          <TouchableOpacity
+            onPress={() => setMarketingOptIn(!marketingOptIn)}
+            activeOpacity={0.8}
+            style={{ flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 20 }}
+          >
+            <View
+              style={{
+                width: 22, height: 22, borderRadius: 6, marginTop: 1,
+                borderWidth: 2,
+                borderColor: marketingOptIn ? "#FF8C00" : "#CBD5E1",
+                backgroundColor: marketingOptIn ? "#FF8C00" : "#FFFFFF",
+                justifyContent: "center", alignItems: "center", flexShrink: 0,
+              }}
+            >
+              {marketingOptIn && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+            </View>
+            <Text style={{ fontSize: 12, color: "#94A3B8", flex: 1, lineHeight: 18 }}>
+              I agree to receive course updates, offers and announcements from Nimu Academy.
+            </Text>
+          </TouchableOpacity>
 
           {/* Error */}
           {displayError ? (
@@ -331,15 +282,7 @@ export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
             </View>
           ) : null}
 
-          {/* Terms text */}
-          <Text style={{ fontSize: 11, color: "#94A3B8", textAlign: "center", marginBottom: 16, lineHeight: 16 }}>
-            By signing up, you agree to our{" "}
-            <Text style={{ color: "#FF8C00", fontWeight: "700" }}>Terms of Service</Text>
-            {" "}and{" "}
-            <Text style={{ color: "#FF8C00", fontWeight: "700" }}>Privacy Policy</Text>
-          </Text>
-
-          {/* Register Button */}
+          {/* Submit Button */}
           <Animated.View style={{ transform: [{ scale: btnScale }] }}>
             <TouchableOpacity
               onPress={handleRegister}
@@ -348,24 +291,24 @@ export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
               disabled={loading || !canSubmit}
               activeOpacity={0.9}
               style={{
-                height: 56,
-                borderRadius: 18,
+                height: 56, borderRadius: 18,
                 backgroundColor: !canSubmit ? "#E2E8F0" : "#FF8C00",
-                justifyContent: "center",
-                alignItems: "center",
-                shadowColor: "#FF8C00",
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: !canSubmit ? 0 : 0.35,
-                shadowRadius: 12,
+                justifyContent: "center", alignItems: "center",
+                shadowColor: "#FF8C00", shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: !canSubmit ? 0 : 0.35, shadowRadius: 12,
                 elevation: !canSubmit ? 0 : 6,
+                flexDirection: "row", gap: 10,
               }}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={{ color: !canSubmit ? "#94A3B8" : "#FFFFFF", fontSize: 16, fontWeight: "700", letterSpacing: 0.3 }}>
-                  Create Account
-                </Text>
+                <>
+                  <Ionicons name="rocket-outline" size={18} color={!canSubmit ? "#94A3B8" : "#FFFFFF"} />
+                  <Text style={{ color: !canSubmit ? "#94A3B8" : "#FFFFFF", fontSize: 16, fontWeight: "700", letterSpacing: 0.3 }}>
+                    Get Started
+                  </Text>
+                </>
               )}
             </TouchableOpacity>
           </Animated.View>
@@ -378,7 +321,6 @@ export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
             </TouchableOpacity>
           </View>
 
-          {/* Bottom padding */}
           <View style={{ height: 20 }} />
         </View>
       </ScrollView>

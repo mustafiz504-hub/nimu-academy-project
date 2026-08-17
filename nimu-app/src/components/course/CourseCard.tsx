@@ -20,7 +20,7 @@ export default function CourseCard({
   accentColor = "#FF8C00", 
   accentBgColor = "#FFE0B2",
   onPress,
-  width = 220
+  width = 260
 }: CourseCardProps) {
   return (
     <TouchableOpacity 
@@ -30,18 +30,18 @@ export default function CourseCard({
         width: width as any, 
         backgroundColor, 
         borderRadius: 24, 
-        padding: 20, 
+        padding: 22, 
         position: "relative", 
         overflow: "hidden", 
-        minHeight: 170, 
+        minHeight: 230, 
         borderWidth: 1, 
         borderColor: "#FFFFFF" 
       }}
     >
-      <Text style={{ fontSize: 18, fontWeight: "800", color: "#1E1B18", marginBottom: 4 }} numberOfLines={1}>
+      <Text style={{ fontSize: 20, fontWeight: "800", color: "#1E1B18", marginBottom: 6 }} numberOfLines={1}>
         {course.name}
       </Text>
-      <Text style={{ fontSize: 10, color: "#64748B", lineHeight: 15, marginBottom: 16 }} numberOfLines={2}>
+      <Text style={{ fontSize: 11, color: "#64748B", lineHeight: 16, marginBottom: 16 }} numberOfLines={2}>
         {course.description || "Learn amazing cooking skills."}
       </Text>
 
@@ -65,7 +65,7 @@ export default function CourseCard({
         </Text>
       </View>
 
-      <View style={{ position: "absolute", bottom: -10, right: -10, opacity: 0.25 }}>
+      <View style={{ position: "absolute", bottom: -12, right: -12, opacity: 0.25 }}>
         <Ionicons name={iconName} size={60} color={accentColor} />
       </View>
     </TouchableOpacity>

@@ -1,5 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
-import { api, ApiCourse, ApiUser, clearStoredAuth, getStoredToken, getStoredUser, storeAuth } from '../lib/api';
+import {
+  api, ApiCourse, ApiUser,
+  clearStoredAuth, getStoredToken, getStoredUser, storeAuth,
+  SignupInitiatePayload, SignupVerifyPayload,
+  LoginInitiatePayload, LoginVerifyPayload,
+  OtpResendPayload, OtpInitiateResponse,
+} from '../lib/api';
 
 export interface Course {
   id: number;
@@ -24,8 +30,12 @@ interface GlobalContextType {
   user: ApiUser | null;
   setUser: (user: ApiUser | null) => void;
   authLoading: boolean;
-  login: (email: string, password: string) => Promise<ApiUser>;
-  register: (data: { name: string; email: string; password: string; phone?: string }) => Promise<ApiUser>;
+  // OTP Auth
+  signupInitiate: (data: SignupInitiatePayload) => Promise<OtpInitiateResponse>;
+  signupVerify: (data: SignupVerifyPayload) => Promise<ApiUser>;
+  loginInitiate: (data: LoginInitiatePayload) => Promise<OtpInitiateResponse>;
+  loginVerify: (data: LoginVerifyPayload) => Promise<ApiUser>;
+  resendOtp: (data: OtpResendPayload) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   cart: any[];
   setCart: (cart: any[]) => void;
@@ -33,6 +43,8 @@ interface GlobalContextType {
   setCourses: React.Dispatch<React.SetStateAction<Course[]>>;
   coursesLoading: boolean;
   refreshCourses: () => Promise<void>;
+  myEnrollments: any[];
+  refreshMyEnrollments: () => Promise<void>;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -117,6 +129,18 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState([]);
   const [courses, setCourses] = useState<Course[]>(fallbackCourses);
   const [coursesLoading, setCoursesLoading] = useState(true);
+  const [myEnrollments, setMyEnrollments] = useState<any[]>([]);
+
+  const refreshMyEnrollments = useCallback(async () => {
+    if (!getStoredToken()) return;
+    try {
+      const response = await api.user.enrollments();
+      setMyEnrollments(response.enrollments);
+    } catch (error) {
+      console.error('Unable to load enrollments:', error);
+      setMyEnrollments([]);
+    }
+  }, []);
 
   const refreshCourses = useCallback(async () => {
     setCoursesLoading(true);
@@ -146,29 +170,47 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
         const response = await api.auth.me();
         setUser(response.user);
         storeAuth(getStoredToken() || '', response.user);
+        refreshMyEnrollments();
       } catch {
         clearStoredAuth();
         setUser(null);
+        setMyEnrollments([]);
       } finally {
         setAuthLoading(false);
       }
     };
 
     hydrateUser();
+  }, [refreshMyEnrollments]);
+
+  // ── OTP Auth Methods ──────────────────────────────────────────────────────────
+
+  const signupInitiate = useCallback(async (data: SignupInitiatePayload) => {
+    return api.auth.signupInitiate(data);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const response = await api.auth.login({ email, password });
+  const signupVerify = useCallback(async (data: SignupVerifyPayload) => {
+    const response = await api.auth.signupVerify(data);
     storeAuth(response.token, response.user);
     setUser(response.user);
+    refreshMyEnrollments();
     return response.user;
+  }, [refreshMyEnrollments]);
+
+  const loginInitiate = useCallback(async (data: LoginInitiatePayload) => {
+    return api.auth.loginInitiate(data);
   }, []);
 
-  const register = useCallback(async (data: { name: string; email: string; password: string; phone?: string }) => {
-    const response = await api.auth.register(data);
+  const loginVerify = useCallback(async (data: LoginVerifyPayload) => {
+    const response = await api.auth.loginVerify(data);
     storeAuth(response.token, response.user);
     setUser(response.user);
+    refreshMyEnrollments();
     return response.user;
+  }, [refreshMyEnrollments]);
+
+  const resendOtp = useCallback(async (data: OtpResendPayload) => {
+    return api.auth.resendOtp(data);
   }, []);
 
   const logout = useCallback(async () => {
@@ -177,6 +219,7 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       clearStoredAuth();
       setUser(null);
+      setMyEnrollments([]);
     }
   }, []);
 
@@ -185,8 +228,11 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
       user,
       setUser,
       authLoading,
-      login,
-      register,
+      signupInitiate,
+      signupVerify,
+      loginInitiate,
+      loginVerify,
+      resendOtp,
       logout,
       cart,
       setCart,
@@ -194,8 +240,10 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
       setCourses,
       coursesLoading,
       refreshCourses,
+      myEnrollments,
+      refreshMyEnrollments,
     }),
-    [user, authLoading, login, register, logout, cart, courses, coursesLoading, refreshCourses]
+    [user, authLoading, signupInitiate, signupVerify, loginInitiate, loginVerify, resendOtp, logout, cart, courses, coursesLoading, refreshCourses, myEnrollments, refreshMyEnrollments]
   );
 
   return (

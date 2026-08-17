@@ -65,8 +65,19 @@ const getSignature = (req, res) => {
   });
 };
 
+const getUploadProgress = (req, res) => {
+  const { trackingId } = req.query;
+  if (!trackingId || !global.uploadProgressTracker || !global.uploadProgressTracker.has(trackingId)) {
+    return res.json({ progress: 0, status: 'idle', message: '' });
+  }
+  const data = global.uploadProgressTracker.get(trackingId);
+  res.json(data);
+};
+
 const uploadVideoChunked = async (req, res) => {
   const filePath = req.file?.path;
+  const trackingId = req.query.trackingId;
+
   try {
     // ── Step 1: Check file received ──────────────────────────────────────────
     if (!req.file || !filePath) {
@@ -79,6 +90,15 @@ const uploadVideoChunked = async (req, res) => {
     console.log(`   Size: ${fileSizeMB} MB | Temp path: ${filePath}`);
     console.log(`   MIME: ${req.file.mimetype}`);
 
+    if (trackingId) {
+      if (!global.uploadProgressTracker) global.uploadProgressTracker = new Map();
+      global.uploadProgressTracker.set(trackingId, {
+        progress: 18,
+        status: 'uploading_to_cloud',
+        message: `Processing on server (${fileSizeMB} MB)...`
+      });
+    }
+
     const subFolder = req.query.folder || 'general';
     const folderPath = `nimu-academy/${subFolder}`;
 
@@ -89,8 +109,18 @@ const uploadVideoChunked = async (req, res) => {
       filePath,
       req.file.originalname,
       req.file.mimetype,
-      subFolder
+      subFolder,
+      trackingId
     );
+
+    if (trackingId && global.uploadProgressTracker) {
+      global.uploadProgressTracker.set(trackingId, {
+        progress: 100,
+        status: 'done',
+        message: 'Cloud upload complete!'
+      });
+      setTimeout(() => global.uploadProgressTracker?.delete(trackingId), 300000);
+    }
 
     res.status(200).json({
       message: 'Video uploaded successfully',
@@ -117,6 +147,13 @@ const uploadVideoChunked = async (req, res) => {
     // ── Error details ────────────────────────────────────────────────────────
     console.error(`\n❌ [Upload] FAILED`);
     console.error(`   Error: ${error.message}`);
+    if (trackingId && global.uploadProgressTracker) {
+      global.uploadProgressTracker.set(trackingId, {
+        progress: 0,
+        status: 'error',
+        message: error.message || 'Server error during upload'
+      });
+    }
     res.status(500).json({ message: 'Server error during video upload', error: error.message });
   } finally {
     // ── Cleanup temp file ────────────────────────────────────────────────────
@@ -168,4 +205,5 @@ module.exports = {
   getSignature,
   uploadVideoChunked,
   getR2PresignedUrl,
+  getUploadProgress,
 };

@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "App ko photo upload karne ke liye access chahiye",
+        "NSCameraUsageDescription": "App ko photo khich kar upload karne ke liye camera access chahiye"
+      }
     },
     "android": {
       "package": "com.anonymous.reactnativeapp",

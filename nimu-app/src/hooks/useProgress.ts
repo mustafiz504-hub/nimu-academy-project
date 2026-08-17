@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { courseService } from "../services/course.service";
-import type { Course } from "../types/course.types";
+import type { Course, Enrollment } from "../types/course.types";
 
 export function useProgress() {
-  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

@@ -19,6 +19,7 @@ const Nav = () => {
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
     { name: 'Academy', href: '/course/1' },
+    { name: 'Learn', href: '/learn' },
     { name: 'Certificate', href: '/certificate' },
     { name: 'About', href: '/about' },
   ], []);
@@ -93,7 +94,7 @@ const Nav = () => {
             </div>
             <span className="font-serif text-2xl font-bold tracking-wider text-brand-gold">NIMU</span>
             <span className="hidden xl:inline font-sans text-[10px] tracking-widest uppercase text-brand-cream/60 ml-2 border-l border-brand-cream/20 pl-3">
-              Odisha's No.1 Cooking Class – Learn • Cook • Grow
+              Odisha's No.1 Cooking Class 
             </span>
           </Link>
           

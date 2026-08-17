@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllCourses, getCourseById, getCourseVideos, createCourse, updateCourse, deleteCourse, addVideoToCourse, deleteVideo } = require('../controllers/course.controller');
+const { getAllCourses, getCourseById, getCourseVideos, createCourse, updateCourse, deleteCourse, addVideoToCourse, deleteVideo, updateVideo } = require('../controllers/course.controller');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
 
@@ -148,6 +148,7 @@ router.delete('/:id', verifyToken, checkRole('superadmin'), deleteCourse);
 
 // ── Video Management (admin/superadmin) ──────────────────────────────────────
 router.post('/:id/videos', verifyToken, checkRole('admin', 'superadmin'), addVideoToCourse);
+router.put('/:id/videos/:videoId', verifyToken, checkRole('admin', 'superadmin'), updateVideo);
 router.delete('/:id/videos/:videoId', verifyToken, checkRole('admin', 'superadmin'), deleteVideo);
 
 module.exports = router;

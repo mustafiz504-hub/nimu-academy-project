@@ -2,16 +2,17 @@ import React from "react";
 import { View, Text, ScrollView } from "react-native";
 import CourseCard from "./CourseCard";
 
+import type { Course } from "../../types/course.types";
+
+interface CourseItem extends Course {
+  backgroundColor?: string;
+  iconName?: any;
+  accentColor?: string;
+  accentBgColor?: string;
+}
+
 interface CourseListProps {
-  courses: {
-    title: string;
-    subtitle: string;
-    category: string;
-    backgroundColor: string;
-    iconName: any;
-    accentColor: string;
-    accentBgColor: string;
-  }[];
+  courses: CourseItem[];
 }
 
 export default function CourseList({ courses }: CourseListProps) {
@@ -22,7 +23,14 @@ export default function CourseList({ courses }: CourseListProps) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 20 }}>
       {courses.map((course, idx) => (
-        <CourseCard key={idx} {...course} />
+        <CourseCard
+          key={idx}
+          course={course}
+          backgroundColor={course.backgroundColor}
+          iconName={course.iconName}
+          accentColor={course.accentColor}
+          accentBgColor={course.accentBgColor}
+        />
       ))}
     </ScrollView>
   );

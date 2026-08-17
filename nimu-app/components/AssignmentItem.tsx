@@ -45,7 +45,7 @@ export default function AssignmentItem({
             marginRight: 12 
           }}
         >
-          <Ionicons name={category === "Arts" ? "brush" : "book-open"} size={20} color="#FFA726" />
+          <Ionicons name={category === "Arts" ? "brush" : "book-outline"} size={20} color="#FFA726" />
         </View>
         <View>
           <Text className="text-sm font-bold text-[#1E1B18]" style={{ fontSize: 14, fontWeight: "700", color: "#1E1B18" }}>

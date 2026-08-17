@@ -19,7 +19,7 @@ interface BottomTabNavigatorProps {
 const BASE_TABS: Tab[] = [
   { key: "home",     active: "home",            inactive: "home-outline" },
   { key: "courses",  active: "compass",          inactive: "compass-outline" },
-  { key: "schedule", active: "calendar",         inactive: "calendar-outline" },
+  { key: "schedule", active: "play-circle",       inactive: "play-circle-outline" },
   { key: "profile",  active: "person",           inactive: "person-outline" },
 ];
 

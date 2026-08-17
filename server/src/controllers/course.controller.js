@@ -25,21 +25,69 @@ const getCourseById = async (req, res) => {
   }
 };
 
-// GET /api/courses/:id/videos - Get videos for a course (must be enrolled or free video)
+// GET /api/courses/:id/videos - Access controlled
 const getCourseVideos = async (req, res) => {
   try {
     const courseId = req.params.id;
-    // For now, return all videos for this course. Real logic might check enrollment.
-    const result = await pool.query(
-      'SELECT * FROM course_videos WHERE course_id = $1 ORDER BY order_index ASC',
-      [courseId]
-    );
-    res.status(200).json({ videos: result.rows });
+    const userId = req.user?.id;
+
+    // 1. Fetch course to check price
+    const courseResult = await pool.query('SELECT price, active FROM courses WHERE id = $1', [courseId]);
+    if (courseResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Course not found.' });
+    }
+    const course = courseResult.rows[0];
+    const isPaidCourse = parseFloat(course.price) > 0;
+
+    // 2. Check if admin/superadmin (bypass all checks)
+    const isAdmin = req.user?.role === 'admin' || req.user?.role === 'superadmin';
+
+    // 3. Check enrollment if course is paid
+    let isEnrolled = false;
+    if (isPaidCourse && userId && !isAdmin) {
+      const enrollResult = await pool.query(
+        "SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2 AND status IN ('confirmed', 'completed')",
+        [userId, courseId]
+      );
+      isEnrolled = enrollResult.rows.length > 0;
+    }
+
+    // 4. Build query — admins and enrolled users get all videos; others only free ones
+    const canAccessAll = isAdmin || !isPaidCourse || isEnrolled;
+    const query = canAccessAll
+      ? 'SELECT * FROM course_videos WHERE course_id = $1 ORDER BY order_index ASC'
+      : 'SELECT id, course_id, title, description, duration_minutes, order_index, is_free, thumbnail_url, created_at FROM course_videos WHERE course_id = $1 AND is_free = true ORDER BY order_index ASC';
+
+    const result = await pool.query(query, [courseId]);
+
+    // For locked videos, we return them in the list but WITHOUT the video_url
+    let videos = result.rows;
+    if (!canAccessAll) {
+      // Also include locked videos in list (without URL) so UI can show the lock icon
+      const allVideosResult = await pool.query(
+        'SELECT id, course_id, title, description, duration_minutes, order_index, is_free, thumbnail_url, created_at FROM course_videos WHERE course_id = $1 ORDER BY order_index ASC',
+        [courseId]
+      );
+      videos = allVideosResult.rows.map(v => ({
+        ...v,
+        video_url: v.is_free ? v.video_url : null, // Hide URL for locked videos
+      }));
+      // Re-fetch with video_url for free ones
+      const freeWithUrl = await pool.query(
+        'SELECT * FROM course_videos WHERE course_id = $1 AND is_free = true ORDER BY order_index ASC',
+        [courseId]
+      );
+      const freeMap = new Map(freeWithUrl.rows.map(v => [v.id, v]));
+      videos = allVideosResult.rows.map(v => freeMap.get(v.id) || { ...v, video_url: null });
+    }
+
+    res.status(200).json({ videos, isEnrolled, canAccessAll });
   } catch (error) {
     console.error('Get course videos error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 };
+
 
 // POST /api/courses (admin/superadmin)
 const createCourse = async (req, res) => {
@@ -163,4 +211,35 @@ const deleteVideo = async (req, res) => {
   }
 };
 
-module.exports = { getAllCourses, getCourseById, getCourseVideos, createCourse, updateCourse, deleteCourse, addVideoToCourse, deleteVideo };
+// PUT /api/courses/:id/videos/:videoId (admin/superadmin)
+const updateVideo = async (req, res) => {
+  try {
+    const { title, description, is_free } = req.body;
+    
+    if (!title) {
+      return res.status(400).json({ message: 'Title is required.' });
+    }
+
+    const result = await pool.query(
+      `UPDATE course_videos SET 
+        title = COALESCE($1, title),
+        description = $2,
+        is_free = COALESCE($3, is_free)
+       WHERE id = $4 AND course_id = $5 RETURNING *`,
+      [title, description, is_free, req.params.videoId, req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Video not found.' });
+    }
+
+    await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Updated video "${title}" in course #${req.params.id}`]);
+
+    res.status(200).json({ message: 'Video updated successfully.', video: result.rows[0] });
+  } catch (error) {
+    console.error('Update video error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getAllCourses, getCourseById, getCourseVideos, createCourse, updateCourse, deleteCourse, addVideoToCourse, deleteVideo, updateVideo };

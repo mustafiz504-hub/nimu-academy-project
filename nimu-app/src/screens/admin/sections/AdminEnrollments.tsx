@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { adminService, type AdminEnrollment } from "../../../services/admin.service";
+import { useAppAlert } from "../../../components/common/AppAlert";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   pending:   { bg: "#FEF9C3", text: "#A16207" },
@@ -22,6 +23,7 @@ export default function AdminEnrollments() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const appAlert = useAppAlert();
 
   const load = useCallback(async (isRefresh = false) => {
     try {
@@ -40,7 +42,7 @@ export default function AdminEnrollments() {
       await adminService.updateEnrollmentStatus(id, status);
       setEnrollments(prev => prev.map(e => e.id === id ? { ...e, status: status as any } : e));
     } catch (e: any) {
-      Alert.alert("Error", e?.response?.data?.message || "Failed to update.");
+      appAlert.show({ title: "Error", message: e?.response?.data?.message || "Failed to update enrollment.", type: "danger" });
     }
   };
 
@@ -86,10 +88,15 @@ export default function AdminEnrollments() {
                       <TouchableOpacity
                         key={nextStatus}
                         onPress={() => {
-                          Alert.alert("Update Status", `Change to "${nextStatus}"?`, [
-                            { text: "Cancel", style: "cancel" },
-                            { text: "Yes", onPress: () => updateStatus(e.id, nextStatus) },
-                          ]);
+                          appAlert.show({
+                            title: "Update Status",
+                            message: `Change enrollment status to "${nextStatus}"?`,
+                            type: nextStatus === "cancelled" ? "danger" : "info",
+                            buttons: [
+                              { text: "Cancel", style: "secondary" },
+                              { text: "Confirm", style: nextStatus === "cancelled" ? "danger" : "primary", onPress: () => updateStatus(e.id, nextStatus) },
+                            ]
+                          });
                         }}
                         style={{
                           backgroundColor: nextStatus === "cancelled" ? "#FEE2E2" : "#DCFCE7",

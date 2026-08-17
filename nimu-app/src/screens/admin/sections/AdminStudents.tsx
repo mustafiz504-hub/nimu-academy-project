@@ -4,12 +4,14 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { adminService, type Student } from "../../../services/admin.service";
 import { useCourseStore } from "../../../store/course.store";
+import { API_BASE_URL } from "../../../constants/api";
 
-// Server IP — same as API_BASE_URL machine IP
-const CERT_IMAGE_URL = `http://10.31.136.66:8000/public/certificate-template1.jpeg`;
+// Server IP — derived dynamically from API_BASE_URL
+const RAW_SERVER_URL = API_BASE_URL.endsWith("/api") ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+const CERT_IMAGE_URL = `${RAW_SERVER_URL}/public/certificate-template1.jpeg`;
 
 // Fetch certificate template from Express server and convert to base64 data URI
 // This is the most reliable method — no expo-file-system needed

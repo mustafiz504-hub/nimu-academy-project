@@ -2,7 +2,7 @@ import axios from "axios";
 import api from "./api";
 import { ENDPOINTS } from "../constants/api";
 import type { Course, CourseVideo } from "../types/course.types";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -135,6 +135,21 @@ export const adminService = {
     return res.course;
   },
 
+  async updateCourse(
+    courseId: string,
+    data: {
+      name?: string;
+      description?: string;
+      duration?: string;
+      mode?: string;
+      price?: number;
+      active?: boolean;
+    }
+  ): Promise<Course> {
+    const { data: res } = await api.put<{ course: Course }>(`${ENDPOINTS.courses}/${courseId}`, data);
+    return res.course;
+  },
+
   // Videos
   async addVideo(
     courseId: string,
@@ -149,6 +164,21 @@ export const adminService = {
   ): Promise<CourseVideo> {
     const { data: res } = await api.post<{ video: CourseVideo }>(
       `${ENDPOINTS.courses}/${courseId}/videos`,
+      data
+    );
+    return res.video;
+  },
+  async updateVideo(
+    courseId: string,
+    videoId: string,
+    data: {
+      title: string;
+      description?: string;
+      is_free?: boolean;
+    }
+  ): Promise<CourseVideo> {
+    const { data: res } = await api.put<{ video: CourseVideo }>(
+      `${ENDPOINTS.courses}/${courseId}/videos/${videoId}`,
       data
     );
     return res.video;

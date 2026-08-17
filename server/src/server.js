@@ -8,33 +8,14 @@ const setupSwagger = require('./swagger/config');
 
 // Database Orchestrators
 const createTables = require('./database/createTables');
+const runMigrations = require('./database/runMigrations');
 const seedData = require('./database/seedData');
 
 /** @type {import('express').Express} */
 const app = express();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:8081',   // Expo Metro bundler
-    'http://localhost:19006',  // Expo web
-    'http://192.168.1.140:3000',
-    'http://10.224.19.66:3000',
-    'http://10.224.19.66:5173',
-    'http://10.112.198.66:8000',
-    'http://10.229.157.66:8000',
-    'http://10.31.136.66:8000',
-    'http://10.31.136.66:8081',
-    'http://10.31.136.66:3000',
-    'http://10.31.136.66:5173',
-    'https://nimu-academy-project.vercel.app'
-  ],
-  credentials: true,
-  // Allow all origins in development (remove in production)
-  ...(process.env.NODE_ENV !== 'production' ? { origin: true } : {}),
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -59,6 +40,7 @@ app.use('/api/gallery',     require('./routes/gallery.routes'));
 app.use('/api/students',    require('./routes/student.routes'));
 app.use('/api/admin',       require('./routes/admin.routes'));
 app.use('/api/superadmin',  require('./routes/superadmin.routes'));
+app.use('/api/progress',    require('./routes/progress.routes'));
 
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
@@ -77,16 +59,33 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error.' });
 });
 
+const os = require('os');
+
+const getNetworkIp = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
 // ─── Start Server ─────────────────────────────────────────────────────────────
 const startServer = async () => {
   try {
     // Database Initialization
     await createTables(pool);
+    await runMigrations(pool);
     await seedData(pool);
 
-    app.listen(PORT, () => {
-      console.log(`\n🚀 Nimu Academy Server Running on port ${PORT}`);
-      console.log(`📡 API Base URL: http://localhost:${PORT}/api`);
+    app.listen(PORT, '0.0.0.0', () => {
+      const netIp = getNetworkIp();
+      console.log(`\n🚀 Nimu Academy Server Running on port ${PORT} (0.0.0.0)`);
+      console.log(`📡 Local API URL: http://localhost:${PORT}/api`);
+      console.log(`📡 Network API URL: http://${netIp}:${PORT}/api`);
       console.log(`📑 Swagger Docs: http://localhost:${PORT}/api-docs`);
       console.log('-------------------------------------------');
     });

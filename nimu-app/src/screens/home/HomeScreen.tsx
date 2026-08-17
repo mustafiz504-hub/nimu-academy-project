@@ -55,18 +55,6 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
           />
         }
       >
-        {/* ── Search Bar ── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 16, paddingHorizontal: 16, height: 52, borderWidth: 1, borderColor: "#F0E6D8" }}>
-            <Ionicons name="search-outline" size={20} color="#94A3B8" />
-            <Text style={{ flex: 1, marginLeft: 12, fontSize: 14, color: "#94A3B8", fontWeight: "500" }}>
-              Search for recipes, techniques...
-            </Text>
-            <TouchableOpacity style={{ width: 36, height: 36, backgroundColor: "#FFF3E0", borderRadius: 12, justifyContent: "center", alignItems: "center" }}>
-              <Ionicons name="options" size={18} color="#FF8C00" />
-            </TouchableOpacity>
-          </View>
-        </View>
 
         {/* ── Study Report (Placeholder stats) ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 32 }}>
@@ -113,23 +101,6 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
           )}
         </View>
 
-        {/* ── Categories ── */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={{ fontSize: 20, fontWeight: "800", color: "#1E1B18", marginBottom: 16 }}>Top Categories</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-            {[
-              { icon: "🍕", label: "Italian", color: "#FFF3E0", border: "#FFE0B2" },
-              { icon: "🥗", label: "Healthy", color: "#ECFCCB", border: "#D9F99D" },
-              { icon: "🍰", label: "Baking", color: "#FCE7F3", border: "#FBCFE8" },
-              { icon: "🍱", label: "Asian", color: "#E0E7FF", border: "#C7D2FE" }
-            ].map((cat, idx) => (
-              <TouchableOpacity key={idx} style={{ flexBasis: "48%", backgroundColor: cat.color, borderRadius: 20, padding: 16, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: cat.border }}>
-                <Text style={{ fontSize: 24 }}>{cat.icon}</Text>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: "#1E1B18" }}>{cat.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
       </ScrollView>
     </View>
   );

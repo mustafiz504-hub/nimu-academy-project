@@ -1,39 +1,54 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 /**
  * ─── API Base URL ────────────────────────────────────────────────────────────
  *
- * Android Emulator  → 10.0.2.2  (maps to host machine's localhost)
- * iOS Simulator     → localhost
- * Physical Device   → your machine's LAN IP (auto-detected below)
- *
- * Your machine's current LAN IP: 10.31.136.66
- * If this changes (different WiFi), update MACHINE_IP below.
+ * Loaded from environment variables (.env via process.env or expo-constants).
+ * Fallback to local network IP if not set.
  */
-const MACHINE_IP = "10.31.136.66";
-const PORT = "8000";
+// Auto-detect host computer IP from Expo Go
+const getExpoHostIp = () => {
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
+    (Constants as any).manifest?.debuggerHost;
+  return hostUri ? hostUri.split(":")[0] : null;
+};
 
-const API_BASE_URL_MAP = {
-  android: `http://10.0.2.2:${PORT}/api`,          // Android emulator
-  ios:     `http://localhost:${PORT}/api`,           // iOS simulator
-  web:     `http://localhost:${PORT}/api`,           // Expo web
-} as const;
+const expoHostIp = getExpoHostIp();
 
-// For physical device (Expo Go), use the machine LAN IP
-// Expo Go runs on device — needs real network IP
-const isExpoGo = !__DEV__ === false; // always true in dev builds
+const ENV_BASE =
+  (expoHostIp ? `http://${expoHostIp}:8000` : null) ||
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  process.env.API_BASE_URL ||
+  "http://10.188.169.66:8000";
+
+const RAW_BASE_URL = ENV_BASE.endsWith("/api")
+  ? ENV_BASE.slice(0, -4)
+  : ENV_BASE;
 
 export const API_BASE_URL =
   Platform.OS === "web"
-    ? `http://localhost:${PORT}/api`
-    : `http://${MACHINE_IP}:${PORT}/api`;
+    ? `http://localhost:8000/api`
+    : `${RAW_BASE_URL}/api`;
 
 export const ENDPOINTS = {
-  // Auth
-  login:    "/auth/login",
-  register: "/auth/register",
-  logout:   "/auth/logout",
-  me:       "/auth/me",
+  // Auth — OTP-only (new)
+  signupInitiate: "/auth/signup/initiate",
+  signupVerify:   "/auth/signup/verify",
+  loginInitiate:  "/auth/login/initiate",
+  loginVerify:    "/auth/login/verify",
+  otpResend:      "/auth/otp/resend",
+
+  // Auth — Legacy aliases (kept for backward compat)
+  login:     "/auth/login",
+  register:  "/auth/register",
+  signup:    "/auth/signup",
+  verifyOtp: "/auth/verify-otp",
+  resendOtp: "/auth/resend-otp",
+  logout:    "/auth/logout",
+  me:        "/auth/me",
 
   // Courses
   courses:       "/courses",
@@ -43,4 +58,9 @@ export const ENDPOINTS = {
   // Orders / Payments
   createOrder:   "/orders",
   verifyPayment: "/orders/verify",
+
+  // Progress
+  myProgress:         "/progress/my",
+  courseProgress:     (courseId: string) => `/progress/course/${courseId}`,
+  markVideoWatched:   (videoId: string)  => `/progress/video/${videoId}`,
 };

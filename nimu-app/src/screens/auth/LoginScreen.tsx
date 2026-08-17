@@ -12,38 +12,55 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../hooks/useAuth";
+import { Image } from "expo-image";
+import { useLoginInitiateMutation } from "../../hooks/useAuthMutations";
+import type { LoginInitiateResponse } from "../../services/auth.service";
 
 const { width } = Dimensions.get("window");
 
 interface LoginScreenProps {
   onGoToRegister: () => void;
+  /** Called when OTP has been sent — passes session info to parent for OTP screen */
+  onOtpSent: (session: {
+    identifier: string;
+    maskedTarget: string;
+    channel: "email" | "phone";
+    purpose: "login";
+  }) => void;
 }
 
-export default function LoginScreen({ onGoToRegister }: LoginScreenProps) {
-  const { login, loading, error } = useAuth();
+export default function LoginScreen({ onGoToRegister, onOtpSent }: LoginScreenProps) {
+  const { mutateAsync: loginInitiate, loading, error } = useLoginInitiateMutation();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
 
-  // Button press animation
   const btnScale = useRef(new Animated.Value(1)).current;
+  const pressIn = () => Animated.spring(btnScale, { toValue: 0.97, useNativeDriver: true, tension: 200, friction: 8 }).start();
+  const pressOut = () => Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 8 }).start();
 
-  const pressIn = () =>
-    Animated.spring(btnScale, { toValue: 0.97, useNativeDriver: true, tension: 200, friction: 8 }).start();
-  const pressOut = () =>
-    Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 8 }).start();
+  const handleRequestOtp = async () => {
+    if (!email.trim() || !password.trim()) return;
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password) return;
     try {
-      await login({ email: email.trim(), password });
+      const res: LoginInitiateResponse = await loginInitiate({ email: email.trim(), password: password.trim() });
+      
+      onOtpSent({
+        identifier: res.identifier || email.trim(),
+        maskedTarget: res.maskedTarget || email.trim(),
+        channel: res.channel || "email",
+        purpose: "login",
+      });
     } catch {
-      // handled in hook
+      // Error handled in hook
     }
   };
+
+  const canSubmit = email.trim().length > 0 && password.trim().length > 0;
 
   return (
     <KeyboardAvoidingView
@@ -69,31 +86,28 @@ export default function LoginScreen({ onGoToRegister }: LoginScreenProps) {
               opacity: 0.8,
             }}
           />
-
           {/* Floating decorative dots */}
           <View style={{ position: "absolute", top: 40, left: 30, width: 10, height: 10, borderRadius: 5, backgroundColor: "#FFA726", opacity: 0.5 }} />
           <View style={{ position: "absolute", top: 80, left: 60, width: 6, height: 6, borderRadius: 3, backgroundColor: "#FF8C00", opacity: 0.4 }} />
           <View style={{ position: "absolute", top: 30, right: 40, width: 14, height: 14, borderRadius: 7, backgroundColor: "#FFB74D", opacity: 0.4 }} />
           <View style={{ position: "absolute", top: 90, right: 70, width: 8, height: 8, borderRadius: 4, backgroundColor: "#FFA726", opacity: 0.5 }} />
 
-          {/* Logo circle */}
+          {/* Logo */}
           <View
             style={{
-              width: 96,
-              height: 96,
-              borderRadius: 48,
-              backgroundColor: "#FF8C00",
-              justifyContent: "center",
-              alignItems: "center",
-              marginBottom: 16,
-              shadowColor: "#FF8C00",
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.35,
-              shadowRadius: 16,
-              elevation: 10,
+              width: 100, height: 100, borderRadius: 50, backgroundColor: "#FFFFFF",
+              justifyContent: "center", alignItems: "center", marginBottom: 16,
+              shadowColor: "#FF8C00", shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.35, shadowRadius: 16, elevation: 10,
+              overflow: "hidden", borderWidth: 2.5, borderColor: "#FF8C00",
             }}
           >
-            <Text style={{ fontSize: 44 }}>🍳</Text>
+            <Image
+              source={require("../../../assets/images/logo-round.png")}
+              style={{ width: "100%", height: "100%" }}
+              contentFit="cover"
+              transition={200}
+            />
           </View>
 
           <Text style={{ fontSize: 26, fontWeight: "800", color: "#1E1B18", letterSpacing: -0.5 }}>
@@ -107,47 +121,37 @@ export default function LoginScreen({ onGoToRegister }: LoginScreenProps) {
         {/* ── Card Form Section ── */}
         <View
           style={{
-            flex: 1,
-            backgroundColor: "#FFFFFF",
-            borderTopLeftRadius: 36,
-            borderTopRightRadius: 36,
-            padding: 28,
-            paddingTop: 32,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 16,
-            elevation: 8,
+            flex: 1, backgroundColor: "#FFFFFF",
+            borderTopLeftRadius: 36, borderTopRightRadius: 36,
+            padding: 28, paddingTop: 32,
+            shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.06, shadowRadius: 16, elevation: 8,
           }}
         >
           <Text style={{ fontSize: 22, fontWeight: "800", color: "#1E1B18", marginBottom: 4 }}>
             Welcome Back 👋
           </Text>
           <Text style={{ fontSize: 13, color: "#94A3B8", marginBottom: 28, fontWeight: "500" }}>
-            Sign in to continue learning
+            Sign in with your email and password to receive a one-time code.
           </Text>
 
-          {/* Email Field */}
+          {/* Email */}
           <Text style={{ fontSize: 12, fontWeight: "700", color: "#64748B", marginBottom: 6, letterSpacing: 0.3 }}>
             EMAIL ADDRESS
           </Text>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: "row", alignItems: "center",
               backgroundColor: emailFocused ? "#FFFBF5" : "#F8F9FA",
-              borderRadius: 16,
-              borderWidth: 1.5,
+              borderRadius: 16, borderWidth: 1.5,
               borderColor: emailFocused ? "#FF8C00" : "#F0E6D8",
-              paddingHorizontal: 16,
-              marginBottom: 20,
-              height: 56,
+              paddingHorizontal: 16, marginBottom: 16, height: 56,
             }}
           >
             <Ionicons name="mail-outline" size={20} color={emailFocused ? "#FF8C00" : "#94A3B8"} />
             <TextInput
               style={{ flex: 1, marginLeft: 12, fontSize: 14, color: "#1E1B18", fontWeight: "500" }}
-              placeholder="you@example.com"
+              placeholder="email@example.com"
               placeholderTextColor="#CBD5E1"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -156,24 +160,21 @@ export default function LoginScreen({ onGoToRegister }: LoginScreenProps) {
               onChangeText={setEmail}
               onFocus={() => setEmailFocused(true)}
               onBlur={() => setEmailFocused(false)}
+              returnKeyType="next"
             />
           </View>
 
-          {/* Password Field */}
+          {/* Password */}
           <Text style={{ fontSize: 12, fontWeight: "700", color: "#64748B", marginBottom: 6, letterSpacing: 0.3 }}>
             PASSWORD
           </Text>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: "row", alignItems: "center",
               backgroundColor: passwordFocused ? "#FFFBF5" : "#F8F9FA",
-              borderRadius: 16,
-              borderWidth: 1.5,
+              borderRadius: 16, borderWidth: 1.5,
               borderColor: passwordFocused ? "#FF8C00" : "#F0E6D8",
-              paddingHorizontal: 16,
-              marginBottom: 8,
-              height: 56,
+              paddingHorizontal: 16, marginBottom: 24, height: 56,
             }}
           >
             <Ionicons name="lock-closed-outline" size={20} color={passwordFocused ? "#FF8C00" : "#94A3B8"} />
@@ -182,20 +183,17 @@ export default function LoginScreen({ onGoToRegister }: LoginScreenProps) {
               placeholder="Enter your password"
               placeholderTextColor="#CBD5E1"
               secureTextEntry={!showPassword}
+              autoCapitalize="none"
               value={password}
               onChangeText={setPassword}
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
+              onSubmitEditing={handleRequestOtp}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} activeOpacity={0.7}>
-              <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#94A3B8" />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#94A3B8" />
             </TouchableOpacity>
           </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 20 }}>
-            <Text style={{ fontSize: 12, fontWeight: "700", color: "#FF8C00" }}>Forgot Password?</Text>
-          </TouchableOpacity>
 
           {/* Error */}
           {error ? (
@@ -205,39 +203,38 @@ export default function LoginScreen({ onGoToRegister }: LoginScreenProps) {
             </View>
           ) : null}
 
-          {/* Login Button */}
+          {/* OTP Button */}
           <Animated.View style={{ transform: [{ scale: btnScale }] }}>
             <TouchableOpacity
-              onPress={handleLogin}
+              onPress={handleRequestOtp}
               onPressIn={pressIn}
               onPressOut={pressOut}
-              disabled={loading || !email || !password}
+              disabled={loading || !canSubmit}
               activeOpacity={0.9}
               style={{
-                height: 56,
-                borderRadius: 18,
-                backgroundColor: !email || !password ? "#E2E8F0" : "#FF8C00",
-                justifyContent: "center",
-                alignItems: "center",
-                shadowColor: "#FF8C00",
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: !email || !password ? 0 : 0.35,
-                shadowRadius: 12,
-                elevation: !email || !password ? 0 : 6,
+                height: 56, borderRadius: 18,
+                backgroundColor: !canSubmit ? "#E2E8F0" : "#FF8C00",
+                justifyContent: "center", alignItems: "center",
+                shadowColor: "#FF8C00", shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: !canSubmit ? 0 : 0.35, shadowRadius: 12,
+                elevation: !canSubmit ? 0 : 6,
+                flexDirection: "row", gap: 10,
               }}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={{ color: !email || !password ? "#94A3B8" : "#FFFFFF", fontSize: 16, fontWeight: "700", letterSpacing: 0.3 }}>
-                  Sign In
-                </Text>
+                <>
+                  <Ionicons name="shield-checkmark-outline" size={18} color={!canSubmit ? "#94A3B8" : "#FFFFFF"} />
+                  <Text style={{ color: !canSubmit ? "#94A3B8" : "#FFFFFF", fontSize: 16, fontWeight: "700", letterSpacing: 0.3 }}>
+                    Login securely
+                  </Text>
+                </>
               )}
             </TouchableOpacity>
           </Animated.View>
 
-
-
+          {/* Removed Toggle */}
 
           {/* Sign Up Link */}
           <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 28 }}>

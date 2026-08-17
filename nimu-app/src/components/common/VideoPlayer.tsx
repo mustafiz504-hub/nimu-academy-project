@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useEvent } from 'expo';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SPEED_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
@@ -40,10 +41,13 @@ interface VideoPlayerProps {
   videoUrl: string;
   title?: string;
   autoPlay?: boolean;
+  isActive?: boolean;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoPlayerProps) {
+export default function VideoPlayer({ videoUrl, title, autoPlay = true, isActive = true }: VideoPlayerProps) {
+  const insets = useSafeAreaInsets();
+
   // Player
   const player = useVideoPlayer(videoUrl, (p) => {
     p.loop = false;
@@ -53,7 +57,7 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
 
   // Player events
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
-  const { currentTime } = useEvent(player, 'timeUpdate', { currentTime: 0, currentOffsetTime: 0 });
+  const { currentTime } = useEvent(player, 'timeUpdate', { currentTime: 0, currentLiveTimestamp: null, currentOffsetFromLive: null, bufferedPosition: 0 });
   const { status } = useEvent(player, 'statusChange', { status: player.status, error: undefined });
 
   const duration = player.duration ?? 0;
@@ -66,15 +70,58 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
   const seekBarWidthRef = useRef(1);
 
   // ── UI State ─────────────────────────────────────────────────────────────
-  const [isLandscape, setIsLandscape] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPortraitMode, setIsPortraitMode] = useState(false);
+  const [contentFit, setContentFit] = useState<'contain' | 'cover'>('contain');
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1.0);
   const [isBuffering, setIsBuffering] = useState(true);
 
-  // Instantly show spinner right when user clicks any video from playlist (videoUrl changes)
+  // ── Double Tap Seek State & Refs (YouTube Style) ─────────────────────────
+  const playerWidthRef = useRef(Dimensions.get('window').width);
+  const lastTapTimestamp = useRef(0);
+  const lastTapSide = useRef<'left' | 'right' | null>(null);
+  const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const accumulatedSeek = useRef(0);
+  const accumulatedSeekTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [doubleTapSide, setDoubleTapSide] = useState<'left' | 'right' | null>(null);
+  const [doubleTapSeconds, setDoubleTapSeconds] = useState(0);
+  const rippleAnim = useRef(new Animated.Value(0)).current;
+
+  // Instantly reset states right when user clicks any video from playlist (videoUrl changes)
   useEffect(() => {
     setIsBuffering(true);
+    setIsPortraitMode(false);
+    setIsFullscreen(false);
+    setContentFit('contain');
+    setDoubleTapSide(null);
   }, [videoUrl]);
+
+  // Pause video if screen goes inactive
+  useEffect(() => {
+    if (!isActive && isPlaying) {
+      player.pause();
+    }
+  }, [isActive, isPlaying, player]);
+
+  // Auto-detect vertical/portrait aspect ratio when player loads
+  useEffect(() => {
+    const checkSize = () => {
+      const size = (player as any).naturalSize;
+      if (size && size.width > 0 && size.height > 0) {
+        // Only set portrait mode true if height is strictly greater than width (ratio > 1.15)
+        if (size.height / size.width > 1.15) {
+          setIsPortraitMode(true);
+        } else {
+          setIsPortraitMode(false);
+        }
+      }
+    };
+    checkSize();
+    const interval = setInterval(checkSize, 800);
+    const timeout = setTimeout(() => clearInterval(interval), 4000);
+    return () => { clearInterval(interval); clearTimeout(timeout); };
+  }, [videoUrl, player]);
 
   // Hide spinner once player is ready or actively playing
   useEffect(() => {
@@ -143,20 +190,41 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
     return () => { if (hideTimer.current) clearTimeout(hideTimer.current); };
   }, [isPlaying]);
 
-  // ── Orientation ──────────────────────────────────────────────────────────
-  const toggleOrientation = useCallback(async () => {
+  // ── Orientation & Fullscreen ─────────────────────────────────────────────
+  const toggleFullscreen = useCallback(async () => {
     try {
-      if (isLandscape) {
+      if (isFullscreen) {
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-        setIsLandscape(false);
+        setIsFullscreen(false);
       } else {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-        setIsLandscape(true);
+        if (isPortraitMode) {
+          // For vertical portrait videos, keep upright PORTRAIT_UP full-screen (reels style)
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+        } else {
+          // For horizontal videos, rotate phone to LANDSCAPE
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        }
+        setIsFullscreen(true);
       }
     } catch (e) {
       console.warn('Orientation lock failed:', e);
+      setIsFullscreen(!isFullscreen);
     }
-  }, [isLandscape]);
+  }, [isFullscreen, isPortraitMode]);
+
+  const togglePortraitMode = useCallback(async () => {
+    const nextVal = !isPortraitMode;
+    setIsPortraitMode(nextVal);
+    if (isFullscreen) {
+      try {
+        if (nextVal) {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+        } else {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        }
+      } catch {}
+    }
+  }, [isPortraitMode, isFullscreen]);
 
   // Restore portrait on unmount
   useEffect(() => {
@@ -212,28 +280,111 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
     showControls();
   }, [player, showControls]);
 
+  // ── Double Tap Handlers ───────────────────────────────────────────────────
+  const triggerDoubleTapSeek = useCallback((side: 'left' | 'right') => {
+    const delta = side === 'right' ? 10 : -10;
+    skip(delta);
+
+    const prevAcc = lastTapSide.current === side ? accumulatedSeek.current : 0;
+    accumulatedSeek.current = prevAcc + Math.abs(delta);
+    lastTapSide.current = side;
+    setDoubleTapSide(side);
+    setDoubleTapSeconds(accumulatedSeek.current);
+
+    rippleAnim.setValue(1);
+    if (accumulatedSeekTimer.current) clearTimeout(accumulatedSeekTimer.current);
+    accumulatedSeekTimer.current = setTimeout(() => {
+      Animated.timing(rippleAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+        setDoubleTapSide(null);
+        accumulatedSeek.current = 0;
+        lastTapSide.current = null;
+      });
+    }, 650);
+  }, [skip, rippleAnim]);
+
+  const handleVideoPress = useCallback((evt: any) => {
+    const now = Date.now();
+    const touchX = evt.nativeEvent?.locationX ?? 0;
+    const w = playerWidthRef.current || Dimensions.get('window').width;
+    const side = touchX < w * 0.42 ? 'left' : touchX > w * 0.58 ? 'right' : 'center';
+
+    if (now - lastTapTimestamp.current < 290 && side !== 'center') {
+      // Double tap detected on left or right!
+      if (singleTapTimer.current) {
+        clearTimeout(singleTapTimer.current);
+        singleTapTimer.current = null;
+      }
+      lastTapTimestamp.current = 0; // reset so next tap starts a new sequence or accumulates
+      triggerDoubleTapSeek(side);
+    } else {
+      // Single tap
+      lastTapTimestamp.current = now;
+      if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
+      singleTapTimer.current = setTimeout(() => {
+        toggleControls();
+        singleTapTimer.current = null;
+      }, 260);
+    }
+  }, [toggleControls, triggerDoubleTapSeek]);
+
   // ── Interpolated widths ───────────────────────────────────────────────────
   const playedWidth = seekRatio.interpolate({ inputRange: [0, 1], outputRange: [0, seekBarWidth], extrapolate: 'clamp' });
   const thumbLeft = seekRatio.interpolate({ inputRange: [0, 1], outputRange: [0, seekBarWidth - 12], extrapolate: 'clamp' });
 
+  // ── Dynamic Safe Area Margins ─────────────────────────────────────────────
+  // In Landscape / Horizontal or Inline mode, keep exact original paddings (top: 10, bottom: 8).
+  // ONLY when in Upright Vertical Portrait Fullscreen (reels style), lift top below camera punch-hole and bottom above gesture bar!
+  const topSafePadding = (isFullscreen && isPortraitMode) ? Math.max(insets.top + 16, 46) : 10;
+  const bottomSafePadding = (isFullscreen && isPortraitMode) ? Math.max(insets.bottom + 20, 38) : 8;
+  const sideSafePadding = isFullscreen ? Math.max(insets.left + 16, Math.max(insets.right + 16, 16)) : 12;
+
   // ── Render ────────────────────────────────────────────────────────────────
   const playerContent = (
-    <View style={[styles.root, isLandscape && styles.landscapeRoot]}>
+    <View
+      style={[
+        styles.root,
+        isFullscreen && styles.fullscreenRoot
+      ]}
+      onLayout={(e) => { playerWidthRef.current = e.nativeEvent.layout.width; }}
+    >
       {/* ── Video ── */}
       <VideoView
         player={player}
         style={StyleSheet.absoluteFillObject}
         nativeControls={false}
-        allowsFullscreen={false}
-        contentFit="contain"
+        fullscreenOptions={{ enable: false }}
+        contentFit={isFullscreen ? contentFit : "contain"}
       />
 
-      {/* ── Tap area (toggle controls) ── */}
+      {/* ── Tap area (Single tap toggles controls, Double tap skips 10s) ── */}
       <TouchableOpacity
         style={StyleSheet.absoluteFillObject}
         activeOpacity={1}
-        onPress={toggleControls}
+        onPress={handleVideoPress}
       />
+
+      {/* ── Double Tap Seek Ripple Overlay (YouTube Style) ── */}
+      {doubleTapSide && (
+        <Animated.View
+          style={[
+            styles.doubleTapRipple,
+            doubleTapSide === 'left' ? styles.doubleTapLeft : styles.doubleTapRight,
+            { opacity: rippleAnim }
+          ]}
+          pointerEvents="none"
+        >
+          <View style={styles.doubleTapCircle}>
+            <Ionicons
+              name={doubleTapSide === 'left' ? "play-back" : "play-forward"}
+              size={32}
+              color="#FFF"
+            />
+            <Text style={styles.doubleTapText}>
+              {doubleTapSide === 'left' ? `-${doubleTapSeconds}s` : `+${doubleTapSeconds}s`}
+            </Text>
+          </View>
+        </Animated.View>
+      )}
 
       {/* ── Loading Spinner ── */}
       {(isBuffering || status === 'loading') && (
@@ -248,7 +399,7 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
       <Animated.View style={[StyleSheet.absoluteFillObject, styles.controlsWrap, { opacity: controlsAnim }]} pointerEvents="box-none">
 
         {/* Top gradient bar */}
-        <View style={styles.topBar} pointerEvents="box-none">
+        <View style={[styles.topBar, { paddingTop: topSafePadding, paddingHorizontal: sideSafePadding }]} pointerEvents="box-none">
           {!!title && (
             <Text style={styles.title} numberOfLines={1}>{title}</Text>
           )}
@@ -258,10 +409,21 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
               <Ionicons name="speedometer-outline" size={14} color="#FFF" />
               <Text style={styles.chipText}>{playbackRate === 1 ? '1×' : `${playbackRate}×`}</Text>
             </TouchableOpacity>
-            {/* Orientation */}
-            <TouchableOpacity onPress={toggleOrientation} style={styles.chipBtn} activeOpacity={0.7}>
-              <Ionicons name={isLandscape ? 'phone-portrait-outline' : 'phone-landscape-outline'} size={15} color="#FFF" />
-            </TouchableOpacity>
+
+            {/* In Fullscreen mode, show Fit/Fill & Aspect Mode buttons cleanly */}
+            {isFullscreen && (
+              <>
+                <TouchableOpacity onPress={() => { setContentFit(contentFit === 'contain' ? 'cover' : 'contain'); showControls(); }} style={styles.chipBtn} activeOpacity={0.7}>
+                  <Ionicons name={contentFit === 'contain' ? 'resize-outline' : 'scan-outline'} size={14} color="#FFF" />
+                  <Text style={styles.chipText}>{contentFit === 'contain' ? 'Fit' : 'Fill'}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => { togglePortraitMode(); showControls(); }} style={[styles.chipBtn, isPortraitMode && styles.chipBtnActive]} activeOpacity={0.7}>
+                  <Ionicons name={isPortraitMode ? 'phone-portrait-outline' : 'phone-landscape-outline'} size={14} color={isPortraitMode ? '#FF8C00' : '#FFF'} />
+                  <Text style={[styles.chipText, isPortraitMode && { color: '#FF8C00' }]}>{isPortraitMode ? '9:16' : '16:9'}</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
@@ -283,7 +445,7 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
         </View>
 
         {/* Bottom gradient bar */}
-        <View style={styles.bottomBar} pointerEvents="box-none">
+        <View style={[styles.bottomBar, { paddingBottom: bottomSafePadding, paddingHorizontal: sideSafePadding }]} pointerEvents="box-none">
           <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
 
           {/* Seek bar — full width */}
@@ -302,9 +464,9 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
 
           <Text style={styles.timeText}>{formatTime(duration)}</Text>
 
-          {/* Rotate/Fullscreen */}
-          <TouchableOpacity onPress={toggleOrientation} style={styles.fsBtn} activeOpacity={0.7}>
-            <Ionicons name={isLandscape ? 'contract-outline' : 'expand-outline'} size={19} color="#FFF" />
+          {/* Fullscreen Button */}
+          <TouchableOpacity onPress={toggleFullscreen} style={styles.fsBtn} activeOpacity={0.7}>
+            <Ionicons name={isFullscreen ? 'contract-outline' : 'expand-outline'} size={19} color="#FFF" />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -317,7 +479,7 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
             activeOpacity={1}
             onPress={() => setShowSpeedMenu(false)}
           />
-          <View style={styles.rightMenuCard}>
+          <View style={[styles.rightMenuCard, { paddingTop: topSafePadding, paddingRight: sideSafePadding }]}>
             <View style={styles.rightMenuHeader}>
               <Text style={styles.rightMenuHeading}>Speed</Text>
               <TouchableOpacity onPress={() => setShowSpeedMenu(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -344,12 +506,12 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true }: VideoP
 
   );
 
-  // Landscape = fullscreen modal
-  if (isLandscape) {
+  // Fullscreen modal (either upright portrait or horizontal landscape depending on isPortraitMode)
+  if (isFullscreen) {
     return (
-      <Modal visible animationType="fade" statusBarTranslucent onRequestClose={toggleOrientation}>
+      <Modal visible animationType="fade" statusBarTranslucent onRequestClose={toggleFullscreen}>
         <StatusBar hidden />
-        <View style={styles.landscapeContainer}>
+        <View style={styles.fullscreenContainer}>
           {playerContent}
         </View>
       </Modal>
@@ -368,13 +530,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  landscapeRoot: {
+  portraitRoot: {
+    width: '100%',
+    aspectRatio: 9 / 16,
+    maxHeight: Dimensions.get('window').height * 0.58,
+    backgroundColor: '#000',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  fullscreenRoot: {
     flex: 1,
     aspectRatio: undefined,
     width: '100%',
     height: '100%',
   },
-  landscapeContainer: {
+  fullscreenContainer: {
     flex: 1,
     backgroundColor: '#000',
   },
@@ -443,6 +613,10 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
     fontWeight: '700',
+  },
+  chipBtnActive: {
+    borderColor: '#FF8C00',
+    backgroundColor: 'rgba(255,140,0,0.25)',
   },
 
   // Center controls
@@ -594,6 +768,42 @@ const styles = StyleSheet.create({
   rightMenuTextActive: {
     color: '#FF8C00',
     fontWeight: '700',
+  },
+
+  // Double Tap Seek Ripple Overlay (YouTube / Netflix style)
+  doubleTapRipple: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: '40%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
+  },
+  doubleTapLeft: {
+    left: 0,
+    borderTopRightRadius: 200,
+    borderBottomRightRadius: 200,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  doubleTapRight: {
+    right: 0,
+    borderTopLeftRadius: 200,
+    borderBottomLeftRadius: 200,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  doubleTapCircle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  doubleTapText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '800',
+    textShadowColor: 'rgba(0,0,0,0.85)',
+    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: 1 },
   },
 });
 
