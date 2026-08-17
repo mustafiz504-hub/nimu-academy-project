@@ -1,16 +1,24 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/auth.store";
+import { useAppAlert } from "../../components/common/AppAlert";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
+  const appAlert = useAppAlert();
 
   const handleLogout = () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign Out", style: "destructive", onPress: () => logout() },
-    ]);
+    appAlert.show({
+      title: "Sign Out",
+      message: "Are you sure you want to sign out of your account?",
+      type: "warning",
+      icon: "log-out-outline",
+      buttons: [
+        { text: "Cancel", style: "secondary" },
+        { text: "Sign Out", style: "danger", onPress: () => logout() },
+      ],
+    });
   };
 
   return (

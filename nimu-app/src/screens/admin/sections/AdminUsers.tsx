@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { adminService, type AdminUser } from "../../../services/admin.service";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../../store/auth.store";
+import { useAppAlert } from "../../../components/common/AppAlert";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuthStore();
@@ -10,6 +11,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const isSuperAdmin = currentUser?.role === "superadmin";
+  const appAlert = useAppAlert();
 
   const load = useCallback(async (isRefresh = false) => {
     try {
@@ -21,23 +23,29 @@ export default function AdminUsers() {
   useEffect(() => { load(); }, [load]);
 
   const toggleRole = (user: AdminUser) => {
-    if (!isSuperAdmin) return Alert.alert("Access Denied", "Only superadmin can change roles.");
+    if (!isSuperAdmin) {
+      appAlert.show({ title: "Access Denied", message: "Only a Superadmin can change user roles.", type: "danger", icon: "shield-outline" });
+      return;
+    }
     const isAdmin = user.role === "admin";
-    Alert.alert(
-      isAdmin ? "Remove Admin" : "Make Admin",
-      `${isAdmin ? "Demote" : "Promote"} ${user.name}?`,
-      [
-        { text: "Cancel", style: "cancel" },
+    appAlert.show({
+      title: isAdmin ? "Remove Admin" : "Make Admin",
+      message: `${isAdmin ? "Demote" : "Promote"} ${user.name} to ${isAdmin ? "regular user" : "admin"}?`,
+      type: isAdmin ? "danger" : "warning",
+      icon: isAdmin ? "person-remove-outline" : "person-add-outline",
+      buttons: [
+        { text: "Cancel", style: "secondary" },
         {
-          text: "Confirm", onPress: async () => {
+          text: "Confirm", style: isAdmin ? "danger" : "primary",
+          onPress: async () => {
             try {
               isAdmin ? await adminService.removeAdmin(user.id) : await adminService.makeAdmin(user.id);
               setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: isAdmin ? "user" : "admin" } : u));
-            } catch (e: any) { Alert.alert("Error", e?.response?.data?.message || "Failed."); }
+            } catch (e: any) { appAlert.show({ title: "Error", message: e?.response?.data?.message || "Failed to update role.", type: "danger" }); }
           }
         }
       ]
-    );
+    });
   };
 
   if (loading) return <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}><ActivityIndicator color="#FF8C00" size="large" /></View>;

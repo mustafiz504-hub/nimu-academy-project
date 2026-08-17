@@ -4,64 +4,192 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
 import { adminService, type Student } from "../../../services/admin.service";
 import { useCourseStore } from "../../../store/course.store";
+import { API_BASE_URL } from "../../../constants/api";
 
-const getCertificateHtml = (s: Student) => `
-  <div class="certificate-page" style="page-break-after: always; width: 100vw; height: 100vh; margin: 0; padding: 0;">
-    <div class="container">
-      <div class="border">
-        <div class="inner-border">
-          <div class="logo">NIMU ACADEMY</div>
-          <div class="id-text">ID: ${s.student_id || s.id}</div>
-          
-          <h1>CERTIFICATE</h1>
-          <h2>OF COMPLETION</h2>
-          
-          <div class="presented-to">This certificate is proudly presented to</div>
-          <div class="student-name">${s.student_name}</div>
-          
-          <div class="course-text">for successfully completing the course</div>
-          <div class="course-name">${s.course_name}</div>
-          
-          <div class="footer">
-            <div class="footer-item">
-              <div style="font-weight: normal; color: #64748B; font-size: 12px; margin-bottom: 5px;">Date</div>
-              ${s.completion_date || new Date().toLocaleDateString()}
-            </div>
-            <div class="footer-item">
-              <div style="font-weight: normal; color: #64748B; font-size: 12px; margin-bottom: 5px;">Signature</div>
-              Nimu Academy
-            </div>
-          </div>
-          
-          <div class="badge">NIMU<br/>CERTIFIED</div>
-        </div>
-      </div>
+// Server IP — derived dynamically from API_BASE_URL
+const RAW_SERVER_URL = API_BASE_URL.endsWith("/api") ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+const CERT_IMAGE_URL = `${RAW_SERVER_URL}/public/certificate-template1.jpeg`;
+
+// Fetch certificate template from Express server and convert to base64 data URI
+// This is the most reliable method — no expo-file-system needed
+const getCertTemplateUri = async (): Promise<string> => {
+  const response = await fetch(CERT_IMAGE_URL);
+  if (!response.ok) throw new Error(`Image fetch failed: HTTP ${response.status}`);
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  // Convert to base64 in chunks (btoa is available in React Native/Hermes)
+  let binary = '';
+  const CHUNK = 8192;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...Array.from(bytes.subarray(i, i + CHUNK)));
+  }
+  return `data:image/jpeg;base64,${btoa(binary)}`;
+};
+
+// ─── Certificate HTML — same layout as the website CertificateDownloader ───────
+// Uses local asset: assets/certificate/certificate-template1.jpeg
+// Text positions mirror CertificateDownloader.tsx pixel-for-pixel.
+
+const formatCertDate = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  
+  // If already in DD-MM-YYYY or DD/MM/YYYY format (e.g. "10-05-2026")
+  const ddMmYyyyMatch = trimmed.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/);
+  if (ddMmYyyyMatch) {
+    const dd = ddMmYyyyMatch[1].padStart(2, '0');
+    const mm = ddMmYyyyMatch[2].padStart(2, '0');
+    const yyyy = ddMmYyyyMatch[3];
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  // If in YYYY-MM-DD format (e.g. "2026-05-10")
+  const yyyyMmDdMatch = trimmed.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
+  if (yyyyMmDdMatch) {
+    const yyyy = yyyyMmDdMatch[1];
+    const mm = yyyyMmDdMatch[2].padStart(2, '0');
+    const dd = yyyyMmDdMatch[3].padStart(2, '0');
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  const months: { [key: string]: string } = {
+    jan: '01', january: '01',
+    feb: '02', february: '02',
+    mar: '03', march: '03',
+    apr: '04', april: '04',
+    may: '05',
+    jun: '06', june: '06',
+    jul: '07', july: '07',
+    aug: '08', august: '08',
+    sep: '09', september: '09',
+    oct: '10', october: '10',
+    nov: '11', november: '11',
+    dec: '12', december: '12'
+  };
+
+  // Match "DD Month YYYY" (e.g. "10 May 2026")
+  const ddMonthYyyyMatch = trimmed.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/);
+  if (ddMonthYyyyMatch) {
+    const dd = ddMonthYyyyMatch[1].padStart(2, '0');
+    const monthStr = ddMonthYyyyMatch[2].toLowerCase();
+    const mm = months[monthStr] || '01';
+    const yyyy = ddMonthYyyyMatch[3];
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  // Match "Month DD, YYYY" or "Month DD YYYY" (e.g. "May 10, 2026")
+  const monthDdYyyyMatch = trimmed.match(/^([a-zA-Z]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+  if (monthDdYyyyMatch) {
+    const monthStr = monthDdYyyyMatch[1].toLowerCase();
+    const mm = months[monthStr] || '01';
+    const dd = monthDdYyyyMatch[2].padStart(2, '0');
+    const yyyy = monthDdYyyyMatch[3];
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  try {
+    const date = new Date(trimmed);
+    if (!isNaN(date.getTime())) {
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yyyy = date.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    }
+  } catch {
+    // ignore
+  }
+
+  return trimmed;
+};
+
+const getCertificateHtml = (s: Student, templateUri: string) => `
+  <div style="
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    display: block;
+    width: 1123px;
+    height: 794px;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    background-image: url('${templateUri}');
+    background-size: 1123px 794px;
+    background-repeat: no-repeat;
+  ">
+
+    <!-- Student Name -->
+    <div style="
+      position: absolute;
+      top: 330px;
+      left: 0;
+      width: 1123px;
+      text-align: center;
+    ">
+      <span style="
+        font-family: 'Great Vibes', cursive;
+        font-size: 82px;
+        color: #000000;
+        line-height: 1;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      ">${s.student_name}</span>
     </div>
+
+    <!-- Course & Academy Details -->
+    <div style="
+      position: absolute;
+      top: 430px;
+      left: 0;
+      width: 1123px;
+      font-family: 'Lora', serif;
+      color: #2a3f5f;
+      text-align: center;
+      line-height: 1.55;
+    ">
+      <p style="font-size: 22px; font-weight: 500; margin: 0;">
+        Has successfully completed <span style="font-weight: 700;">${s.course_name}</span> course
+      </p>
+      <p style="font-size: 22px; font-weight: 500; margin: 0;">
+        conducted by <span style="font-weight: 700;">nimu cooking academy</span>
+      </p>
+      <p style="font-size: 20px; font-weight: 700; margin: 4px 0 0;">UDYAM-OD-30-0059753</p>
+      <p style="font-size: 20px; font-weight: 700; margin: 2px 0 0;">Fssai no:22026032000151</p>
+    </div>
+
+    <!-- Date (bottom-right) -->
+    <div style="
+      position: absolute;
+      bottom: 66px;
+      right: 179px;
+      font-size: 15px;
+      color: #3f5a73;
+      font-weight: 500;
+      font-family: 'Poppins', sans-serif;
+      letter-spacing: 0.03em;
+    ">${formatCertDate(s.completion_date || '')}</div>
+
   </div>
 `;
-
 const getFullHtmlDocument = (pagesHtml: string) => `
   <html>
     <head>
+      <meta charset="utf-8"/>
       <style>
-        @page { size: landscape; margin: 0; }
-        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #fff; -webkit-print-color-adjust: exact; }
-        .container { width: 100%; height: 100%; padding: 40px; box-sizing: border-box; }
-        .border { border: 12px solid #1E1B18; width: 100%; height: 100%; padding: 10px; box-sizing: border-box; text-align: center; position: relative; }
-        .inner-border { border: 4px double #FF8C00; width: 100%; height: 100%; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        h1 { font-size: 56px; color: #1E1B18; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 4px; }
-        h2 { font-size: 20px; color: #FF8C00; margin-bottom: 40px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
-        .presented-to { font-size: 16px; color: #64748B; margin-bottom: 10px; }
-        .student-name { font-size: 48px; color: #1E1B18; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #FF8C00; padding-bottom: 10px; width: 70%; font-family: 'Georgia', serif; font-style: italic; }
-        .course-text { font-size: 18px; color: #64748B; margin-bottom: 15px; }
-        .course-name { font-size: 32px; color: #FF8C00; font-weight: bold; margin-bottom: 40px; }
-        .footer { display: flex; justify-content: space-between; width: 80%; margin-top: 50px; }
-        .footer-item { text-align: center; border-top: 1px solid #94A3B8; padding-top: 10px; width: 200px; font-size: 14px; font-weight: bold; color: #1E1B18; }
-        .logo { position: absolute; top: 40px; left: 40px; font-size: 24px; font-weight: 900; color: #FF8C00; }
-        .badge { position: absolute; bottom: 50px; right: 50px; width: 80px; height: 80px; background-color: #FF8C00; border-radius: 40px; display: flex; justify-content: center; align-items: center; color: #fff; font-weight: bold; font-size: 12px; text-align: center; border: 4px solid #fff; box-shadow: 0 0 0 2px #FF8C00; }
-        .id-text { position: absolute; top: 40px; right: 40px; font-size: 12px; color: #94A3B8; }
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lora:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
+        @page { size: 842pt 595pt landscape; margin: 0; }
+        * { box-sizing: border-box; }
+        html, body {
+          margin: 0; padding: 0;
+          width: 1123px;
+          background: #fff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
       </style>
     </head>
     <body>
@@ -69,6 +197,8 @@ const getFullHtmlDocument = (pagesHtml: string) => `
     </body>
   </html>
 `;
+
+
 
 export default function AdminStudents() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -132,11 +262,11 @@ export default function AdminStudents() {
     const currentDate = selectedDate || date;
     setShowDatePicker(Platform.OS === 'ios');
     setDate(currentDate);
-    // Format: DD MMM YYYY (e.g. 20 May 2026)
-    const formatted = currentDate.toLocaleDateString('en-GB', {
-      day: 'numeric', month: 'short', year: 'numeric'
-    });
-    setCompletionDate(formatted);
+    // Format: DD-MM-YYYY (e.g. 10-05-2026)
+    const dd = String(currentDate.getDate()).padStart(2, '0');
+    const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const yyyy = currentDate.getFullYear();
+    setCompletionDate(`${dd}-${mm}-${yyyy}`);
   };
 
   const handleAdd = async () => {
@@ -169,18 +299,56 @@ export default function AdminStudents() {
 
   const handleDownloadCertificate = async (s: Student) => {
     try {
-      const html = getFullHtmlDocument(getCertificateHtml(s));
-      const { uri } = await Print.printToFileAsync({ html, width: 842, height: 595 });
-      await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
-    } catch (error) { Alert.alert("Error", "Could not generate certificate"); }
+      const templateUri = await getCertTemplateUri();
+      const html = getFullHtmlDocument(getCertificateHtml(s, templateUri));
+      const { uri: tempUri } = await Print.printToFileAsync({ html, width: 842, height: 595 });
+      
+      let shareUri = tempUri;
+      if (Platform.OS !== 'web') {
+        const baseDir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
+        if (baseDir) {
+          // Create a clean file name without extra spaces or invalid characters
+          const cleanName = `${s.student_name.trim().replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+          const newPath = `${baseDir}${cleanName}`;
+          try {
+            // Delete existing file if present so copyAsync does not fail with "File already exists"
+            await FileSystem.deleteAsync(newPath, { idempotent: true });
+            await FileSystem.copyAsync({ from: tempUri, to: newPath });
+            shareUri = newPath;
+          } catch (err: any) {
+            console.error('Could not rename file, sharing original:', err);
+            Alert.alert('Notice', 'Could not rename PDF to ' + cleanName + ': ' + (err?.message || String(err)));
+          }
+        }
+      }
+
+      await Sharing.shareAsync(shareUri, { 
+        UTI: '.pdf', 
+        mimeType: 'application/pdf',
+        dialogTitle: `${s.student_name} Certificate`
+      });
+    } catch (error: any) {
+      console.error('[Certificate Download]', error);
+      Alert.alert('Error', error?.message || String(error));
+    }
   };
 
   const handlePreviewCertificate = async (s: Student) => {
     try {
-      const html = getFullHtmlDocument(getCertificateHtml(s));
+      const templateUri = await getCertTemplateUri();
+      const html = getFullHtmlDocument(getCertificateHtml(s, templateUri));
       await Print.printAsync({ html });
-    } catch (error) { Alert.alert("Error", "Could not preview certificate"); }
+    } catch (error: any) {
+      const debugMsg = [
+        'Type: ' + typeof error,
+        'Msg: ' + (error?.message ?? 'NONE'),
+        'Str: ' + String(error),
+      ].join('\n');
+      console.error('[Certificate Preview]', error);
+      Alert.alert('Certificate Error', debugMsg);
+    }
   };
+
 
   const handleBulkDownload = async () => {
     if (selectedStudents.length === 0) return;
@@ -190,12 +358,33 @@ export default function AdminStudents() {
         Alert.alert("Notice", "Selected students must have approved certificates.");
         return;
       }
-      const pagesHtml = selectedDocs.map(s => getCertificateHtml(s)).join("");
+      const templateUri = await getCertTemplateUri();
+      const pagesHtml = selectedDocs.map(s => getCertificateHtml(s, templateUri)).join("");
       const html = getFullHtmlDocument(pagesHtml);
-      const { uri } = await Print.printToFileAsync({ html, width: 842, height: 595 });
-      await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      const { uri: tempUri } = await Print.printToFileAsync({ html, width: 842, height: 595 });
+      
+      let shareUri = tempUri;
+      if (Platform.OS !== 'web') {
+        const baseDir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
+        if (baseDir) {
+          const newPath = `${baseDir}Nimu_Certificates.pdf`;
+          try {
+            await FileSystem.deleteAsync(newPath, { idempotent: true });
+            await FileSystem.copyAsync({ from: tempUri, to: newPath });
+            shareUri = newPath;
+          } catch (err: any) {
+            console.error('Could not rename bulk file, sharing original:', err);
+          }
+        }
+      }
+
+      await Sharing.shareAsync(shareUri, { 
+        UTI: '.pdf', 
+        mimeType: 'application/pdf',
+        dialogTitle: 'Nimu Certificates'
+      });
       setSelectedStudents([]);
-    } catch (error) { Alert.alert("Error", "Could not generate certificates"); }
+    } catch (error: any) { Alert.alert("Error", error?.message || "Could not generate certificates"); }
   };
 
   const inputStyle = { backgroundColor: "#FFFFFF", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: "#1E1B18", borderWidth: 1, borderColor: "#F0E6D8", marginBottom: 10 } as const;
@@ -203,11 +392,12 @@ export default function AdminStudents() {
   if (loading) return <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}><ActivityIndicator color="#FF8C00" size="large" /></View>;
 
   return (
-    <ScrollView
-      contentContainerStyle={{ padding: 16 }}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={["#FF8C00"]} tintColor="#FF8C00" />}
-    >
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16 }}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={["#FF8C00"]} tintColor="#FF8C00" />}
+      >
       {/* Add button */}
       <TouchableOpacity
         onPress={() => setShowForm(!showForm)}
@@ -296,9 +486,19 @@ export default function AdminStudents() {
             s.course_name.toLowerCase().includes(searchQuery.toLowerCase())
           ).length} Students
         </Text>
-        <TouchableOpacity onPress={selectAllFiltered} style={{ padding: 4 }}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: "#FF8C00" }}>Select All</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          {selectedStudents.length > 0 && (
+            <TouchableOpacity onPress={handleBulkDownload} style={{ backgroundColor: "#FF8C00", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Ionicons name="download-outline" size={14} color="#FFFFFF" />
+              <Text style={{ fontSize: 12, fontWeight: "800", color: "#FFFFFF" }}>Download ({selectedStudents.length})</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={selectAllFiltered} style={{ padding: 4 }}>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: "#FF8C00" }}>
+              {selectedStudents.length > 0 && students.length > 0 && selectedStudents.length === students.length ? "Deselect All" : "Select All"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       <View style={{ gap: 10, paddingBottom: selectedStudents.length > 0 ? 80 : 0 }}>
@@ -325,7 +525,7 @@ export default function AdminStudents() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: "700", color: "#1E1B18" }}>{s.student_name}</Text>
                   <Text style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>{s.course_name}</Text>
-                  <Text style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>{s.phone}{s.student_id ? ` · ID: ${s.student_id}` : ""}</Text>
+                  <Text style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>{s.phone}{s.certificate_id ? ` · ID: ${s.certificate_id}` : (s.student_id ? ` · ID: ${s.student_id}` : "")}</Text>
                 </View>
               </View>
               <View style={{ alignItems: "flex-end", gap: 6 }}>
@@ -371,16 +571,26 @@ export default function AdminStudents() {
         )})}
       </View>
       
-      {/* Floating Action Bar for Bulk Download */}
+      </ScrollView>
+
+      {/* Fixed Floating Action Bar for Bulk Download */}
       {selectedStudents.length > 0 && (
-        <View style={{ position: "absolute", bottom: 20, left: 20, right: 20, backgroundColor: "#1E1B18", borderRadius: 16, paddingHorizontal: 20, paddingVertical: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 }}>
-          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}>{selectedStudents.length} Selected</Text>
-          <TouchableOpacity onPress={handleBulkDownload} style={{ backgroundColor: "#FF8C00", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Bulk Download</Text>
-          </TouchableOpacity>
+        <View style={{ position: "absolute", bottom: 16, left: 12, right: 12, backgroundColor: "#1E1B18", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 }}>
+          <View style={{ flexShrink: 1, marginRight: 6 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700" }}>{selectedStudents.length} Selected</Text>
+            <Text style={{ color: "#94A3B8", fontSize: 10, marginTop: 1 }} numberOfLines={1}>Combined PDF</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <TouchableOpacity onPress={() => setSelectedStudents([])} style={{ paddingHorizontal: 8, paddingVertical: 8 }}>
+              <Text style={{ color: "#94A3B8", fontSize: 12, fontWeight: "600" }}>Clear</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleBulkDownload} style={{ backgroundColor: "#FF8C00", paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Ionicons name="download-outline" size={15} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Download</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }

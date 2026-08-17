@@ -14,14 +14,67 @@ interface OffscreenCertProps {
 
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return '';
-  try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
+  const trimmed = dateStr.trim();
+  
+  const ddMmYyyyMatch = trimmed.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/);
+  if (ddMmYyyyMatch) {
+    const dd = ddMmYyyyMatch[1].padStart(2, '0');
+    const mm = ddMmYyyyMatch[2].padStart(2, '0');
+    const yyyy = ddMmYyyyMatch[3];
     return `${dd}-${mm}-${yyyy}`;
-  } catch { return dateStr; }
+  }
+
+  const yyyyMmDdMatch = trimmed.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
+  if (yyyyMmDdMatch) {
+    const yyyy = yyyyMmDdMatch[1];
+    const mm = yyyyMmDdMatch[2].padStart(2, '0');
+    const dd = yyyyMmDdMatch[3].padStart(2, '0');
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  const months: { [key: string]: string } = {
+    jan: '01', january: '01',
+    feb: '02', february: '02',
+    mar: '03', march: '03',
+    apr: '04', april: '04',
+    may: '05',
+    jun: '06', june: '06',
+    jul: '07', july: '07',
+    aug: '08', august: '08',
+    sep: '09', september: '09',
+    oct: '10', october: '10',
+    nov: '11', november: '11',
+    dec: '12', december: '12'
+  };
+
+  const ddMonthYyyyMatch = trimmed.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/);
+  if (ddMonthYyyyMatch) {
+    const dd = ddMonthYyyyMatch[1].padStart(2, '0');
+    const monthStr = ddMonthYyyyMatch[2].toLowerCase();
+    const mm = months[monthStr] || '01';
+    const yyyy = ddMonthYyyyMatch[3];
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  const monthDdYyyyMatch = trimmed.match(/^([a-zA-Z]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+  if (monthDdYyyyMatch) {
+    const monthStr = monthDdYyyyMatch[1].toLowerCase();
+    const mm = months[monthStr] || '01';
+    const dd = monthDdYyyyMatch[2].padStart(2, '0');
+    const yyyy = monthDdYyyyMatch[3];
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  try {
+    const date = new Date(trimmed);
+    if (!isNaN(date.getTime())) {
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yyyy = date.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    }
+  } catch { return trimmed; }
+  return trimmed;
 };
 
 // Generates and saves a single certificate PDF from a student object (headless)

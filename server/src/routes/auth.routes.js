@@ -1,106 +1,47 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, logout, getMe } = require('../controllers/auth.controller');
+const {
+  signupInitiate,
+  signupVerify,
+  loginInitiate,
+  loginVerify,
+  resendOtp,
+  logout,
+  getMe,
+  // Legacy stubs
+  register,
+  signup,
+  login,
+  verifyOtp,
+} = require('../controllers/auth.controller');
 const { verifyToken } = require('../middleware/auth');
-const { registerValidationRules, loginValidationRules, validate } = require('../middleware/validators');
+const { signupInitiateRules, loginInitiateRules, validate } = require('../middleware/validators');
 
-/**
- * @swagger
- * tags:
- *   name: Auth
- *   description: Authentication management
- */
+// ─── OTP-Only Auth Routes ─────────────────────────────────────────────────────
 
-/**
- * @swagger
- * /api/auth/register:
- *   post:
- *     summary: Register new user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [name, email, password]
- *             properties:
- *               name:
- *                 type: string
- *                 example: Muskan Naz
- *               email:
- *                 type: string
- *                 example: muskan@nimu.com
- *               password:
- *                 type: string
- *                 example: Nimu@2026
- *               phone:
- *                 type: string
- *                 example: 9777240070
- *     responses:
- *       201:
- *         description: Registration successful
- *       400:
- *         description: Bad request
- *       409:
- *         description: Email already registered
- */
-router.post('/register', registerValidationRules(), validate, register);
+// Signup Flow (2 steps)
+router.post('/signup/initiate', signupInitiateRules(), validate, signupInitiate);
+router.post('/signup/verify',   signupVerify);
 
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     summary: Login user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email, password]
- *             properties:
- *               email:
- *                 type: string
- *                 example: muskan@nimu.com
- *               password:
- *                 type: string
- *                 example: Nimu@2026
- *     responses:
- *       200:
- *         description: Login successful
- *       401:
- *         description: Invalid credentials
- */
-router.post('/login', loginValidationRules(), validate, login);
+// Login Flow (2 steps)
+router.post('/login/initiate', loginInitiateRules(), validate, loginInitiate);
+router.post('/login/verify',   loginVerify);
 
-/**
- * @swagger
- * /api/auth/logout:
- *   post:
- *     summary: Logout user
- *     tags: [Auth]
- *     responses:
- *       200:
- *         description: Logged out successfully
- */
+// OTP Resend (shared for signup + login)
+router.post('/otp/resend', resendOtp);
+
+// Session
 router.post('/logout', logout);
+router.get('/me',      verifyToken, getMe);
 
-/**
- * @swagger
- * /api/auth/me:
- *   get:
- *     summary: Get current logged in user
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Current user data
- *       401:
- *         description: Unauthorized
- */
-router.get('/me', verifyToken, getMe);
+// ─── Legacy / Deprecated Routes (410 Gone) ───────────────────────────────────
+// These are kept so old mobile clients get a clear error instead of a cryptic 404
+router.post('/register',    register);
+router.post('/signup',      signup);
+router.post('/login',       login);
+router.post('/verify-otp',  verifyOtp);
+router.post('/resend-otp',  (req, res) => res.status(410).json({
+  message: 'Please use POST /auth/otp/resend instead.',
+}));
 
 module.exports = router;

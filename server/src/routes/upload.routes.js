@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/upload');
 const uploadVideo = require('../middleware/uploadVideo');
-const { uploadImage, getSignature, uploadVideoChunked } = require('../controllers/upload.controller');
+const { uploadImage, getSignature, uploadVideoChunked, getR2PresignedUrl, getUploadProgress } = require('../controllers/upload.controller');
 
 router.get('/signature', getSignature);
+router.get('/r2-presigned', getR2PresignedUrl);
+router.get('/progress', getUploadProgress);
 router.post('/video', uploadVideo.single('video'), uploadVideoChunked);
 
 /**

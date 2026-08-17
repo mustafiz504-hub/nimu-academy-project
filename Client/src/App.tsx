@@ -18,6 +18,7 @@ const AdminCourses = lazy(() => import('./pages/admin/AdminCourses'));
 const AdminGallery = lazy(() => import('./pages/admin/AdminGallery'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminCertificatesPage = lazy(() => import('./pages/admin/AdminCertificatesPage'));
+const AdminVideos = lazy(() => import('./pages/admin/AdminVideos'));
 const ProfilePage = lazy(() => import('./pages/user/ProfilePage'));
 const UserOrdersPage = lazy(() => import('./pages/user/UserOrdersPage'));
 const UserEnrollmentsPage = lazy(() => import('./pages/user/UserEnrollmentsPage'));
@@ -26,6 +27,7 @@ const CertificatePage = lazy(() => import('./pages/CertificatePage'));
 const TermsOfUse = lazy(() => import('./pages/TermsOfUse'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
+const LearnPage = lazy(() => import('./pages/LearnPage'));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-brand-dark">
@@ -60,6 +62,7 @@ function App() {
               <Route path="/admin/gallery" element={<AdminGallery />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/certificates" element={<AdminCertificatesPage />} />
+              <Route path="/admin/videos" element={<AdminVideos />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/user/orders" element={<UserOrdersPage />} />
               <Route path="/user/enrollments" element={<UserEnrollmentsPage />} />
@@ -69,6 +72,7 @@ function App() {
               <Route path="/refund" element={<RefundPolicy />} />
               <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
               <Route path="/course/:id" element={<CourseDetailPage />} />
+              <Route path="/learn" element={<LearnPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

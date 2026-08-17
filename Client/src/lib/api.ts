@@ -9,7 +9,13 @@ export interface ApiUser {
   name: string;
   email: string;
   phone?: string | null;
+  phone_number?: string | null;
+  country_code?: string | null;
   role: 'user' | 'admin' | 'superadmin' | string;
+  is_verified?: boolean;
+  email_verified?: boolean;
+  phone_verified?: boolean;
+  marketing_opt_in?: boolean;
   created_at?: string;
 }
 
@@ -109,6 +115,54 @@ export interface ActivityLog {
   created_at?: string;
 }
 
+// ─── OTP Auth Payloads ────────────────────────────────────────────────────────
+
+export interface SignupInitiatePayload {
+  name: string;
+  email: string;
+  password: string;
+  terms_agreed: boolean;
+  marketing_opt_in?: boolean;
+}
+
+export interface SignupVerifyPayload {
+  email: string;
+  otp: string;
+}
+
+export interface LoginInitiatePayload {
+  email: string;
+  password: string;
+}
+
+export interface LoginVerifyPayload {
+  identifier: string;
+  otp: string;
+}
+
+export interface OtpResendPayload {
+  identifier: string;
+  purpose: 'signup' | 'login';
+}
+
+export interface OtpInitiateResponse {
+  message: string;
+  channel?: 'email' | 'phone';
+  maskedTarget?: string;
+  maskedEmail?: string;
+  maskedPhone?: string;
+  email?: string;
+  identifier?: string;
+}
+
+export interface AuthResponse {
+  message: string;
+  token: string;
+  user: ApiUser;
+}
+
+// ─── Infrastructure ───────────────────────────────────────────────────────────
+
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
   auth?: boolean;
@@ -188,18 +242,17 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
 export const api = {
   auth: {
-    register: (body: { name: string; email: string; password: string; phone?: string }) =>
-      request<{ message: string; token: string; user: ApiUser }>('/auth/register', {
-        method: 'POST',
-        body,
-        auth: false,
-      }),
-    login: (body: { email: string; password: string }) =>
-      request<{ message: string; token: string; user: ApiUser }>('/auth/login', {
-        method: 'POST',
-        body,
-        auth: false,
-      }),
+    // ── New OTP-only endpoints ──
+    signupInitiate: (body: SignupInitiatePayload) =>
+      request<OtpInitiateResponse>('/auth/signup/initiate', { method: 'POST', body, auth: false }),
+    signupVerify: (body: SignupVerifyPayload) =>
+      request<AuthResponse>('/auth/signup/verify', { method: 'POST', body, auth: false }),
+    loginInitiate: (body: LoginInitiatePayload) =>
+      request<OtpInitiateResponse>('/auth/login/initiate', { method: 'POST', body, auth: false }),
+    loginVerify: (body: LoginVerifyPayload) =>
+      request<AuthResponse>('/auth/login/verify', { method: 'POST', body, auth: false }),
+    resendOtp: (body: OtpResendPayload) =>
+      request<{ message: string }>('/auth/otp/resend', { method: 'POST', body, auth: false }),
     logout: () => request<{ message: string }>('/auth/logout', { method: 'POST', auth: false }),
     me: () => request<{ user: ApiUser }>('/auth/me'),
   },
