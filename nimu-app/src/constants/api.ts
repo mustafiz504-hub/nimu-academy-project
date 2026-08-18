@@ -9,6 +9,7 @@ import Constants from "expo-constants";
  */
 // Auto-detect host computer IP from Expo Go
 const getExpoHostIp = () => {
+  if (!__DEV__) return null;
   const hostUri =
     Constants.expoConfig?.hostUri ||
     (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
