@@ -7,20 +7,7 @@ import Constants from "expo-constants";
  * Loaded from environment variables (.env via process.env or expo-constants).
  * Fallback to local network IP if not set.
  */
-// Auto-detect host computer IP from Expo Go
-const getExpoHostIp = () => {
-  if (!__DEV__) return null;
-  const hostUri =
-    Constants.expoConfig?.hostUri ||
-    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
-    (Constants as any).manifest?.debuggerHost;
-  return hostUri ? hostUri.split(":")[0] : null;
-};
-
-const expoHostIp = getExpoHostIp();
-
 const ENV_BASE =
-  (expoHostIp ? `http://${expoHostIp}:8000` : null) ||
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   process.env.API_BASE_URL ||
   "https://nimu-academy-backend.onrender.com";
