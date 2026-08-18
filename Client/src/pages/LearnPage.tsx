@@ -489,7 +489,7 @@ export default function LearnPage() {
                           This lesson is locked. Enroll in the full course to unlock all video lessons, premium materials, and earn your certificate.
                         </p>
                         <Link
-                          to={`/courses/${selectedCourseId}`}
+                          to={`/course/${selectedCourseId}`}
                           className="mt-4 bg-brand-gold hover:bg-brand-gold/90 text-brand-dark px-8 py-3.5 rounded-xl font-bold transition shadow-lg shadow-brand-gold/20 flex items-center gap-2 relative z-10"
                         >
                           <Gift size={18} />
@@ -516,7 +516,7 @@ export default function LearnPage() {
                         Enroll in this course to unlock video lessons, premium materials, and earn your certificate.
                       </p>
                       <Link
-                        to={`/courses/${selectedCourseId}`}
+                        to={`/course/${selectedCourseId}`}
                         className="mt-4 bg-brand-gold hover:bg-brand-gold/90 text-brand-dark px-8 py-3.5 rounded-xl font-bold transition shadow-lg shadow-brand-gold/20 flex items-center gap-2 relative z-10"
                       >
                         <Gift size={18} />

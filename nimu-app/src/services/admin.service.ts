@@ -2,7 +2,7 @@ import axios from "axios";
 import api from "./api";
 import { ENDPOINTS } from "../constants/api";
 import type { Course, CourseVideo } from "../types/course.types";
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────

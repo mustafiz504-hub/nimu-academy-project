@@ -4,7 +4,7 @@ import type { PaymentOrder, PaymentVerification, PaymentResult } from "../types/
 
 export const paymentService = {
   async createOrder(courseId: string, amount: number): Promise<PaymentOrder> {
-    const { data } = await api.post<PaymentOrder>(ENDPOINTS.createOrder, { courseId, amount });
+    const { data } = await api.post<PaymentOrder>(ENDPOINTS.createOrder, { course_id: courseId, amount });
     return data;
   },
 

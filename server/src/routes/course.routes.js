@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getAllCourses, getCourseById, getCourseVideos, createCourse, updateCourse, deleteCourse, addVideoToCourse, deleteVideo, updateVideo } = require('../controllers/course.controller');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, optionalVerifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
 
 /**
@@ -59,7 +59,7 @@ router.get('/:id', getCourseById);
  *       200:
  *         description: List of videos
  */
-router.get('/:id/videos', verifyToken, getCourseVideos);
+router.get('/:id/videos', optionalVerifyToken, getCourseVideos);
 
 /**
  * @swagger

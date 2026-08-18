@@ -11,8 +11,12 @@ import {
   Animated,
   FlatList,
   Platform,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
+import * as WebBrowser from "expo-web-browser";
+import * as ExpoLinking from "expo-linking";
 import { useCourseStore } from "../../store/course.store";
 import { useAuthStore } from "../../store/auth.store";
 import type { Course, CourseVideo } from "../../types/course.types";
@@ -236,6 +240,8 @@ function CourseDropdown({ courses, selectedId, onSelect, myEnrollments }: Course
   );
 }
 
+const EMPTY_VIDEOS: CourseVideo[] = [];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LearnScreen — main component
 // ─────────────────────────────────────────────────────────────────────────────
@@ -245,13 +251,15 @@ interface LearnScreenProps {
   onSelectCourse: (id: string | null) => void;
 }
 
-export default function LearnScreen({ isActive = true, selectedCourseId, onSelectCourse }: LearnScreenProps) {
+export default function LearnScreen({ isActive = true, selectedCourseId: propSelectedCourseId, onSelectCourse }: LearnScreenProps) {
   const {
     courses,
     courseDetails,
     courseVideos: allCourseVideos,
     myEnrollments,
     lastPlayedVideo,
+    selectedCourseId: storeSelectedCourseId,
+    setSelectedCourseId: setStoreSelectedCourseId,
     loadingCourses,
     loadingDetail,
     loadingVideos,
@@ -269,8 +277,9 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
 
   const { user } = useAuthStore();
   const [activeVideo, setActiveVideo] = useState<CourseVideo | null>(null);
-  const [showPaywall, setShowPaywall] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+
+  const selectedCourseId = propSelectedCourseId || storeSelectedCourseId;
 
   // ── 1. Load all courses + enrollments on mount ───────────────────────────
   useEffect(() => {
@@ -280,14 +289,14 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
 
   // ── 2. Auto-select first accessible course once courses are loaded ────────
   useEffect(() => {
-    if (courses.length === 0) return;
-    if (selectedCourseId) return; // already selected
+    if (courses.length === 0 || selectedCourseId) return;
 
     // Prefer free courses first, then enrolled, then anything
     const sorted = sortFreesFirst(courses);
     const firstId = String(sorted[0].id);
     onSelectCourse(firstId);
-  }, [courses, selectedCourseId, onSelectCourse]);
+    setStoreSelectedCourseId(firstId);
+  }, [courses.length, selectedCourseId]);
 
   // ── 3. Load detail + videos whenever selected course changes ─────────────
   useEffect(() => {
@@ -297,11 +306,14 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
   }, [selectedCourseId, fetchCourseDetail, fetchCourseVideos]);
 
   // ── 4. Set active video from lastPlayed or first video ───────────────────
-  const courseVideos = selectedCourseId ? (allCourseVideos[selectedCourseId] ?? []) : [];
-  const course = selectedCourseId ? (courseDetails[selectedCourseId] ?? null) : null;
+  const courseVideos = selectedCourseId ? (allCourseVideos[selectedCourseId] || EMPTY_VIDEOS) : EMPTY_VIDEOS;
+  const course = selectedCourseId ? (courseDetails[selectedCourseId] || null) : null;
 
   useEffect(() => {
-    if (courseVideos.length === 0 || !selectedCourseId) return;
+    if (!selectedCourseId || courseVideos.length === 0) {
+      setActiveVideo(null);
+      return;
+    }
     const saved = lastPlayedVideo[selectedCourseId];
     if (saved) {
       setActiveVideo(saved);
@@ -310,14 +322,7 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
     // For locked courses, auto-select first free video only (not a paid one)
     const firstFree = courseVideos.find((v) => v.is_free);
     setActiveVideo(firstFree ?? courseVideos[0]);
-  }, [courseVideos, selectedCourseId]);
-
-  // Reset active video when course changes
-  useEffect(() => {
-    if (!selectedCourseId) return;
-    const saved = selectedCourseId ? lastPlayedVideo[selectedCourseId] : null;
-    setActiveVideo(saved ?? null);
-  }, [selectedCourseId]);
+  }, [selectedCourseId, courseVideos]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const isFreeCourse = Number(course?.price) === 0;
@@ -341,7 +346,7 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
 
   const handlePlayVideo = (video: CourseVideo) => {
     if (!isUnlocked && !video.is_free) {
-      setShowPaywall(true);
+      // Scroll hint — footer is already visible, no modal needed
       return;
     }
     setActiveVideo(video);
@@ -352,22 +357,84 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
     if (!course || !selectedCourseId) return;
     try {
       setPaymentLoading(true);
-      // Submit enrollment request — admin will confirm after payment
-      await api.post("/enrollments", {
-        course_id: selectedCourseId,
-        student_name: user?.name || "Student",
-        phone: user?.phone || "",
-        email: user?.email || "",
-        message: `Enrollment request for ${course.name} via app`,
+      
+      const { paymentService } = require("../../services/payment.service");
+      
+      // 1. Create Order
+      const order = await paymentService.createOrder(selectedCourseId, Number(course.price));
+      
+      // 2. Expo Go detection — react-native-razorpay native module nahi chalta Expo Go mein
+      //    Constants.appOwnership === 'expo' matlab Expo Go app hai
+      const isExpoGo = Constants.appOwnership === 'expo';
+
+      if (isExpoGo) {
+        // ── EXPO GO: Real Razorpay via openAuthSessionAsync + ExpoLinking ────────
+        //    ExpoLinking.createURL generates valid deep link URL (exp://... in Expo Go)
+        //    openAuthSessionAsync detects the redirect, CLOSES the browser, and returns the result!
+        setPaymentLoading(false);
+
+        const redirectUrl = ExpoLinking.createURL('razorpay-callback');
+        const { API_BASE_URL } = require("../../constants/api");
+        const checkoutUrl = `${API_BASE_URL}/payments/checkout-page?order_id=${encodeURIComponent(order.order_id)}&amount=${order.amount}&course_id=${encodeURIComponent(selectedCourseId)}&course_name=${encodeURIComponent(course.name)}&user_name=${encodeURIComponent(user?.name || '')}&user_email=${encodeURIComponent(user?.email || '')}&user_phone=${encodeURIComponent(user?.phone || '')}&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+        const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectUrl);
+
+        if (result.type === 'success' && result.url) {
+          const parsed = ExpoLinking.parse(result.url);
+          const status = parsed.queryParams?.status as string;
+
+          if (status === 'success') {
+            const razorpay_order_id   = (parsed.queryParams?.order_id as string)   || '';
+            const razorpay_payment_id = (parsed.queryParams?.payment_id as string) || '';
+            const razorpay_signature  = (parsed.queryParams?.signature as string)  || '';
+
+            setPaymentLoading(true);
+            try {
+              await paymentService.verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+              await handleRefresh();
+            } catch {
+              await handleRefresh();
+            } finally {
+              setPaymentLoading(false);
+            }
+          } else if (status === 'cancelled') {
+            // Quiet cancel
+          }
+        }
+        return;
+      }
+
+      // 3. Real Razorpay Checkout (Custom Dev Client / Production build)
+      const RazorpayCheckout = require("react-native-razorpay").default;
+      const options = {
+        description: `Enrollment for ${course.name}`,
+        image: 'https://i.imgur.com/3g7nmJC.png',
+        currency: 'INR',
+        key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '',
+        amount: String(order.amount),
+        name: 'Nimu Academy',
+        order_id: order.order_id,
+        prefill: {
+          email: user?.email || '',
+          contact: user?.phone || '',
+          name: user?.name || ''
+        },
+        theme: { color: '#FF8C00' }
+      };
+
+      RazorpayCheckout.open(options).then(async (data: any) => {
+        try {
+          await paymentService.verifyPayment(data);
+          await handleRefresh();
+        } catch (verErr: any) {
+          await handleRefresh();
+        }
+      }).catch((error: any) => {
+        // Quiet cancel or soft notice
       });
-      setShowPaywall(false);
-      Alert.alert(
-        "Enrollment Request Sent! 🎉",
-        `Your request to enroll in "${course.name}" has been submitted. Our team will contact you to confirm your enrollment after payment.\n\nFee: ₹${course.price}`,
-        [{ text: "OK" }]
-      );
+      
     } catch (err: any) {
-      const msg = err?.response?.data?.message || "Could not submit enrollment request. Please try again.";
+      const msg = err?.response?.data?.message || err?.message || "Could not initiate payment.";
       Alert.alert("Error", msg);
     } finally {
       setPaymentLoading(false);
@@ -508,118 +575,11 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
       {/* ── Main Content ─────────────────────────────────────────────────── */}
       {course && (
         <>
-          {/* Paywall Modal */}
-          <Modal
-            transparent
-            visible={showPaywall}
-            animationType="slide"
-            onRequestClose={() => setShowPaywall(false)}
-          >
-            <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
-              <View
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  borderTopLeftRadius: 32,
-                  borderTopRightRadius: 32,
-                  paddingTop: 12,
-                  paddingHorizontal: 24,
-                  paddingBottom: 40,
-                }}
-              >
-                {/* Handle */}
-                <View style={{ width: 40, height: 4, backgroundColor: "#E2E8F0", borderRadius: 2, alignSelf: "center", marginBottom: 24 }} />
 
-                {/* Lock icon */}
-                <View style={{ alignItems: "center", marginBottom: 20 }}>
-                  <View
-                    style={{
-                      width: 72, height: 72, borderRadius: 36,
-                      backgroundColor: "#FFF3E0",
-                      justifyContent: "center", alignItems: "center",
-                      marginBottom: 16,
-                    }}
-                  >
-                    <Ionicons name="lock-closed" size={36} color="#FF8C00" />
-                  </View>
-                  <Text style={{ fontSize: 22, fontWeight: "800", color: "#1E1B18", textAlign: "center" }}>
-                    {course?.name}
-                  </Text>
-                  <Text style={{ fontSize: 13, color: "#64748B", textAlign: "center", marginTop: 6, lineHeight: 20 }}>
-                    Enroll to unlock all {courseVideos.length} video lessons and start learning.
-                  </Text>
-                </View>
-
-                {/* Price badge */}
-                <View
-                  style={{
-                    flexDirection: "row", alignItems: "center",
-                    backgroundColor: "#FFF8F0", borderRadius: 16,
-                    padding: 16, marginBottom: 24,
-                    borderWidth: 1, borderColor: "#FFE0B2",
-                    gap: 12,
-                  }}
-                >
-                  <Ionicons name="pricetag" size={22} color="#FF8C00" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 12, color: "#94A3B8", fontWeight: "600" }}>Course Fee</Text>
-                    <Text style={{ fontSize: 24, fontWeight: "800", color: "#1E1B18" }}>
-                      ₹{course?.price}
-                    </Text>
-                  </View>
-                  <View style={{ backgroundColor: "#FFF3E0", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 }}>
-                    <Text style={{ fontSize: 11, color: "#FF8C00", fontWeight: "800" }}>ONE-TIME</Text>
-                  </View>
-                </View>
-
-                {/* Features */}
-                {[
-                  "Access to all video lessons",
-                  "Watch at your own pace",
-                  "Certificate on completion",
-                ].map((feat) => (
-                  <View key={feat} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
-                    <Text style={{ fontSize: 13, color: "#374151", fontWeight: "500" }}>{feat}</Text>
-                  </View>
-                ))}
-
-                {/* CTA buttons */}
-                <TouchableOpacity
-                  onPress={handleEnrollNow}
-                  disabled={paymentLoading}
-                  style={{
-                    backgroundColor: paymentLoading ? "#FFC04D" : "#FF8C00",
-                    paddingVertical: 16, borderRadius: 20,
-                    alignItems: "center", marginTop: 20,
-                    shadowColor: "#FF8C00",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
-                  }}
-                >
-                  {paymentLoading ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 16 }}>
-                      Enroll Now — ₹{course?.price}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setShowPaywall(false)}
-                  style={{ paddingVertical: 14, alignItems: "center", marginTop: 8 }}
-                >
-                  <Text style={{ fontSize: 14, color: "#94A3B8", fontWeight: "600" }}>Maybe Later</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
 
           {/* Video Player — HARD GUARD: never renders if user is not unlocked */}
           {!isUnlocked && !isFreeCourse ? (
-            <TouchableOpacity
-              onPress={() => setShowPaywall(true)}
-              activeOpacity={0.9}
+            <View
               style={{
                 width: "100%",
                 aspectRatio: 16 / 9,
@@ -638,8 +598,8 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
                 <Ionicons name="lock-closed" size={36} color="#FF8C00" />
               </View>
               <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>Premium Course</Text>
-              <Text style={{ color: "#94A3B8", fontSize: 12, marginTop: 4 }}>Tap to enroll</Text>
-            </TouchableOpacity>
+              <Text style={{ color: "#94A3B8", fontSize: 12, marginTop: 4 }}>Enroll below to unlock</Text>
+            </View>
           ) : activeVideo?.video_url ? (
             <VideoPlayer videoUrl={activeVideo.video_url} title={activeVideo.title} autoPlay isActive={isActive} />
           ) : (
@@ -656,7 +616,7 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
 
           {/* Scrollable playlist */}
           <ScrollView
-            contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
+            contentContainerStyle={{ padding: 20, paddingBottom: !isUnlocked && !isFreeCourse ? 100 : 40 }}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -809,6 +769,85 @@ export default function LearnScreen({ isActive = true, selectedCourseId, onSelec
               </View>
             )}
           </ScrollView>
+
+          {/* ── Floating Enroll Card (Matching App UI) ───────────────────── */}
+          {!isUnlocked && !isFreeCourse && (
+            <View
+              style={{
+                position: "absolute",
+                bottom: 12,
+                left: 16,
+                right: 16,
+                backgroundColor: "#FFFFFF",
+                borderRadius: 24,
+                borderWidth: 1,
+                borderColor: "#F0E6D8",
+                paddingHorizontal: 18,
+                paddingVertical: 14,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                shadowColor: "#FF8C00",
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.15,
+                shadowRadius: 16,
+                elevation: 8,
+              }}
+            >
+              {/* Price & Badge */}
+              <View style={{ gap: 2 }}>
+                <View
+                  style={{
+                    backgroundColor: "#FFF3E0",
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: 8,
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  <Text style={{ fontSize: 9, fontWeight: "800", color: "#FF8C00", letterSpacing: 0.5 }}>
+                    PREMIUM COURSE
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 22, fontWeight: "900", color: "#1E1B18", letterSpacing: -0.5 }}>
+                  ₹{course?.price ? Math.round(Number(course.price)).toLocaleString("en-IN") : "--"}
+                </Text>
+              </View>
+
+              {/* Enroll Button */}
+              <TouchableOpacity
+                onPress={handleEnrollNow}
+                disabled={paymentLoading}
+                activeOpacity={0.85}
+                style={{
+                  backgroundColor: paymentLoading ? "#FFC04D" : "#FF8C00",
+                  width: 150,
+                  height: 48,
+                  borderRadius: 18,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  shadowColor: "#FF8C00",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 5,
+                }}
+              >
+                {paymentLoading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="sparkles" size={16} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 15 }}>
+                      Enroll Now
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </>
       )}
     </View>

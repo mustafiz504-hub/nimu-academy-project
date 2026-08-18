@@ -49,3 +49,5 @@ server/uploads/**
 !server/uploads/temp/.gitkeep
 temp/
 tmp/
+# Architecture Info
+projectDetail.txt

@@ -41,6 +41,7 @@ app.use('/api/students',    require('./routes/student.routes'));
 app.use('/api/admin',       require('./routes/admin.routes'));
 app.use('/api/superadmin',  require('./routes/superadmin.routes'));
 app.use('/api/progress',    require('./routes/progress.routes'));
+app.use('/api/payments',    require('./routes/payment.routes'));
 
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────

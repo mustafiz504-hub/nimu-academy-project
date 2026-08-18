@@ -1,7 +1,7 @@
-import { View, ActivityIndicator } from "react-native";
+import { View, Image, Animated, Easing } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
 
 // Navigation
@@ -22,6 +22,7 @@ import AdminScreen from "../src/screens/admin/AdminScreen";
 
 // Stores
 import { useAuthStore } from "../src/store/auth.store";
+import { useCourseStore } from "../src/store/course.store";
 import { AppAlertProvider } from "../src/components/common/AppAlert";
 
 type AuthPage = "login" | "register" | "verify-otp";
@@ -31,6 +32,90 @@ interface OtpSession {
   identifier: string;       // email (signup) or email/phone (login)
   maskedTarget: string;     // e.g. "j***@gmail.com" or "+91 98***210"
   purpose: "signup" | "login";
+}
+
+function AppBootLoadingScreen() {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 1300,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(anim, {
+          toValue: 0,
+          duration: 1300,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [anim]);
+
+  const translateX = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-60, 140],
+  });
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#FDF8F0", justifyContent: "center", alignItems: "center" }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar style="dark" />
+
+      {/* Clean circular logo: smaller size, no black/grey square shadow */}
+      <View
+        style={{
+          width: 100,
+          height: 100,
+          borderRadius: 50,
+          overflow: "hidden",
+          backgroundColor: "#FFFFFF",
+          borderWidth: 2,
+          borderColor: "#FF8C00",
+          shadowColor: "#FF8C00",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 10,
+          elevation: 4,
+        }}
+      >
+        <Image
+          source={require("../assets/images/logo-round.png")}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+        />
+      </View>
+
+      {/* Bottom loading progress bar matching App UI theme */}
+      <View style={{ position: "absolute", bottom: 65, width: 180, alignItems: "center" }}>
+        <View
+          style={{
+            width: "100%",
+            height: 6,
+            backgroundColor: "#FFE5C4",
+            borderRadius: 3,
+            overflow: "hidden",
+          }}
+        >
+          <Animated.View
+            style={{
+              width: 70,
+              height: "100%",
+              backgroundColor: "#FF8C00",
+              borderRadius: 3,
+              transform: [{ translateX }],
+            }}
+          />
+        </View>
+      </View>
+    </View>
+  );
 }
 
 function AuthFlow() {
@@ -92,9 +177,12 @@ function AuthFlow() {
 }
 
 export default function Index() {
-  const [currentTab, setCurrentTab] = useState<TabName>("home");
+  const { selectedCourseId: storeSelectedCourseId, setSelectedCourseId: setStoreSelectedCourseId } = useCourseStore();
+  const [currentTab, setCurrentTab] = useState<TabName>(storeSelectedCourseId ? "schedule" : "home");
   const [isBooting, setIsBooting] = useState(true);
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+
+  const selectedCourseId = storeSelectedCourseId;
+  const setSelectedCourseId = setStoreSelectedCourseId;
 
   const { isAuthenticated, user, loadFromStorage } = useAuthStore();
 
@@ -107,25 +195,7 @@ export default function Index() {
 
   // ── Splash / Loading ──────────────────────────────────────────────────────
   if (isBooting) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#FDF8F0", justifyContent: "center", alignItems: "center" }}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <StatusBar style="dark" />
-        <View
-          style={{
-            width: 80, height: 80, borderRadius: 40,
-            backgroundColor: "#FF8C00",
-            justifyContent: "center", alignItems: "center",
-            marginBottom: 20,
-            shadowColor: "#FF8C00",
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
-          }}
-        >
-          <ActivityIndicator color="#FFFFFF" size="large" />
-        </View>
-      </View>
-    );
+    return <AppBootLoadingScreen />;
   }
 
   // ── Not Authenticated → Auth screens ─────────────────────────────────────
