@@ -1,0 +1,35 @@
+NIMU ACADEMY PROJECT ARCHITECTURE
+
+1. Database (Data Storage)
+   - Platform: Supabase (PostgreSQL)
+   - Location: Cloud (AWS Server, Singapore)
+   - Use: Stores all text data (users, courses, enrollments, payments).
+   - Connection: Connected via server/.env file.
+
+2. Backend (Server / API)
+   - Technology: Node.js (Express.js)
+   - Location: /server
+   - Use: Core logic, payment processing (Razorpay), auth, etc.
+   - Run Command: npm run dev
+
+3. Frontend - Mobile App (Nimu Academy App)
+   - Technology: React Native (Expo Router)
+   - Location: /nimu-app
+   - Use: Student facing Android/iOS application.
+   - Run Command: npm start
+
+4. Frontend - Web Client (Admin Panel)
+   - Technology: React.js (Vite)
+   - Location: /Client
+   - Use: Admin panel to manage courses, uploads, students.
+   - Run Command: npm run dev
+
+5. Videos Storage
+   - Platform: Cloudflare R2
+   - Bucket: nimu-academy-videos
+   - Use: Stores heavy course lecture videos.
+
+6. Images Storage
+   - Platform: Cloudinary
+   - Cloud Name: ds3oirjrk
+   - Use: Fast loading of banners, thumbnails, profile photos.

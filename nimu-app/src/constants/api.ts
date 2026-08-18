@@ -22,7 +22,7 @@ const ENV_BASE =
   (expoHostIp ? `http://${expoHostIp}:8000` : null) ||
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   process.env.API_BASE_URL ||
-  "http://10.188.169.66:8000";
+  "https://nimu-academy-backend.onrender.com";
 
 const RAW_BASE_URL = ENV_BASE.endsWith("/api")
   ? ENV_BASE.slice(0, -4)
@@ -56,8 +56,8 @@ export const ENDPOINTS = {
   myEnrollments: "/enrollments/my",
 
   // Orders / Payments
-  createOrder:   "/orders",
-  verifyPayment: "/orders/verify",
+  createOrder:   "/payments/create-order",
+  verifyPayment: "/payments/verify",
 
   // Progress
   myProgress:         "/progress/my",

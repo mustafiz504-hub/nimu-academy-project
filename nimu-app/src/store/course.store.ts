@@ -10,6 +10,9 @@ interface CourseState {
   courseAccess: Record<string, { isEnrolled: boolean; canAccessAll: boolean }>; // Access flags per course
   lastPlayedVideo: Record<string, CourseVideo>; // Last played video per course ID
 
+  selectedCourseId: string | null;
+  setSelectedCourseId: (id: string | null) => void;
+
   loadingCourses: boolean;
   loadingEnrollments: boolean;
   loadingVideos: boolean;
@@ -47,6 +50,9 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   courseVideos: {},
   courseAccess: {},
   lastPlayedVideo: {},
+  selectedCourseId: null,
+
+  setSelectedCourseId: (id: string | null) => set({ selectedCourseId: id }),
 
   loadingCourses: false,
   loadingEnrollments: false,

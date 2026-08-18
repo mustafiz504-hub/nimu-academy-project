@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, User, ArrowRight, ArrowLeft, AlertCircle, CheckCircle2, Sparkles, RefreshCw, Shield, Lock, Eye, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import OtpInput from '../components/ui/OtpInput';
 import Nav from '../components/Nav';
@@ -77,6 +77,7 @@ const AuthPage = () => {
 
   const { signupInitiate, signupVerify, loginInitiate, loginVerify, resendOtp } = useGlobal();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Countdown timer
   useEffect(() => {
@@ -192,7 +193,11 @@ const AuthPage = () => {
           otp: code,
         });
       }
-      navigate(nextPathForRole(user?.role));
+      if (location.state?.returnTo) {
+        navigate(location.state.returnTo, { state: location.state });
+      } else {
+        navigate(nextPathForRole(user?.role));
+      }
     } catch (err: any) {
       setError(err.message || 'Incorrect OTP. Please try again.');
       setOtpDigits(['', '', '', '', '', '']);

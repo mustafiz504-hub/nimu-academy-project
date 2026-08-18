@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { adminService, type Student } from "../../../services/admin.service";
 import { useCourseStore } from "../../../store/course.store";
 import { API_BASE_URL } from "../../../constants/api";

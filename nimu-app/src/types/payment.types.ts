@@ -1,8 +1,9 @@
 export interface PaymentOrder {
-  orderId: string;
+  order_id: string;
   amount: number;
   currency: string;
-  courseId: string;
+  course_id?: string;
+  key_id?: string;
 }
 
 export interface PaymentVerification {

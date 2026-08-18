@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   Clock, Calendar, CheckCircle2, User, BookOpen, GraduationCap, 
@@ -16,8 +16,9 @@ import { api } from '../lib/api';
 
 const CourseDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { courses, user } = useGlobal();
+  const { courses, user, refreshMyEnrollments } = useGlobal();
   const navigate = useNavigate();
+  const location = useLocation();
   const course = useMemo(
     () => courses.find(c => String(c.id) === String(id)) ?? null,
     [courses, id]
@@ -37,53 +38,11 @@ const CourseDetailPage = () => {
     message: '',
   });
 
-  useEffect(() => {
-    if (course) {
-      window.scrollTo(0, 0);
-    } else {
-      navigate('/');
+  const openEnrollment = React.useCallback(() => {
+    if (!user) {
+      navigate('/auth', { state: { returnTo: location.pathname, action: 'enroll' } });
+      return;
     }
-  }, [course, navigate]);
-
-  if (!course) return null;
-
-  const handleEnrollSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setError('');
-
-    try {
-      await api.enrollments.create({
-        course_id: course.id,
-        student_name: enrollmentForm.student_name,
-        phone: enrollmentForm.phone,
-        email: enrollmentForm.email,
-        city: enrollmentForm.city,
-        batch_timing: enrollmentForm.batch_timing,
-        mode: enrollmentForm.mode || course.mode,
-        how_heard: enrollmentForm.how_heard,
-        message: enrollmentForm.message,
-      });
-
-      setIsSuccess(true);
-      setEnrollmentForm({
-        student_name: user?.name || '',
-        phone: user?.phone || '',
-        email: user?.email || '',
-        city: '',
-        batch_timing: course.batches?.[0] || '',
-        mode: course.mode,
-        how_heard: 'Instagram',
-        message: '',
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Enrollment submit nahi ho paya.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const openEnrollment = () => {
     setError('');
     setIsSuccess(false);
     setEnrollmentForm((prev) => ({
@@ -91,11 +50,126 @@ const CourseDetailPage = () => {
       student_name: prev.student_name || user?.name || '',
       phone: prev.phone || user?.phone || '',
       email: prev.email || user?.email || '',
-      batch_timing: prev.batch_timing || course.batches?.[0] || '',
-      mode: prev.mode || course.mode,
+      batch_timing: prev.batch_timing || course?.batches?.[0] || '',
+      mode: prev.mode || course?.mode || '',
     }));
     setShowEnrollModal(true);
+  }, [user, navigate, location.pathname, course]);
+
+  useEffect(() => {
+    if (course) {
+      if (location.state?.action === 'enroll' && user) {
+        openEnrollment();
+        // Clear state so it doesn't keep reopening on refresh
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+      window.scrollTo(0, 0);
+    } else {
+      navigate('/');
+    }
+  }, [course, navigate, location.state, location.pathname, user, openEnrollment]);
+
+  if (!course) return null;
+
+  const handlePayment = async () => {
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const res = await new Promise((resolve) => {
+        if ((window as any).Razorpay) return resolve(true);
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+
+      if (!res) {
+        setError('Razorpay SDK failed to load. Are you offline?');
+        setSubmitting(false);
+        return;
+      }
+
+      const token = localStorage.getItem('nimu_auth_token');
+      const API_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:8000/api';
+      
+      // 1. Create order
+      const orderRes = await fetch(`${API_URL}/payments/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          course_id: course.id,
+          enrollmentData: {
+            student_name: user?.name,
+            phone: user?.phone
+          }
+        })
+      });
+      
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.message || 'Could not create order');
+
+      // 2. Open Razorpay Checkout
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Nimu Academy',
+        description: `Unlock ${orderData.course_name}`,
+        order_id: orderData.order_id,
+        handler: async (response: any) => {
+          // 3. Verify Payment
+          const verifyRes = await fetch(`${API_URL}/payments/verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
+          });
+          const verifyData = await verifyRes.json();
+          if (!verifyRes.ok) throw new Error(verifyData.message || 'Verification failed');
+          
+          setIsSuccess(true);
+          await refreshMyEnrollments();
+          setTimeout(() => {
+             setShowEnrollModal(false);
+             navigate('/learn');
+          }, 2000);
+        },
+        prefill: {
+          name: orderData.user_name,
+          email: orderData.user_email,
+          contact: orderData.user_phone
+        },
+        theme: {
+          color: '#ca8a04'
+        }
+      };
+
+      const Razorpay = (window as any).Razorpay;
+      const rzp1 = new Razorpay(options);
+      rzp1.on('payment.failed', function (response: any) {
+        setError(response.error.description || 'Payment failed');
+      });
+      rzp1.open();
+
+    } catch (err: any) {
+      setError(err.message || 'Payment initiation failed.');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  // openEnrollment is now defined above with useCallback
 
   return (
     <div className="min-h-screen bg-brand-cream">
@@ -333,39 +407,61 @@ const CourseDetailPage = () => {
         headerClassName="bg-[#1a110a] text-brand-gold border-b border-white/5"
       >
         <div className="py-8 px-2 text-center">
-          <div className="w-20 h-20 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-6 border border-brand-gold/20">
-            <Phone size={32} />
-          </div>
-          
-          <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">
-            Join {course.title}
-          </h3>
-          
-          <p className="text-brand-brown/70 mb-8 max-w-[280px] mx-auto text-sm leading-relaxed">
-            Talk to Chef <strong>Muskan Naz's</strong> team to confirm your seat and batch timings.
-          </p>
+          {isSuccess ? (
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center">
+              <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mb-6 border border-green-500/20">
+                <CheckCircle2 size={40} />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">Payment Successful!</h3>
+              <p className="text-brand-brown/70 mb-6 max-w-[280px] mx-auto text-sm leading-relaxed">
+                Welcome to {course.title}. You will be redirected to the Learn screen shortly.
+              </p>
+            </motion.div>
+          ) : (
+            <>
+              <div className="w-20 h-20 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-6 border border-brand-gold/20">
+                <Award size={32} />
+              </div>
+              
+              <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">
+                Unlock {course.title}
+              </h3>
+              
+              <p className="text-brand-brown/70 mb-6 max-w-[280px] mx-auto text-sm leading-relaxed">
+                Get full access to all premium video lessons, materials, and earn your certificate.
+              </p>
 
-          <div className="space-y-3">
-            <a 
-              href="tel:+919777240070"
-              className="flex items-center justify-center gap-3 w-full py-4 bg-[#1a110a] text-brand-gold rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
-            >
-              <Phone size={20} /> Call Now: +91 97772 40070
-            </a>
-            
-            <a 
-              href="https://wa.me/919777240070"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-green-500/20"
-            >
-              <Send size={20} className="rotate-[-45deg] translate-y-[-1px]" /> WhatsApp Us
-            </a>
-          </div>
+              {error && (
+                <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-xl text-sm flex items-center gap-2 text-left">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <p>{error}</p>
+                </div>
+              )}
 
-          <p className="mt-8 text-[10px] text-brand-brown/40 font-black uppercase tracking-[0.2em]">
-            Available 8 AM - 10 PM IST
-          </p>
+              <div className="space-y-4">
+                <Button 
+                  onClick={handlePayment} 
+                  disabled={submitting}
+                  className="w-full h-14 text-lg font-bold shadow-xl shadow-brand-gold/20 flex items-center justify-center gap-2"
+                >
+                  {submitting ? 'Processing...' : (
+                    <>
+                      Pay ₹{Number(course.price).toLocaleString('en-IN')} <ArrowRight size={20} />
+                    </>
+                  )}
+                </Button>
+                
+                <a 
+                  href="https://wa.me/919777240070"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 w-full py-4 text-brand-brown/60 hover:text-brand-dark font-medium transition-colors text-sm"
+                >
+                  <Phone size={16} /> Have questions? Contact Support
+                </a>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
     </div>
