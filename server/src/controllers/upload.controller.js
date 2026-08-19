@@ -50,17 +50,20 @@ const getSignature = (req, res) => {
   const timestamp = Math.round(new Date().getTime() / 1000);
   const subFolder = req.query.folder || 'general';
   const folderPath = `nimu-academy/${subFolder}`;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET || '3F9c2NyK0mP2RDP9Lz37sfQLbYA';
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'ds3oirjrk';
+  const apiKey = process.env.CLOUDINARY_API_KEY || '272361327377243';
 
   const signature = cloudinary.utils.api_sign_request(
     { timestamp, folder: folderPath },
-    process.env.CLOUDINARY_API_SECRET
+    apiSecret
   );
 
   res.json({
     signature,
     timestamp,
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    apiKey: process.env.CLOUDINARY_API_KEY,
+    cloudName,
+    apiKey,
     folder: folderPath,
   });
 };
