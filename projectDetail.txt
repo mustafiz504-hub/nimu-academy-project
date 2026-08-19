@@ -33,3 +33,8 @@ NIMU ACADEMY PROJECT ARCHITECTURE
    - Platform: Cloudinary
    - Cloud Name: ds3oirjrk
    - Use: Fast loading of banners, thumbnails, profile photos.
+
+7. Email / OTP Delivery Service
+   - Service: Brevo API / Resend API (Transactional Email Services)
+   - Configuration: BREVO_API_KEY / RESEND_API_KEY set in Render Environment Variables
+   - Use: Sends instant 6-digit OTP verification emails to users during Signup & Login across Web Client and Mobile App.

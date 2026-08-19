@@ -181,15 +181,18 @@ const getR2PresignedUrl = async (req, res) => {
     const ext = path.extname(filename) || '.mp4';
     const key = `nimu-academy/${folder}/${uuidv4()}${ext}`;
 
+    const bucketName = process.env.R2_BUCKET_NAME || 'nimu-academy-videos';
+    const publicUrl = (process.env.R2_PUBLIC_URL || 'https://pub-8d569d923b41447ba0ac57f09f8b39ba.r2.dev').replace(/\/$/, '');
+
     const command = new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME,
+      Bucket: bucketName,
       Key: key,
       ContentType: mimeType,
     });
 
     // Presigned URL valid for 1 hour
     const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn: 3600 });
-    const videoUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+    const videoUrl = `${publicUrl}/${key}`;
 
     console.log(`\n🔑 [R2 Presigned] Generated URL for key: ${key}`);
 
