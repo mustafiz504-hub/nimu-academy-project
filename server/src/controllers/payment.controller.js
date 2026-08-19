@@ -42,7 +42,7 @@ exports.createOrder = async (req, res) => {
     const options = {
       amount,
       currency: 'INR',
-      receipt: `receipt_course_${course_id}_user_${user_id}_${Date.now()}`,
+      receipt: `rcpt_c${course_id}_u${user_id}_${Date.now()}`.substring(0, 40),
     };
     const order = await razorpay.orders.create(options);
 
@@ -84,7 +84,8 @@ exports.createOrder = async (req, res) => {
 
   } catch (error) {
     console.error('Razorpay create order error:', error);
-    res.status(500).json({ message: 'Could not initiate payment.' });
+    const errMsg = error?.error?.description || error?.message || 'Could not initiate payment.';
+    res.status(500).json({ message: errMsg });
   }
 };
 

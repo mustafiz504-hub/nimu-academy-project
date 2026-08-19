@@ -363,75 +363,35 @@ export default function LearnScreen({ isActive = true, selectedCourseId: propSel
       // 1. Create Order
       const order = await paymentService.createOrder(selectedCourseId, Number(course.price));
       
-      // 2. Expo Go detection — react-native-razorpay native module nahi chalta Expo Go mein
-      //    Constants.appOwnership === 'expo' matlab Expo Go app hai
-      const isExpoGo = Constants.appOwnership === 'expo';
+      // ── Real Razorpay via openAuthSessionAsync + ExpoLinking (For both Expo Go & APK) ────────
+      setPaymentLoading(false);
 
-      if (isExpoGo) {
-        // ── EXPO GO: Real Razorpay via openAuthSessionAsync + ExpoLinking ────────
-        //    ExpoLinking.createURL generates valid deep link URL (exp://... in Expo Go)
-        //    openAuthSessionAsync detects the redirect, CLOSES the browser, and returns the result!
-        setPaymentLoading(false);
+      const redirectUrl = ExpoLinking.createURL('razorpay-callback');
+      const { API_BASE_URL } = require("../../constants/api");
+      const checkoutUrl = `${API_BASE_URL}/payments/checkout-page?order_id=${encodeURIComponent(order.order_id)}&amount=${order.amount}&course_id=${encodeURIComponent(selectedCourseId)}&course_name=${encodeURIComponent(course.name)}&user_name=${encodeURIComponent(user?.name || '')}&user_email=${encodeURIComponent(user?.email || '')}&user_phone=${encodeURIComponent(user?.phone || '')}&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
-        const redirectUrl = ExpoLinking.createURL('razorpay-callback');
-        const { API_BASE_URL } = require("../../constants/api");
-        const checkoutUrl = `${API_BASE_URL}/payments/checkout-page?order_id=${encodeURIComponent(order.order_id)}&amount=${order.amount}&course_id=${encodeURIComponent(selectedCourseId)}&course_name=${encodeURIComponent(course.name)}&user_name=${encodeURIComponent(user?.name || '')}&user_email=${encodeURIComponent(user?.email || '')}&user_phone=${encodeURIComponent(user?.phone || '')}&redirect_url=${encodeURIComponent(redirectUrl)}`;
+      const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectUrl);
 
-        const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectUrl);
+      if (result.type === 'success' && result.url) {
+        const parsed = ExpoLinking.parse(result.url);
+        const status = parsed.queryParams?.status as string;
 
-        if (result.type === 'success' && result.url) {
-          const parsed = ExpoLinking.parse(result.url);
-          const status = parsed.queryParams?.status as string;
+        if (status === 'success') {
+          const razorpay_order_id   = (parsed.queryParams?.order_id as string)   || '';
+          const razorpay_payment_id = (parsed.queryParams?.payment_id as string) || '';
+          const razorpay_signature  = (parsed.queryParams?.signature as string)  || '';
 
-          if (status === 'success') {
-            const razorpay_order_id   = (parsed.queryParams?.order_id as string)   || '';
-            const razorpay_payment_id = (parsed.queryParams?.payment_id as string) || '';
-            const razorpay_signature  = (parsed.queryParams?.signature as string)  || '';
-
-            setPaymentLoading(true);
-            try {
-              await paymentService.verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
-              await handleRefresh();
-            } catch {
-              await handleRefresh();
-            } finally {
-              setPaymentLoading(false);
-            }
-          } else if (status === 'cancelled') {
-            // Quiet cancel
+          setPaymentLoading(true);
+          try {
+            await paymentService.verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+            await handleRefresh();
+          } catch {
+            await handleRefresh();
+          } finally {
+            setPaymentLoading(false);
           }
         }
-        return;
       }
-
-      // 3. Real Razorpay Checkout (Custom Dev Client / Production build)
-      const RazorpayCheckout = require("react-native-razorpay").default;
-      const options = {
-        description: `Enrollment for ${course.name}`,
-        image: 'https://i.imgur.com/3g7nmJC.png',
-        currency: 'INR',
-        key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TQnrOoJoIKGrCP',
-        amount: String(order.amount),
-        name: 'Nimu Academy',
-        order_id: order.order_id,
-        prefill: {
-          email: user?.email || '',
-          contact: user?.phone || '',
-          name: user?.name || ''
-        },
-        theme: { color: '#FF8C00' }
-      };
-
-      RazorpayCheckout.open(options).then(async (data: any) => {
-        try {
-          await paymentService.verifyPayment(data);
-          await handleRefresh();
-        } catch (verErr: any) {
-          await handleRefresh();
-        }
-      }).catch((error: any) => {
-        // Quiet cancel or soft notice
-      });
       
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Could not initiate payment.";
