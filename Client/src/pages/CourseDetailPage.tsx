@@ -92,7 +92,7 @@ const CourseDetailPage = () => {
       }
 
       const token = localStorage.getItem('nimu_auth_token');
-      const API_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:8000/api';
+      const API_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || (import.meta.env.PROD ? 'https://nimu-academy-backend.onrender.com/api' : 'http://localhost:8000/api');
       
       // 1. Create order
       const orderRes = await fetch(`${API_URL}/payments/create-order`, {

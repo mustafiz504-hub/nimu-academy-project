@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:8000/api';
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || (import.meta.env.PROD ? 'https://nimu-academy-backend.onrender.com/api' : 'http://localhost:8000/api');
 
 const TOKEN_KEY = 'nimu_auth_token';
 const USER_KEY = 'nimu_auth_user';

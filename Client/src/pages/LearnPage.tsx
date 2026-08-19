@@ -319,7 +319,7 @@ export default function LearnPage() {
     setVideosLoading(true);
 
     const token = localStorage.getItem('nimu_auth_token');
-    fetch(`${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:8000/api'}/courses/${selectedCourseId}/videos`, {
+    fetch(`${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || (import.meta.env.PROD ? 'https://nimu-academy-backend.onrender.com/api' : 'http://localhost:8000/api')}/courses/${selectedCourseId}/videos`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((r) => r.json())
