@@ -2,8 +2,8 @@ import axios from "axios";
 import api from "./api";
 import { ENDPOINTS } from "../constants/api";
 import type { Course, CourseVideo } from "../types/course.types";
-import * as FileSystem from 'expo-file-system';
-import { FileSystemUploadType, FileSystemSessionType } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+import { FileSystemUploadType, FileSystemSessionType } from 'expo-file-system/legacy';
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -212,11 +212,20 @@ export const adminService = {
 
       // 2. Upload binary file directly to R2 using expo-file-system
       // (XHR.send({uri}) sends JSON, not binary — expo-file-system sends actual bytes)
+      // Safely resolve uploadType & sessionType enum values (0 = BINARY_CONTENT, 0 = BACKGROUND)
+      const binaryUploadType = (typeof FileSystemUploadType !== 'undefined' && FileSystemUploadType?.BINARY_CONTENT !== undefined)
+        ? FileSystemUploadType.BINARY_CONTENT
+        : ((FileSystem as any)?.FileSystemUploadType?.BINARY_CONTENT ?? 0);
+
+      const backgroundSessionType = (typeof FileSystemSessionType !== 'undefined' && FileSystemSessionType?.BACKGROUND !== undefined)
+        ? FileSystemSessionType.BACKGROUND
+        : ((FileSystem as any)?.FileSystemSessionType?.BACKGROUND ?? 0);
+
       const uploadResult = await FileSystem.uploadAsync(data.uploadUrl, fileUri, {
         httpMethod: 'PUT',
-        uploadType: FileSystemUploadType.BINARY_CONTENT,
+        uploadType: binaryUploadType,
         headers: { 'Content-Type': 'video/mp4' },
-        sessionType: FileSystemSessionType.BACKGROUND,
+        sessionType: backgroundSessionType,
       });
 
       if (uploadResult.status !== 200) {
