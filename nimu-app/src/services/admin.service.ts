@@ -3,6 +3,7 @@ import api from "./api";
 import { ENDPOINTS } from "../constants/api";
 import type { Course, CourseVideo } from "../types/course.types";
 import * as FileSystem from 'expo-file-system';
+import { FileSystemUploadType, FileSystemSessionType } from 'expo-file-system';
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -213,9 +214,9 @@ export const adminService = {
       // (XHR.send({uri}) sends JSON, not binary — expo-file-system sends actual bytes)
       const uploadResult = await FileSystem.uploadAsync(data.uploadUrl, fileUri, {
         httpMethod: 'PUT',
-        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+        uploadType: FileSystemUploadType.BINARY_CONTENT,
         headers: { 'Content-Type': 'video/mp4' },
-        sessionType: FileSystem.FileSystemSessionType.BACKGROUND,
+        sessionType: FileSystemSessionType.BACKGROUND,
       });
 
       if (uploadResult.status !== 200) {

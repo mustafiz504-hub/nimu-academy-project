@@ -118,7 +118,7 @@ export default function AdminCourses() {
 
   const pickVideo = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: ['video'],
       allowsEditing: true,
       quality: 1,
     });
@@ -133,7 +133,7 @@ export default function AdminCourses() {
 
   const pickThumbnail = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['image'],
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,

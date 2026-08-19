@@ -7,19 +7,13 @@ import Constants from "expo-constants";
  * Loaded from environment variables (.env via process.env or expo-constants).
  * Fallback to local network IP if not set.
  */
-const ENV_BASE =
-  process.env.EXPO_PUBLIC_API_BASE_URL ||
-  process.env.API_BASE_URL ||
-  "https://nimu-academy-backend.onrender.com";
+const ENV_BASE = "https://nimu-academy-backend.onrender.com";
 
 const RAW_BASE_URL = ENV_BASE.endsWith("/api")
   ? ENV_BASE.slice(0, -4)
   : ENV_BASE;
 
-export const API_BASE_URL =
-  Platform.OS === "web"
-    ? `http://localhost:8000/api`
-    : `${RAW_BASE_URL}/api`;
+export const API_BASE_URL = `${RAW_BASE_URL}/api`;
 
 export const ENDPOINTS = {
   // Auth — OTP-only (new)
