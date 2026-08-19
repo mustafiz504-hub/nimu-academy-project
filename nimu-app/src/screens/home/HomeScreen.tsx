@@ -57,13 +57,13 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
       >
 
         {/* ── Study Report (Placeholder stats) ── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 32 }}>
+        <View style={{ paddingHorizontal: 20, marginBottom: 22 }}>
           <StudyReport />
         </View>
 
         {/* ── Featured Courses (All courses from API) ── */}
         <View style={{ marginBottom: 32 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 16 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 14 }}>
             <Text style={{ fontSize: 20, fontWeight: "800", color: "#1E1B18" }}>Featured Courses</Text>
             <TouchableOpacity onPress={() => onNavigateToTab("courses")}>
               <Text style={{ fontSize: 13, fontWeight: "700", color: "#FF8C00" }}>See All</Text>
@@ -75,7 +75,7 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
           ) : courses.length === 0 ? (
             <Text style={{ textAlign: "center", color: "#94A3B8", marginVertical: 20 }}>No courses available.</Text>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14, gap: 16 }}>
               {courses.map((course, index) => {
                 const colors = [
                   { bg: "#FFF3E0", accentBg: "#FFE0B2", accent: "#FF8C00", icon: "restaurant" },

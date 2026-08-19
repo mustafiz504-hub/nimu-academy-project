@@ -8,6 +8,7 @@ export interface Course {
   price: number;
   topics?: string[];
   active?: boolean;
+  thumbnail_url?: string;
   created_at?: string;
 }
 

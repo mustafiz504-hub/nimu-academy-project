@@ -8,7 +8,10 @@ const {
   updateOrderStatus, 
   updateEnrollmentStatus,
   makeAdmin,
-  removeAdmin
+  removeAdmin,
+  getCoursePurchases,
+  grantCourseAccess,
+  revokeCourseAccess
 } = require('../controllers/admin.controller');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
@@ -184,5 +187,10 @@ router.put('/orders/:id/status', updateOrderStatus);
  *         description: Status updated
  */
 router.put('/enrollments/:id/status', updateEnrollmentStatus);
+
+// Course Manager Routes
+router.get('/course-purchases', getCoursePurchases);
+router.post('/course-purchases/grant', grantCourseAccess);
+router.post('/course-purchases/revoke', revokeCourseAccess);
 
 module.exports = router;

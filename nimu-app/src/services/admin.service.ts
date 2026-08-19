@@ -51,6 +51,19 @@ export interface AdminOrder {
   created_at: string;
 }
 
+export interface CoursePurchase {
+  id: string;
+  user_id: string;
+  course_id: string;
+  user_name: string;
+  user_email: string;
+  course_name: string;
+  status: string;
+  amount: number;
+  message: string;
+  created_at: string;
+}
+
 export interface Student {
   id: string;
   student_name: string;
@@ -285,5 +298,21 @@ export const adminService = {
         err.response?.data?.error?.message || err.message || 'Failed to upload image'
       );
     }
+  },
+
+  // ── Course Manager ────────────────────────────────────────────────────────────
+  async getCoursePurchases(): Promise<CoursePurchase[]> {
+    const { data } = await api.get('/admin/course-purchases');
+    return data;
+  },
+
+  async grantCourseAccess(user_id: string, course_id: string): Promise<any> {
+    const { data } = await api.post('/admin/course-purchases/grant', { user_id, course_id });
+    return data;
+  },
+
+  async revokeCourseAccess(enrollment_id: string): Promise<any> {
+    const { data } = await api.post('/admin/course-purchases/revoke', { enrollment_id });
+    return data;
   },
 };

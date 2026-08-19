@@ -8,12 +8,14 @@ import AdminEnrollments from "./sections/AdminEnrollments";
 import AdminCourses    from "./sections/AdminCourses";
 import AdminUsers      from "./sections/AdminUsers";
 import AdminStudents   from "./sections/AdminStudents";
+import AdminCourseManager from "./sections/AdminCourseManager";
 
-type Section = "dashboard" | "enrollments" | "courses" | "users" | "students";
+type Section = "dashboard" | "enrollments" | "courseManager" | "courses" | "users" | "students";
 
 const SECTIONS: { key: Section; label: string; icon: any; color: string; bg: string }[] = [
   { key: "dashboard",   label: "Dashboard",   icon: "stats-chart",   color: "#FF8C00", bg: "#FFF3E0" },
   { key: "enrollments", label: "Enrollments", icon: "school",        color: "#3B82F6", bg: "#EFF6FF" },
+  { key: "courseManager", label: "Course Manager", icon: "wallet",    color: "#EAB308", bg: "#FEF9C3" },
   { key: "courses",     label: "Courses",     icon: "videocam",      color: "#10B981", bg: "#ECFDF5" },
   { key: "users",       label: "Users",       icon: "people",        color: "#8B5CF6", bg: "#F5F3FF" },
   { key: "students",    label: "Students",    icon: "ribbon",        color: "#F59E0B", bg: "#FFFBEB" },
@@ -28,6 +30,7 @@ export default function AdminScreen() {
     switch (activeSection) {
       case "dashboard":   return <AdminDashboard />;
       case "enrollments": return <AdminEnrollments />;
+      case "courseManager": return <AdminCourseManager />;
       case "courses":     return <AdminCourses />;
       case "users":       return <AdminUsers />;
       case "students":    return <AdminStudents />;

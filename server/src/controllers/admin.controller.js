@@ -64,7 +64,7 @@ const getEnrollments = async (req, res) => {
 const getUsers = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email, phone, role, created_at FROM users WHERE role != 'superadmin' ORDER BY created_at DESC"
+      "SELECT id, name, email, phone, role, created_at FROM users ORDER BY created_at DESC"
     );
     res.status(200).json({ users: result.rows, total: result.rowCount });
   } catch (error) {
@@ -147,6 +147,57 @@ const updateEnrollmentStatus = async (req, res) => {
   }
 };
 
+// GET /api/admin/course-purchases
+const getCoursePurchases = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT e.*, u.name as user_name, u.email as user_email, c.name as course_name 
+      FROM enrollments e 
+      JOIN users u ON e.user_id = u.id 
+      JOIN courses c ON e.course_id = c.id 
+      ORDER BY e.created_at DESC
+    `);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Admin fetch course purchases error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// POST /api/admin/course-purchases/grant
+const grantCourseAccess = async (req, res) => {
+  try {
+    const { user_id, course_id } = req.body;
+    const exist = await pool.query("SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2", [user_id, course_id]);
+    if (exist.rows.length > 0) {
+      await pool.query("UPDATE enrollments SET status = 'completed', amount = 0, message = 'Granted by Admin' WHERE user_id = $1 AND course_id = $2", [user_id, course_id]);
+    } else {
+      await pool.query(
+        "INSERT INTO enrollments (user_id, course_id, status, amount, message) VALUES ($1, $2, 'completed', 0, 'Granted by Admin')",
+        [user_id, course_id]
+      );
+    }
+    await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Admin granted course access for user ${user_id} on course ${course_id}`]);
+    res.status(200).json({ message: 'Course access granted.' });
+  } catch (error) {
+    console.error('Admin grant course access error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// POST /api/admin/course-purchases/revoke
+const revokeCourseAccess = async (req, res) => {
+  try {
+    const { enrollment_id } = req.body;
+    await pool.query("UPDATE enrollments SET status = 'cancelled', message = 'Revoked by Admin' WHERE id = $1", [enrollment_id]);
+    await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Admin revoked enrollment #${enrollment_id}`]);
+    res.status(200).json({ message: 'Course access revoked.' });
+  } catch (error) {
+    console.error('Admin revoke course access error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 module.exports = { 
   getDashboard, 
   getOrders, 
@@ -155,5 +206,8 @@ module.exports = {
   updateOrderStatus, 
   updateEnrollmentStatus,
   makeAdmin,
-  removeAdmin
+  removeAdmin,
+  getCoursePurchases,
+  grantCourseAccess,
+  revokeCourseAccess
 };

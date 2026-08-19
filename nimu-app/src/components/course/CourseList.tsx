@@ -21,7 +21,7 @@ export default function CourseList({ courses }: CourseListProps) {
   }
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 20 }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 20, paddingVertical: 12 }}>
       {courses.map((course, idx) => (
         <CourseCard
           key={idx}

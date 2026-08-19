@@ -410,7 +410,7 @@ export default function LearnScreen({ isActive = true, selectedCourseId: propSel
         description: `Enrollment for ${course.name}`,
         image: 'https://i.imgur.com/3g7nmJC.png',
         currency: 'INR',
-        key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '',
+        key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TQnrOoJoIKGrCP',
         amount: String(order.amount),
         name: 'Nimu Academy',
         order_id: order.order_id,

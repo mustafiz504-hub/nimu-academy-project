@@ -3,7 +3,16 @@ const pool = require('../config/db');
 // GET /api/courses - Public
 const getAllCourses = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM courses WHERE active = true ORDER BY created_at ASC');
+    const result = await pool.query(
+      `SELECT c.*, 
+        COALESCE(
+          c.thumbnail_url, 
+          (SELECT thumbnail_url FROM course_videos WHERE course_id = c.id AND thumbnail_url IS NOT NULL AND thumbnail_url != '' ORDER BY order_index ASC, id ASC LIMIT 1)
+        ) AS thumbnail_url 
+       FROM courses c 
+       WHERE c.active = true 
+       ORDER BY c.created_at ASC`
+    );
     res.status(200).json({ courses: result.rows });
   } catch (error) {
     console.error('Get courses error:', error);
@@ -14,7 +23,16 @@ const getAllCourses = async (req, res) => {
 // GET /api/courses/:id - Public
 const getCourseById = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM courses WHERE id = $1', [req.params.id]);
+    const result = await pool.query(
+      `SELECT c.*, 
+        COALESCE(
+          c.thumbnail_url, 
+          (SELECT thumbnail_url FROM course_videos WHERE course_id = c.id AND thumbnail_url IS NOT NULL AND thumbnail_url != '' ORDER BY order_index ASC, id ASC LIMIT 1)
+        ) AS thumbnail_url 
+       FROM courses c 
+       WHERE c.id = $1`, 
+      [req.params.id]
+    );
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Course not found.' });
     }
@@ -92,17 +110,17 @@ const getCourseVideos = async (req, res) => {
 // POST /api/courses (admin/superadmin)
 const createCourse = async (req, res) => {
   try {
-    const { name, description, duration, timing, mode, price, topics } = req.body;
+    const { name, description, duration, timing, mode, price, topics, thumbnail_url } = req.body;
 
     if (!name || !price) {
       return res.status(400).json({ message: 'Course name and price are required.' });
     }
 
     const result = await pool.query(
-      `INSERT INTO courses (name, description, duration, timing, mode, price, topics)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO courses (name, description, duration, timing, mode, price, topics, thumbnail_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [name, description || null, duration || null, timing || null, mode || null, price, topics || []]
+      [name, description || null, duration || null, timing || null, mode || null, price, topics || [], thumbnail_url || null]
     );
 
     await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Created course: ${name}`]);
@@ -117,7 +135,7 @@ const createCourse = async (req, res) => {
 // PUT /api/courses/:id (admin/superadmin)
 const updateCourse = async (req, res) => {
   try {
-    const { name, description, duration, timing, mode, price, topics, active } = req.body;
+    const { name, description, duration, timing, mode, price, topics, active, thumbnail_url } = req.body;
 
     const result = await pool.query(
       `UPDATE courses SET 
@@ -128,9 +146,10 @@ const updateCourse = async (req, res) => {
         mode = COALESCE($5, mode),
         price = COALESCE($6, price),
         topics = COALESCE($7, topics),
-        active = COALESCE($8, active)
-       WHERE id = $9 RETURNING *`,
-      [name, description, duration, timing, mode, price, topics, active, req.params.id]
+        active = COALESCE($8, active),
+        thumbnail_url = COALESCE($9, thumbnail_url)
+       WHERE id = $10 RETURNING *`,
+      [name, description, duration, timing, mode, price, topics, active, thumbnail_url, req.params.id]
     );
 
     if (result.rows.length === 0) {

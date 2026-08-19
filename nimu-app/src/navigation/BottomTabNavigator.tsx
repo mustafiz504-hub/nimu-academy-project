@@ -6,6 +6,7 @@ export type TabName = "home" | "courses" | "schedule" | "profile" | "admin";
 
 interface Tab {
   key: TabName;
+  label: string;
   active: any;
   inactive: any;
 }
@@ -17,13 +18,13 @@ interface BottomTabNavigatorProps {
 }
 
 const BASE_TABS: Tab[] = [
-  { key: "home",     active: "home",            inactive: "home-outline" },
-  { key: "courses",  active: "compass",          inactive: "compass-outline" },
-  { key: "schedule", active: "play-circle",       inactive: "play-circle-outline" },
-  { key: "profile",  active: "person",           inactive: "person-outline" },
+  { key: "home",     label: "Home",     active: "home",            inactive: "home-outline" },
+  { key: "courses",  label: "Discover", active: "compass",         inactive: "compass-outline" },
+  { key: "schedule", label: "Learning", active: "play-circle",     inactive: "play-circle-outline" },
+  { key: "profile",  label: "Profile",  active: "person",          inactive: "person-outline" },
 ];
 
-const ADMIN_TAB: Tab = { key: "admin", active: "shield", inactive: "shield-outline" };
+const ADMIN_TAB: Tab = { key: "admin", label: "Admin", active: "shield", inactive: "shield-outline" };
 
 export default function BottomTabNavigator({ currentTab, onTabChange, isAdmin = false }: BottomTabNavigatorProps) {
   const tabs = isAdmin ? [...BASE_TABS, ADMIN_TAB] : BASE_TABS;
@@ -53,12 +54,11 @@ export default function BottomTabNavigator({ currentTab, onTabChange, isAdmin = 
   }, [currentTab, tabs.length]);
 
   const tabWidth = containerWidth / tabCount;
-  const pillWidth = 44;
-  const pillHeight = 44;
+  const pillSize = 56;
 
   const translateX = tabX.interpolate({
     inputRange: tabs.map((_, i) => i),
-    outputRange: tabs.map((_, i) => tabWidth * i + (tabWidth - pillWidth) / 2),
+    outputRange: tabs.map((_, i) => tabWidth * i + (tabWidth - pillSize) / 2),
   });
 
   return (
@@ -89,9 +89,9 @@ export default function BottomTabNavigator({ currentTab, onTabChange, isAdmin = 
           style={{
             position: "absolute",
             left: 0,
-            width: pillWidth,
-            height: pillHeight,
-            borderRadius: 22,
+            width: pillSize,
+            height: pillSize,
+            borderRadius: pillSize / 2,
             backgroundColor: "#FFF3E0",
             transform: [{ translateX }],
             zIndex: 1,
@@ -109,12 +109,23 @@ export default function BottomTabNavigator({ currentTab, onTabChange, isAdmin = 
             style={{ flex: 1, height: "100%", justifyContent: "center", alignItems: "center", zIndex: 2 }}
             onPress={() => onTabChange(tab.key)}
           >
-            <Animated.View style={{ transform: [{ scale: scales[index] }] }}>
+            <Animated.View style={{ transform: [{ scale: scales[index] }], alignItems: "center", justifyContent: "center" }}>
               <Ionicons
                 name={isActive ? tab.active : tab.inactive}
-                size={22}
+                size={20}
                 color={isActive ? (isAdminTab ? "#EF4444" : "#FF8A00") : "#94A3B8"}
               />
+              <Animated.Text
+                style={{
+                  fontSize: 10,
+                  marginTop: 3,
+                  fontWeight: isActive ? "700" : "500",
+                  color: isActive ? (isAdminTab ? "#EF4444" : "#FF8A00") : "#94A3B8",
+                  opacity: isActive ? 1 : 0.8
+                }}
+              >
+                {tab.label}
+              </Animated.Text>
             </Animated.View>
           </TouchableOpacity>
         );
