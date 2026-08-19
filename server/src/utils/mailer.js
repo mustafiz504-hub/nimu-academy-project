@@ -59,7 +59,33 @@ const { Resend } = require('resend');
  */
 const sendMail = async (to, subject, html, context) => {
   try {
-    // 1. Try Resend API if RESEND_API_KEY is configured
+    // 1. Try Brevo API if BREVO_API_KEY is configured
+    if (process.env.BREVO_API_KEY) {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+          'api-key': process.env.BREVO_API_KEY,
+        },
+        body: JSON.stringify({
+          sender: { name: process.env.EMAIL_FROM_NAME || 'Nimu Cooking Academy', email: process.env.SMTP_USER || 'mustafiz504@gmail.com' },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        console.error(`❌ Brevo API email failed to ${to}:`, data);
+        return { success: false, error: data, simulated: true };
+      }
+      console.log(`✅ [Brevo] Email sent to ${to}:`, data.messageId);
+      return { success: true, messageId: data.messageId };
+    }
+
+    // 2. Try Resend API if RESEND_API_KEY is configured
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const fromEmail = process.env.RESEND_FROM || 'Nimu Academy <onboarding@resend.dev>';
