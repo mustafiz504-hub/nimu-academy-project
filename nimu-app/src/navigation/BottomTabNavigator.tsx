@@ -33,8 +33,8 @@ export default function BottomTabNavigator({ currentTab, onTabChange, isAdmin = 
   const [containerWidth, setContainerWidth] = useState(0);
   const tabX = useRef(new Animated.Value(0)).current;
 
-  // One scale per tab — support up to 5
-  const scales = useRef(Array.from({ length: 5 }, () => new Animated.Value(1))).current;
+  // One scale per tab — support up to 10 tabs safely
+  const scales = useRef(Array.from({ length: 10 }, () => new Animated.Value(1))).current;
 
   useEffect(() => {
     const index = tabs.findIndex((t) => t.key === currentTab);
@@ -47,18 +47,20 @@ export default function BottomTabNavigator({ currentTab, onTabChange, isAdmin = 
       friction: 10,
     }).start();
 
-    Animated.sequence([
-      Animated.timing(scales[index], { toValue: 1.25, duration: 100, useNativeDriver: true }),
-      Animated.spring(scales[index], { toValue: 1, friction: 4, useNativeDriver: true }),
-    ]).start();
+    if (scales[index]) {
+      Animated.sequence([
+        Animated.timing(scales[index], { toValue: 1.25, duration: 100, useNativeDriver: true }),
+        Animated.spring(scales[index], { toValue: 1, friction: 4, useNativeDriver: true }),
+      ]).start();
+    }
   }, [currentTab, tabs.length]);
 
   const tabWidth = containerWidth / tabCount;
-  const pillSize = 56;
+  const pillSize = tabCount > 5 ? 44 : 52;
 
   const translateX = tabX.interpolate({
-    inputRange: tabs.map((_, i) => i),
-    outputRange: tabs.map((_, i) => tabWidth * i + (tabWidth - pillSize) / 2),
+    inputRange: tabs.length > 1 ? tabs.map((_, i) => i) : [0, 1],
+    outputRange: tabs.length > 1 ? tabs.map((_, i) => tabWidth * i + (tabWidth - pillSize) / 2) : [0, 0],
   });
 
   return (
@@ -109,7 +111,7 @@ export default function BottomTabNavigator({ currentTab, onTabChange, isAdmin = 
             style={{ flex: 1, height: "100%", justifyContent: "center", alignItems: "center", zIndex: 2 }}
             onPress={() => onTabChange(tab.key)}
           >
-            <Animated.View style={{ transform: [{ scale: scales[index] }], alignItems: "center", justifyContent: "center" }}>
+            <Animated.View style={{ transform: [{ scale: scales[index] || 1 }], alignItems: "center", justifyContent: "center" }}>
               <Ionicons
                 name={isActive ? tab.active : tab.inactive}
                 size={20}

@@ -2,14 +2,16 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const pool = require('../config/db');
 
-// Initialize Razorpay
-const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_TQnrOoJoIKGrCP';
-const keySecret = process.env.RAZORPAY_KEY_SECRET || 's3z7f04AYbfyM01Wm6I5J2nA';
+// Helper to safely get Razorpay credentials with fallback
+const getRazorpayKeys = () => {
+  const rawId = process.env.RAZORPAY_KEY_ID;
+  const rawSecret = process.env.RAZORPAY_KEY_SECRET;
 
-const razorpay = new Razorpay({
-  key_id: keyId,
-  key_secret: keySecret,
-});
+  const keyId = (rawId && rawId.trim()) ? rawId.trim().replace(/^["']|["']$/g, '') : 'rzp_test_TQnrOoJoIKGrCP';
+  const keySecret = (rawSecret && rawSecret.trim()) ? rawSecret.trim().replace(/^["']|["']$/g, '') : 's3z7f04AYbfyM01Wm6I5J2nA';
+
+  return { keyId, keySecret };
+};
 
 // POST /api/payments/create-order
 exports.createOrder = async (req, res) => {
@@ -39,6 +41,9 @@ exports.createOrder = async (req, res) => {
     }
 
     // 3. Create order on Razorpay
+    const { keyId, keySecret } = getRazorpayKeys();
+    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+
     const options = {
       amount,
       currency: 'INR',
@@ -75,7 +80,7 @@ exports.createOrder = async (req, res) => {
       order_id: order.id,
       amount: order.amount,
       currency: order.currency,
-      key_id: process.env.RAZORPAY_KEY_ID,
+      key_id: keyId,
       course_name: course.name,
       user_name: req.user.name,
       user_email: req.user.email,
@@ -102,9 +107,10 @@ exports.verifyPayment = async (req, res) => {
     if (isMockPayment && isDevelopment) {
       console.log('[DEV] Mock payment detected — skipping signature verification');
     } else {
+      const { keySecret } = getRazorpayKeys();
       const body = razorpay_order_id + '|' + razorpay_payment_id;
       const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .createHmac('sha256', keySecret)
         .update(body.toString())
         .digest('hex');
 
@@ -147,6 +153,7 @@ exports.verifyPayment = async (req, res) => {
 // GET /api/payments/checkout-page
 exports.checkoutPage = (req, res) => {
   const { order_id, amount, course_name, course_id, user_name, user_email, user_phone, redirect_url } = req.query;
+  const { keyId } = getRazorpayKeys();
 
   const baseRedirect = redirect_url || 'nimucooking://razorpay-callback';
   const sep = baseRedirect.includes('?') ? '&' : '?';
@@ -214,7 +221,7 @@ exports.checkoutPage = (req, res) => {
     }
 
     var options = {
-      key: '${process.env.RAZORPAY_KEY_ID || ''}',
+      key: '${keyId}',
       amount: '${amount || 0}',
       currency: 'INR',
       name: 'Nimu Academy',
