@@ -48,6 +48,8 @@ const buildOtpHtml = (otpCode, userName, headingText, bodyText) => `
   </div>
 `;
 
+const { Resend } = require('resend');
+
 /**
  * Internal mailer function that sends or simulates email.
  * @param {string} to
@@ -57,6 +59,26 @@ const buildOtpHtml = (otpCode, userName, headingText, bodyText) => `
  */
 const sendMail = async (to, subject, html, context) => {
   try {
+    // 1. Try Resend API if RESEND_API_KEY is configured
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const fromEmail = process.env.RESEND_FROM || 'Nimu Academy <onboarding@resend.dev>';
+      const { data, error } = await resend.emails.send({
+        from: fromEmail,
+        to: [to],
+        subject,
+        html,
+      });
+
+      if (error) {
+        console.error(`❌ Resend email failed to ${to}:`, error);
+        return { success: false, error, simulated: true };
+      }
+      console.log(`✅ [Resend] Email sent to ${to}:`, data.id);
+      return { success: true, messageId: data.id };
+    }
+
+    // 2. Fallback to Nodemailer if SMTP details exist
     if (!process.env.SMTP_USER && !process.env.EMAIL_USER) {
       console.log(`\n======================================================`);
       console.log(`📧 [DEV EMAIL SIMULATOR] ${context} for ${to}`);
@@ -70,7 +92,7 @@ const sendMail = async (to, subject, html, context) => {
       subject,
       html,
     });
-    console.log(`✅ Email sent to ${to}: ${info.messageId}`);
+    console.log(`✅ [Nodemailer] Email sent to ${to}: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error(`❌ Failed to send email to ${to}:`, error);
