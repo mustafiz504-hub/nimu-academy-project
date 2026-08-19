@@ -4,11 +4,9 @@ const pool = require('../config/db');
 
 // Helper to safely get Razorpay credentials with fallback
 const getRazorpayKeys = () => {
-  const rawId = process.env.RAZORPAY_KEY_ID;
-  const rawSecret = process.env.RAZORPAY_KEY_SECRET;
-
-  const keyId = (rawId && rawId.trim()) ? rawId.trim().replace(/^["']|["']$/g, '') : 'rzp_test_TQnrOoJoIKGrCP';
-  const keySecret = (rawSecret && rawSecret.trim()) ? rawSecret.trim().replace(/^["']|["']$/g, '') : 's3z7f04AYbfyM01Wm6I5J2nA';
+  // ⚠️ TEMPORARY FIX: Forcing test keys because Render env vars have invalid keys causing "Authentication failed"
+  const keyId = 'rzp_test_TQnrOoJoIKGrCP';
+  const keySecret = 's3z7f04AYbfyM01Wm6I5J2nA';
 
   return { keyId, keySecret };
 };
