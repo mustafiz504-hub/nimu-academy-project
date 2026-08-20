@@ -9,6 +9,7 @@ const coursesTable = `
     price DECIMAL(10,2),
     topics TEXT[],
     active BOOLEAN DEFAULT true,
+    thumbnail_url TEXT,
     created_at TIMESTAMP DEFAULT NOW()
   );
 `;

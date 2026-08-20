@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Switch, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Switch, KeyboardAvoidingView, Platform, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 import { useCourseStore } from "../../../store/course.store";
@@ -101,7 +101,6 @@ export default function AdminCourses() {
   const [showPicker, setShowPicker] = useState(false);
   const [vTitle, setVTitle] = useState("");
   const [videoAsset, setVideoAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [thumbnailAsset, setThumbnailAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [vDesc, setVDesc] = useState("");
   const [vDur, setVDur] = useState("");
   const [vFree, setVFree] = useState(false);
@@ -113,6 +112,7 @@ export default function AdminCourses() {
   const [cPrice, setCPrice] = useState("");
   const [cDur, setCDur] = useState("");
   const [cMode, setCMode] = useState("");
+  const [cThumbnailAsset, setCThumbnailAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [creatingC, setCreatingC] = useState(false);
 
 
@@ -131,14 +131,14 @@ export default function AdminCourses() {
     }
   };
 
-  const pickThumbnail = async () => {
+  const pickCourseThumbnail = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
     });
-    if (!result.canceled) setThumbnailAsset(result.assets[0]);
+    if (!result.canceled) setCThumbnailAsset(result.assets[0]);
   };
 
   const handleAddVideo = useCallback(() => {
@@ -149,7 +149,6 @@ export default function AdminCourses() {
     const title = vTitle.trim();
     const courseId = selectedCourseId;
     const vAsset = videoAsset;
-    const tAsset = thumbnailAsset;
     const desc = vDesc.trim();
     const duration = vDur ? +vDur : undefined;
     const isFree = vFree;
@@ -165,7 +164,7 @@ export default function AdminCourses() {
     appAlert.show({ title: "Upload Started", message: `"${title}" is uploading in the background. Check progress in the floating indicator.`, type: "info", icon: "cloud-upload-outline" });
     
     // Clear form immediately
-    setVTitle(""); setVideoAsset(null); setThumbnailAsset(null); setVDesc(""); setVDur(""); setVFree(false);
+    setVTitle(""); setVideoAsset(null); setVDesc(""); setVDur(""); setVFree(false);
     
     // Background upload process
     (async () => {
@@ -175,18 +174,12 @@ export default function AdminCourses() {
           updateProgress(taskId, Math.floor(prog * 0.9));
         });
         
-        let thumbnailUrl;
-        if (tAsset) {
-          thumbnailUrl = await adminService.uploadMediaToCloudinary(tAsset.uri, 'image', 'courses');
-        }
-        
         updateProgress(taskId, 95); // Almost done
         
         await adminService.addVideo(courseId, { 
           title: title, 
           description: desc || undefined, 
           video_url: videoUrl, 
-          thumbnail_url: thumbnailUrl, 
           duration_minutes: duration, 
           is_free: isFree 
         });
@@ -197,19 +190,32 @@ export default function AdminCourses() {
         failTask(taskId, e?.message || e?.response?.data?.message || "Failed.");
       }
     })();
-  }, [selectedCourseId, vTitle, videoAsset, thumbnailAsset, vDesc, vDur, vFree, addTask, updateProgress, completeTask, failTask, refreshCourseVideos]);
+  }, [selectedCourseId, vTitle, videoAsset, vDesc, vDur, vFree, addTask, updateProgress, completeTask, failTask, refreshCourseVideos]);
 
   const handleCreateCourse = useCallback(async () => {
     if (!cName.trim() || !cPrice.trim()) { appAlert.show({ title: "Required", message: "Course name and price are required.", type: "warning" }); return; }
     try {
       setCreatingC(true);
-      await adminService.createCourse({ name: cName.trim(), description: cDesc.trim() || undefined, duration: cDur.trim() || undefined, price: parseFloat(cPrice), mode: cMode || undefined });
+      
+      let thumbnailUrl;
+      if (cThumbnailAsset) {
+        thumbnailUrl = await adminService.uploadMediaToCloudinary(cThumbnailAsset.uri, 'image', 'courses');
+      }
+
+      await adminService.createCourse({ 
+        name: cName.trim(), 
+        description: cDesc.trim() || undefined, 
+        duration: cDur.trim() || undefined, 
+        price: parseFloat(cPrice), 
+        mode: cMode || undefined,
+        thumbnail_url: thumbnailUrl
+      });
       await refreshAllCourses();
       appAlert.show({ title: "Course Created", message: `"${cName}" has been created successfully.`, type: "success" });
-      setCName(""); setCDesc(""); setCPrice(""); setCDur(""); setCMode("");
+      setCName(""); setCDesc(""); setCPrice(""); setCDur(""); setCMode(""); setCThumbnailAsset(null);
     } catch (e: any) { appAlert.show({ title: "Error", message: e?.response?.data?.message || "Failed to create course.", type: "danger" }); }
     finally { setCreatingC(false); }
-  }, [cName, cDesc, cPrice, cDur, cMode, refreshAllCourses, appAlert]);
+  }, [cName, cDesc, cPrice, cDur, cMode, cThumbnailAsset, refreshAllCourses, appAlert]);
 
   const handleUpdateVideo = useCallback(async () => {
     if (!videoToEdit || !selectedCourseId) return;
@@ -330,21 +336,6 @@ export default function AdminCourses() {
               )}
             </TouchableOpacity>
 
-            <Text style={lbl}>Thumbnail Image</Text>
-            <TouchableOpacity onPress={pickThumbnail} style={{ backgroundColor: "#F8FAFC", borderRadius: 12, paddingVertical: 14, paddingHorizontal: 14, borderWidth: 1, borderColor: "#E2E8F0", borderStyle: "dashed", marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Ionicons name="image-outline" size={24} color={thumbnailAsset ? "#16A34A" : "#94A3B8"} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: "600", color: thumbnailAsset ? "#16A34A" : "#64748B" }}>
-                  {thumbnailAsset ? "Thumbnail Selected" : "Tap to upload thumbnail (optional)"}
-                </Text>
-                {thumbnailAsset && <Text style={{ fontSize: 11, color: "#94A3B8" }} numberOfLines={1}>{thumbnailAsset.fileName || "image.jpg"}</Text>}
-              </View>
-              {thumbnailAsset && (
-                <TouchableOpacity onPress={() => setThumbnailAsset(null)}>
-                  <Ionicons name="close-circle" size={20} color="#94A3B8" />
-                </TouchableOpacity>
-              )}
-            </TouchableOpacity>
             <Text style={lbl}>Description</Text>
             <TextInput style={[inp, { height: 70, textAlignVertical: "top", paddingTop: 10 }]} placeholder="Short description" placeholderTextColor="#C0CADD" value={vDesc} onChangeText={setVDesc} multiline />
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#FFFFFF", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: "#F0E6D8", marginBottom: 12 }}>
@@ -398,6 +389,21 @@ export default function AdminCourses() {
           <>
             <Text style={lbl}>Course Name *</Text>
             <TextInput style={inp} placeholder="e.g. Advanced Cake Baking" placeholderTextColor="#C0CADD" value={cName} onChangeText={setCName} />
+            <Text style={lbl}>Course Thumbnail</Text>
+            <TouchableOpacity onPress={pickCourseThumbnail} style={{ backgroundColor: "#F8FAFC", borderRadius: 12, paddingVertical: 14, paddingHorizontal: 14, borderWidth: 1, borderColor: "#E2E8F0", borderStyle: "dashed", marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Ionicons name="image-outline" size={24} color={cThumbnailAsset ? "#16A34A" : "#94A3B8"} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: "600", color: cThumbnailAsset ? "#16A34A" : "#64748B" }}>
+                  {cThumbnailAsset ? "Thumbnail Selected" : "Tap to upload course thumbnail"}
+                </Text>
+                {cThumbnailAsset && <Text style={{ fontSize: 11, color: "#94A3B8" }} numberOfLines={1}>{cThumbnailAsset.fileName || "image.jpg"}</Text>}
+              </View>
+              {cThumbnailAsset && (
+                <TouchableOpacity onPress={() => setCThumbnailAsset(null)}>
+                  <Ionicons name="close-circle" size={20} color="#94A3B8" />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
             <Text style={lbl}>Description</Text>
             <TextInput style={[inp, { height: 80, textAlignVertical: "top", paddingTop: 10 }]} placeholder="What will students learn?" placeholderTextColor="#C0CADD" value={cDesc} onChangeText={setCDesc} multiline />
             <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
@@ -427,8 +433,12 @@ export default function AdminCourses() {
                     <View key={c.id} style={{ backgroundColor: "#FFFFFF", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#F0E6D8" }}>
                       {/* Top row: icon + name + ACTIVE badge */}
                       <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#FFF3E0", justifyContent: "center", alignItems: "center", marginRight: 12 }}>
-                          <Ionicons name="book" size={18} color="#FF8C00" />
+                        <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#FFF3E0", justifyContent: "center", alignItems: "center", marginRight: 12, overflow: "hidden" }}>
+                          {c.thumbnail_url ? (
+                            <Image source={{ uri: c.thumbnail_url }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+                          ) : (
+                            <Ionicons name="book" size={18} color="#FF8C00" />
+                          )}
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={{ fontSize: 13, fontWeight: "700", color: "#1E1B18" }} numberOfLines={1}>{c.name}</Text>

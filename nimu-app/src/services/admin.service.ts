@@ -144,6 +144,7 @@ export const adminService = {
     duration?: string;
     price: number;
     mode?: string;
+    thumbnail_url?: string;
   }): Promise<Course> {
     const { data: res } = await api.post<{ course: Course }>(ENDPOINTS.courses, data);
     return res.course;
