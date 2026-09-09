@@ -338,13 +338,7 @@ export default function AdminCourses() {
 
             <Text style={lbl}>Description</Text>
             <TextInput style={[inp, { height: 70, textAlignVertical: "top", paddingTop: 10 }]} placeholder="Short description" placeholderTextColor="#C0CADD" value={vDesc} onChangeText={setVDesc} multiline />
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#FFFFFF", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: "#F0E6D8", marginBottom: 12 }}>
-              <View>
-                <Text style={{ fontSize: 13, fontWeight: "600", color: "#1E1B18" }}>Free Preview</Text>
-                <Text style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>Allow users to watch without buying</Text>
-              </View>
-              <Switch value={vFree} onValueChange={setVFree} trackColor={{ false: "#E2E8F0", true: "#FFE0B2" }} thumbColor={vFree ? "#FF8C00" : "#94A3B8"} />
-            </View>
+
             <TouchableOpacity onPress={handleAddVideo} style={{ backgroundColor: "#FF8C00", borderRadius: 14, paddingVertical: 14, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 }}>
               <Ionicons name="cloud-upload" size={18} color="#FFF" />
               <Text style={{ color: "#FFF", fontWeight: "800", fontSize: 14 }}>Upload Video to Course</Text>
@@ -507,13 +501,7 @@ export default function AdminCourses() {
             <Text style={lbl}>Description</Text>
             <TextInput style={[inp, { height: 70, textAlignVertical: "top" }]} value={editDesc} onChangeText={setEditDesc} multiline />
             
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <View>
-                <Text style={{ fontSize: 13, fontWeight: "600", color: "#1E1B18" }}>Free Preview</Text>
-                <Text style={{ fontSize: 11, color: "#94A3B8" }}>Allow users to watch without buying</Text>
-              </View>
-              <Switch value={editFree} onValueChange={setEditFree} trackColor={{ false: "#E2E8F0", true: "#FFE0B2" }} thumbColor={editFree ? "#FF8C00" : "#94A3B8"} />
-            </View>
+
             
             <TouchableOpacity onPress={handleUpdateVideo} disabled={updatingVideo} style={{ backgroundColor: updatingVideo ? "#E2E8F0" : "#FF8C00", borderRadius: 14, paddingVertical: 14, alignItems: "center" }}>
               {updatingVideo ? <ActivityIndicator color="#FF8C00" /> : <Text style={{ color: "#FFF", fontWeight: "800", fontSize: 14 }}>Save Changes</Text>}

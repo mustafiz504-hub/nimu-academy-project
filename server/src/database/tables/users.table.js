@@ -17,6 +17,7 @@ const usersTable = `
     otp_attempts INT DEFAULT 0,
     otp_resend_count INT DEFAULT 0,
     last_otp_sent_at TIMESTAMP,
+    expo_push_token VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW()
   );
 `;

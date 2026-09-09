@@ -13,15 +13,24 @@ interface HomeScreenProps {
 
 export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScreenProps) {
   const { user } = useAuthStore();
-  const { courses, loadingCourses: loading, fetchAllCourses, refreshingCourses, refreshAllCourses } = useCourseStore();
+  const {
+    courses,
+    loadingCourses: loading,
+    fetchAllCourses,
+    fetchMyEnrollments,
+    refreshingCourses,
+    refreshAllCourses,
+    refreshMyEnrollments,
+  } = useCourseStore();
 
   useEffect(() => {
     fetchAllCourses();
-  }, [fetchAllCourses]);
+    fetchMyEnrollments();
+  }, [fetchAllCourses, fetchMyEnrollments]);
 
   const handleRefresh = useCallback(async () => {
-    await refreshAllCourses();
-  }, [refreshAllCourses]);
+    await Promise.all([refreshAllCourses(), refreshMyEnrollments()]);
+  }, [refreshAllCourses, refreshMyEnrollments]);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FDF8F0" }}>
@@ -35,7 +44,13 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
             {user?.name?.split(" ")[0] || "Chef"}! 👋
           </Text>
         </View>
-        <TouchableOpacity style={{ width: 44, height: 44, backgroundColor: "#FFFFFF", borderRadius: 22, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#F0E6D8", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
+        <TouchableOpacity
+          style={{
+            width: 44, height: 44, backgroundColor: "#FFFFFF", borderRadius: 22,
+            justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#F0E6D8",
+            shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+          }}
+        >
           <Ionicons name="notifications-outline" size={22} color="#1E1B18" />
           <View style={{ position: "absolute", top: 12, right: 12, width: 8, height: 8, backgroundColor: "#FF5252", borderRadius: 4, borderWidth: 1.5, borderColor: "#FFFFFF" }} />
         </TouchableOpacity>
@@ -55,13 +70,12 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
           />
         }
       >
-
-        {/* ── Study Report (Placeholder stats) ── */}
+        {/* ── Study Report ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 22 }}>
           <StudyReport />
         </View>
 
-        {/* ── Featured Courses (All courses from API) ── */}
+        {/* ── Featured Courses ── */}
         <View style={{ marginBottom: 32 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 14 }}>
             <Text style={{ fontSize: 20, fontWeight: "800", color: "#1E1B18" }}>Featured Courses</Text>
@@ -75,13 +89,17 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
           ) : courses.length === 0 ? (
             <Text style={{ textAlign: "center", color: "#94A3B8", marginVertical: 20 }}>No courses available.</Text>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14, gap: 16 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14, gap: 16 }}
+            >
               {courses.map((course, index) => {
                 const colors = [
                   { bg: "#FFF3E0", accentBg: "#FFE0B2", accent: "#FF8C00", icon: "restaurant" },
                   { bg: "#F3E8FF", accentBg: "#E9D5FF", accent: "#A855F7", icon: "pizza" },
                   { bg: "#E0F2FE", accentBg: "#BAE6FD", accent: "#0EA5E9", icon: "cafe" },
-                  { bg: "#DCFCE7", accentBg: "#BBF7D0", accent: "#22C55E", icon: "nutrition" }
+                  { bg: "#DCFCE7", accentBg: "#BBF7D0", accent: "#22C55E", icon: "nutrition" },
                 ];
                 const theme = colors[index % colors.length];
 
@@ -100,7 +118,6 @@ export default function HomeScreen({ onNavigateToTab, onCourseSelect }: HomeScre
             </ScrollView>
           )}
         </View>
-
       </ScrollView>
     </View>
   );

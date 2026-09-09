@@ -12,6 +12,7 @@ import {
   FlatList,
   Platform,
   Linking,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
@@ -41,7 +42,7 @@ interface CourseDropdownProps {
   courses: Course[];
   selectedId: string | null;
   onSelect: (course: Course) => void;
-  myEnrollments: { course_id: string }[];
+  myEnrollments: import("../../types/course.types").Enrollment[];
 }
 
 function CourseDropdown({ courses, selectedId, onSelect, myEnrollments }: CourseDropdownProps) {
@@ -158,7 +159,7 @@ function CourseDropdown({ courses, selectedId, onSelect, myEnrollments }: Course
               renderItem={({ item }) => {
                 const isFree = Number(item.price) === 0;
                 const isEnrolled = myEnrollments.some(
-                  (e) => String(e.course_id) === String(item.id)
+                  (e) => String(e.course_id) === String(item.id) && (e.status === "confirmed" || e.status === "completed")
                 );
                 const isSelected = String(item.id) === String(selectedId);
                 return (
@@ -355,47 +356,132 @@ export default function LearnScreen({ isActive = true, selectedCourseId: propSel
 
   const handleEnrollNow = async () => {
     if (!course || !selectedCourseId) return;
+
     try {
       setPaymentLoading(true);
-      
+
       const { paymentService } = require("../../services/payment.service");
-      
-      // 1. Create Order
-      const order = await paymentService.createOrder(selectedCourseId, Number(course.price));
-      
-      // ── Real Razorpay via openAuthSessionAsync + ExpoLinking (For both Expo Go & APK) ────────
+
+      // 1. Create Razorpay order on server
+      const order = await paymentService.createOrder(selectedCourseId, {
+        student_name: user?.name || "",
+        phone: (user as any)?.phone || "",
+      });
+
       setPaymentLoading(false);
 
-      const redirectUrl = ExpoLinking.createURL('razorpay-callback');
-      const { API_BASE_URL } = require("../../constants/api");
-      const checkoutUrl = `${API_BASE_URL}/payments/checkout-page?order_id=${encodeURIComponent(order.order_id)}&amount=${order.amount}&course_id=${encodeURIComponent(selectedCourseId)}&course_name=${encodeURIComponent(course.name)}&user_name=${encodeURIComponent(user?.name || '')}&user_email=${encodeURIComponent(user?.email || '')}&user_phone=${encodeURIComponent(user?.phone || '')}&redirect_url=${encodeURIComponent(redirectUrl)}`;
+      // ─────────────────────────────────────────────────────────────────────
+      // 2a. NATIVE POPUP — react-native-razorpay (Custom Build / APK only)
+      //     Constants.executionEnvironment === 'storeClient'  → Expo Go
+      //     In Expo Go, native module bridge is unavailable → use browser.
+      // ─────────────────────────────────────────────────────────────────────
+      const isExpoGo = Constants.executionEnvironment === 'storeClient';
+      let useNative = false;
+      let RazorpayCheckout: any = null;
 
-      const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectUrl);
+      if (!isExpoGo) {
+        try {
+          RazorpayCheckout = require('react-native-razorpay').default;
+          if (typeof RazorpayCheckout?.open === 'function') {
+            useNative = true;
+          }
+        } catch {
+          useNative = false;
+        }
+      }
 
-      if (result.type === 'success' && result.url) {
-        const parsed = ExpoLinking.parse(result.url);
-        const status = parsed.queryParams?.status as string;
+      if (useNative && RazorpayCheckout) {
+        // ── Native Razorpay bottom-sheet popup (APK / custom build) ──────
+        const RAZORPAY_KEY = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '';
+        const options = {
+          key: RAZORPAY_KEY,
+          amount: String(order.amount),   // already in paise
+          currency: 'INR',
+          order_id: order.order_id,
+          name: 'Nimu Academy',
+          description: `Enrollment: ${course.name}`,
+          prefill: {
+            name:    user?.name  || '',
+            email:   (user as any)?.email || '',
+            contact: (user as any)?.phone || '',
+          },
+          theme: { color: '#FF8C00' },
+        };
 
-        if (status === 'success') {
-          const razorpay_order_id   = (parsed.queryParams?.order_id as string)   || '';
-          const razorpay_payment_id = (parsed.queryParams?.payment_id as string) || '';
-          const razorpay_signature  = (parsed.queryParams?.signature as string)  || '';
-
+        try {
+          const data = await RazorpayCheckout.open(options);
+          // Payment success
           setPaymentLoading(true);
           try {
-            await paymentService.verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+            await paymentService.verifyPayment({
+              razorpay_order_id:   data.razorpay_order_id,
+              razorpay_payment_id: data.razorpay_payment_id,
+              razorpay_signature:  data.razorpay_signature,
+            });
+            Alert.alert('🎉 Enrolled!', `You now have full access to "${course.name}".`);
             await handleRefresh();
           } catch {
+            // Even if verify fails, refresh enrollments (may have updated)
             await handleRefresh();
           } finally {
             setPaymentLoading(false);
           }
+        } catch (payErr: any) {
+          // User dismissed or payment failed
+          const desc = payErr?.code === 'PAYMENT_CANCELLED'
+            ? 'Payment was cancelled.'
+            : payErr?.description || 'Payment could not be completed.';
+          if (payErr?.code !== 'PAYMENT_CANCELLED') {
+            Alert.alert('Payment Failed', desc);
+          }
+        }
+
+      } else {
+        // ── Expo Go fallback — browser-based Razorpay checkout ────────────
+        const redirectUrl = ExpoLinking.createURL('razorpay-callback');
+        const { API_BASE_URL } = require('../../constants/api');
+        const checkoutUrl =
+          `${API_BASE_URL}/payments/checkout-page` +
+          `?order_id=${encodeURIComponent(order.order_id)}` +
+          `&amount=${order.amount}` +
+          `&course_id=${encodeURIComponent(selectedCourseId)}` +
+          `&course_name=${encodeURIComponent(course.name)}` +
+          `&user_name=${encodeURIComponent(user?.name || '')}` +
+          `&user_email=${encodeURIComponent((user as any)?.email || '')}` +
+          `&user_phone=${encodeURIComponent((user as any)?.phone || '')}` +
+          `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+        const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectUrl);
+
+        if (result.type === 'success' && result.url) {
+          const parsed = ExpoLinking.parse(result.url);
+          const status = parsed.queryParams?.status as string;
+
+          if (status === 'success') {
+            const razorpay_order_id   = (parsed.queryParams?.order_id   as string) || '';
+            const razorpay_payment_id = (parsed.queryParams?.payment_id as string) || '';
+            const razorpay_signature  = (parsed.queryParams?.signature  as string) || '';
+
+            setPaymentLoading(true);
+            try {
+              await paymentService.verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+              Alert.alert('🎉 Enrolled!', `You now have full access to "${course.name}".`);
+              await handleRefresh();
+            } catch {
+              await handleRefresh();
+            } finally {
+              setPaymentLoading(false);
+            }
+          } else if (status === 'failed') {
+            Alert.alert('Payment Failed', parsed.queryParams?.error as string || 'Payment could not be completed.');
+          }
+          // status === 'cancelled' → do nothing, user is back on screen
         }
       }
-      
+
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Could not initiate payment.";
-      Alert.alert("Error", msg);
+      const msg = err?.response?.data?.message || err?.message || 'Could not initiate payment.';
+      Alert.alert('Error', msg);
     } finally {
       setPaymentLoading(false);
     }
@@ -544,21 +630,55 @@ export default function LearnScreen({ isActive = true, selectedCourseId: propSel
                 width: "100%",
                 aspectRatio: 16 / 9,
                 backgroundColor: "#1E1B18",
-                justifyContent: "center",
-                alignItems: "center",
+                overflow: "hidden",
               }}
             >
+              {/* Course thumbnail as background */}
+              {course.thumbnail_url ? (
+                <Image
+                  source={{ uri: course.thumbnail_url }}
+                  style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+              ) : null}
+
+              {/* Light overlay — thumbnail clearly visible, lock on top */}
               <View
                 style={{
-                  width: 72, height: 72, borderRadius: 36,
-                  backgroundColor: "rgba(255,140,0,0.15)",
-                  justifyContent: "center", alignItems: "center", marginBottom: 8,
+                  position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                  backgroundColor: course.thumbnail_url ? "rgba(0,0,0,0.30)" : "#1E1B18",
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                <Ionicons name="lock-closed" size={36} color="#FF8C00" />
+                <View
+                  style={{
+                    width: 72, height: 72, borderRadius: 36,
+                    backgroundColor: "rgba(255,140,0,0.20)",
+                    justifyContent: "center", alignItems: "center", marginBottom: 8,
+                    borderWidth: 1.5,
+                    borderColor: "rgba(255,140,0,0.4)",
+                  }}
+                >
+                  <Ionicons name="lock-closed" size={36} color="#FF8C00" />
+                </View>
+                <Text style={{ 
+                  color: "#FFFFFF", 
+                  fontSize: 16, 
+                  fontWeight: "700",
+                  textShadowColor: "rgba(0, 0, 0, 0.8)",
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 4
+                }}>Premium Course</Text>
+                <Text style={{ 
+                  color: "rgba(255,255,255,0.85)", 
+                  fontSize: 12, 
+                  marginTop: 4,
+                  textShadowColor: "rgba(0, 0, 0, 0.8)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3
+                }}>Enroll below to unlock</Text>
               </View>
-              <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>Premium Course</Text>
-              <Text style={{ color: "#94A3B8", fontSize: 12, marginTop: 4 }}>Enroll below to unlock</Text>
             </View>
           ) : activeVideo?.video_url ? (
             <VideoPlayer videoUrl={activeVideo.video_url} title={activeVideo.title} autoPlay isActive={isActive} />

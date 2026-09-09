@@ -1,4 +1,4 @@
-import { View, Image, Animated, Easing } from "react-native";
+import { View, Image, Animated, Easing, BackHandler, ToastAndroid, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { useState, useEffect, useRef } from "react";
@@ -192,6 +192,41 @@ export default function Index() {
   useEffect(() => {
     loadFromStorage().finally(() => setIsBooting(false));
   }, []);
+
+  const backPressCount = useRef(0);
+
+  // Handle hardware back press
+  useEffect(() => {
+    const handleBackPress = () => {
+      // Don't intercept if booting or not authenticated
+      if (isBooting || !isAuthenticated) return false;
+
+      // 1. If not on home tab, go to home tab
+      if (currentTab !== "home") {
+        setCurrentTab("home");
+        return true; // Prevent default (exit)
+      }
+
+      // 2. If on home tab, require double press to exit
+      if (backPressCount.current === 1) {
+        return false; // Allow default (exit)
+      }
+
+      if (Platform.OS === "android") {
+        ToastAndroid.show("Press back again to exit", ToastAndroid.SHORT);
+      }
+      
+      backPressCount.current = 1;
+      setTimeout(() => {
+        backPressCount.current = 0;
+      }, 2000); // Reset after 2 seconds
+
+      return true; // Prevent default (exit)
+    };
+
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", handleBackPress);
+    return () => backHandler.remove();
+  }, [currentTab, isBooting, isAuthenticated]);
 
   // ── Splash / Loading ──────────────────────────────────────────────────────
   if (isBooting) {

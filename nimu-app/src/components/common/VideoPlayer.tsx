@@ -334,9 +334,15 @@ export default function VideoPlayer({ videoUrl, title, autoPlay = true, isActive
   // ── Dynamic Safe Area Margins ─────────────────────────────────────────────
   // In Landscape / Horizontal or Inline mode, keep exact original paddings (top: 10, bottom: 8).
   // ONLY when in Upright Vertical Portrait Fullscreen (reels style), lift top below camera punch-hole and bottom above gesture bar!
-  const topSafePadding = (isFullscreen && isPortraitMode) ? Math.max(insets.top + 16, 46) : 10;
-  const bottomSafePadding = (isFullscreen && isPortraitMode) ? Math.max(insets.bottom + 20, 38) : 8;
-  const sideSafePadding = isFullscreen ? Math.max(insets.left + 16, Math.max(insets.right + 16, 16)) : 12;
+  const topSafePadding = isFullscreen 
+    ? (isPortraitMode ? Math.max(insets.top + 16, 46) : 28) 
+    : 10;
+  const bottomSafePadding = isFullscreen 
+    ? (isPortraitMode ? Math.max(insets.bottom + 20, 38) : 24) 
+    : 8;
+  const sideSafePadding = isFullscreen 
+    ? Math.max(insets.left + 16, Math.max(insets.right + 16, 16)) 
+    : 12;
 
   // ── Render ────────────────────────────────────────────────────────────────
   const playerContent = (
@@ -578,8 +584,8 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 10,
-    paddingHorizontal: 12,
+    paddingTop: 28,
+    paddingHorizontal: 16,
     paddingBottom: 28,
     // Simulated top-to-transparent gradient
     backgroundColor: 'transparent',
@@ -662,8 +668,8 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
     paddingTop: 28,
     gap: 6,
     // Transparent — no dark overlay on video

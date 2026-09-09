@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getProfile, updateProfile, getUserOrders, getUserEnrollments } = require('../controllers/user.controller');
+const { getProfile, updateProfile, getUserOrders, getUserEnrollments, savePushToken } = require('../controllers/user.controller');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
 
@@ -84,5 +84,30 @@ router.get('/orders', getUserOrders);
  *         description: List of user course enrollments
  */
 router.get('/enrollments', getUserEnrollments);
+
+/**
+ * @swagger
+ * /api/user/push-token:
+ *   post:
+ *     summary: Save Expo push token for user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pushToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Push token saved successfully
+ *       400:
+ *         description: Bad request
+ */
+router.post('/push-token', savePushToken);
 
 module.exports = router;

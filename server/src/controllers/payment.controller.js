@@ -2,11 +2,14 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const pool = require('../config/db');
 
-// Helper to safely get Razorpay credentials with fallback
+// Load Razorpay credentials from environment variables
 const getRazorpayKeys = () => {
-  // ⚠️ TEMPORARY FIX: Forcing test keys because Render env vars have invalid keys causing "Authentication failed"
-  const keyId = 'rzp_test_TQnrOoJoIKGrCP';
-  const keySecret = 's3z7f04AYbfyM01Wm6I5J2nA';
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!keyId || !keySecret) {
+    throw new Error('Razorpay credentials not configured in environment variables.');
+  }
 
   return { keyId, keySecret };
 };

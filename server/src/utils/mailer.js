@@ -69,7 +69,7 @@ const sendMail = async (to, subject, html, context) => {
           'api-key': process.env.BREVO_API_KEY,
         },
         body: JSON.stringify({
-          sender: { name: process.env.EMAIL_FROM_NAME || 'Nimu Cooking Academy', email: process.env.SMTP_USER || 'mustafiz504@gmail.com' },
+          sender: { name: process.env.EMAIL_FROM_NAME || 'Nimu Cooking Academy', email: process.env.EMAIL_FROM || 'mustafiz504@gmail.com' },
           to: [{ email: to }],
           subject,
           htmlContent: html,

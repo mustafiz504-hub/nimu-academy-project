@@ -20,7 +20,7 @@ export default function CourseCard({
   accentColor = "#FF8C00", 
   accentBgColor = "#FFE0B2",
   onPress,
-  width = 260
+  width = 220
 }: CourseCardProps) {
   return (
     <TouchableOpacity 
@@ -41,7 +41,7 @@ export default function CourseCard({
     >
       <View style={{ borderRadius: 23, overflow: "hidden" }}>
         {/* ── Image Section ── */}
-        <View style={{ height: 140, backgroundColor: "#E2E8F0", position: "relative" }}>
+        <View style={{ height: 164, backgroundColor: "#E2E8F0", position: "relative" }}>
           {course.thumbnail_url ? (
             <Image 
               source={{ uri: course.thumbnail_url }} 
@@ -63,24 +63,26 @@ export default function CourseCard({
         </View>
 
         {/* ── Details Section ── */}
-        <View style={{ padding: 16 }}>
-          <Text style={{ fontSize: 16, fontWeight: "800", color: "#1E1B18", marginBottom: 4 }} numberOfLines={1}>
-            {course.name}
-          </Text>
-          <Text style={{ fontSize: 11, color: "#64748B", lineHeight: 16, marginBottom: 12 }} numberOfLines={2}>
-            {course.description || "Learn amazing skills."}
-          </Text>
+        <View style={{ height: 88, paddingHorizontal: 12, paddingVertical: 10, justifyContent: "space-between" }}>
+          <View>
+            <Text style={{ fontSize: 14, fontWeight: "800", color: "#1E1B18" }} numberOfLines={1}>
+              {course.name}
+            </Text>
+            <Text style={{ fontSize: 10, color: "#64748B", marginTop: 2 }} numberOfLines={1}>
+              {course.description || "Learn amazing skills."}
+            </Text>
+          </View>
 
-          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#F1F5F9", paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, gap: 4 }}>
-              <Ionicons name="time-outline" size={12} color="#475569" />
-              <Text style={{ fontSize: 10, color: "#475569", fontWeight: "700" }}>
+          <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#F1F5F9", paddingVertical: 2, paddingHorizontal: 6, borderRadius: 6, gap: 3 }}>
+              <Ionicons name="time-outline" size={10} color="#475569" />
+              <Text style={{ fontSize: 9, color: "#475569", fontWeight: "700" }}>
                 {course.duration || "Self Paced"}
               </Text>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: accentBgColor, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, gap: 4 }}>
-              <Ionicons name="videocam-outline" size={12} color={accentColor} />
-              <Text style={{ fontSize: 10, color: accentColor, fontWeight: "700" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: accentBgColor, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 6, gap: 3 }}>
+              <Ionicons name="videocam-outline" size={10} color={accentColor} />
+              <Text style={{ fontSize: 9, color: accentColor, fontWeight: "700" }}>
                 {course.mode || "Online"}
               </Text>
             </View>

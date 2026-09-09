@@ -316,4 +316,9 @@ export const adminService = {
     const { data } = await api.post('/admin/course-purchases/revoke', { enrollment_id });
     return data;
   },
+
+  // Push Notifications
+  async sendPushNotification(title: string, body: string, dataObj?: any): Promise<void> {
+    await api.post('/admin/push-notification', { title, body, data: dataObj });
+  },
 };

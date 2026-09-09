@@ -197,6 +197,32 @@ const revokeCourseAccess = async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 };
+// POST /api/admin/push-notification
+const { sendPushNotifications } = require('../utils/notification');
+
+const sendCustomPushNotification = async (req, res) => {
+  try {
+    const { title, body, data } = req.body;
+    if (!title || !body) {
+      return res.status(400).json({ message: 'Title and body are required.' });
+    }
+
+    // Get all users with an expo push token
+    const result = await pool.query('SELECT expo_push_token FROM users WHERE expo_push_token IS NOT NULL');
+    const pushTokens = result.rows.map(row => row.expo_push_token);
+
+    if (pushTokens.length > 0) {
+      // Send notifications asynchronously
+      sendPushNotifications(pushTokens, title, body, data || {});
+    }
+
+    await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Admin sent custom push notification: ${title}`]);
+    res.status(200).json({ message: `Push notification sent to ${pushTokens.length} users.` });
+  } catch (error) {
+    console.error('Admin send push notification error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
 
 module.exports = { 
   getDashboard, 
@@ -209,5 +235,6 @@ module.exports = {
   removeAdmin,
   getCoursePurchases,
   grantCourseAccess,
-  revokeCourseAccess
+  revokeCourseAccess,
+  sendCustomPushNotification
 };

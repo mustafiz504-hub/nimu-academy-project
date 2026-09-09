@@ -11,7 +11,8 @@ const {
   removeAdmin,
   getCoursePurchases,
   grantCourseAccess,
-  revokeCourseAccess
+  revokeCourseAccess,
+  sendCustomPushNotification
 } = require('../controllers/admin.controller');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
@@ -192,5 +193,6 @@ router.put('/enrollments/:id/status', updateEnrollmentStatus);
 router.get('/course-purchases', getCoursePurchases);
 router.post('/course-purchases/grant', grantCourseAccess);
 router.post('/course-purchases/revoke', revokeCourseAccess);
+router.post('/push-notification', sendCustomPushNotification);
 
 module.exports = router;

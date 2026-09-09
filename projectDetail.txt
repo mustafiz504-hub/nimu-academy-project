@@ -38,3 +38,10 @@ NIMU ACADEMY PROJECT ARCHITECTURE
    - Service: Brevo API / Resend API (Transactional Email Services)
    - Configuration: BREVO_API_KEY / RESEND_API_KEY set in Render Environment Variables
    - Use: Sends instant 6-digit OTP verification emails to users during Signup & Login across Web Client and Mobile App.
+
+8. Payment Gateway
+   - Platform: Razorpay
+   - Setup: Smart detection logic in Nimu App.
+     - Development (Expo Go): Uses `expo-web-browser` as a fallback since native modules aren't supported.
+     - Production (APK): Uses `react-native-razorpay` native module automatically for in-app UI (Google Pay, UPI, Cards).
+   - Build Command: Run `eas build -p android` or `npx expo run:android` to create the production APK. The native Razorpay popup will automatically activate in the build.

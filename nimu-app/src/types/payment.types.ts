@@ -1,9 +1,13 @@
 export interface PaymentOrder {
+  success: boolean;
   order_id: string;
-  amount: number;
+  amount: number;        // in paise
   currency: string;
-  course_id?: string;
-  key_id?: string;
+  key_id: string;
+  course_name: string;
+  user_name: string;
+  user_email: string;
+  user_phone?: string;
 }
 
 export interface PaymentVerification {

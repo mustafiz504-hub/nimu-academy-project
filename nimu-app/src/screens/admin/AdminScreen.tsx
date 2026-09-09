@@ -9,11 +9,13 @@ import AdminCourses    from "./sections/AdminCourses";
 import AdminUsers      from "./sections/AdminUsers";
 import AdminStudents   from "./sections/AdminStudents";
 import AdminCourseManager from "./sections/AdminCourseManager";
+import AdminNotifications from "./sections/AdminNotifications";
 
-type Section = "dashboard" | "enrollments" | "courseManager" | "courses" | "users" | "students";
+type Section = "dashboard" | "enrollments" | "courseManager" | "courses" | "users" | "students" | "notifications";
 
 const SECTIONS: { key: Section; label: string; icon: any; color: string; bg: string }[] = [
   { key: "dashboard",   label: "Dashboard",   icon: "stats-chart",   color: "#FF8C00", bg: "#FFF3E0" },
+  { key: "notifications", label: "Broadcast",   icon: "notifications", color: "#10B981", bg: "#ECFDF5" },
   { key: "enrollments", label: "Enrollments", icon: "school",        color: "#3B82F6", bg: "#EFF6FF" },
   { key: "courseManager", label: "Course Manager", icon: "wallet",    color: "#EAB308", bg: "#FEF9C3" },
   { key: "courses",     label: "Courses",     icon: "videocam",      color: "#10B981", bg: "#ECFDF5" },
@@ -29,6 +31,7 @@ export default function AdminScreen() {
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":   return <AdminDashboard />;
+      case "notifications": return <AdminNotifications />;
       case "enrollments": return <AdminEnrollments />;
       case "courseManager": return <AdminCourseManager />;
       case "courses":     return <AdminCourses />;

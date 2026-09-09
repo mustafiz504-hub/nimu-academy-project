@@ -107,6 +107,8 @@ const getCourseVideos = async (req, res) => {
 };
 
 
+const { sendPushNotifications } = require('../utils/notification');
+
 // POST /api/courses (admin/superadmin)
 const createCourse = async (req, res) => {
   try {
@@ -124,6 +126,18 @@ const createCourse = async (req, res) => {
     );
 
     await pool.query('INSERT INTO activity_logs (user_id, action) VALUES ($1, $2)', [req.user.id, `Created course: ${name}`]);
+
+    // Send push notification to all users with tokens
+    try {
+      const tokenResult = await pool.query('SELECT expo_push_token FROM users WHERE expo_push_token IS NOT NULL');
+      const pushTokens = tokenResult.rows.map(row => row.expo_push_token);
+      
+      if (pushTokens.length > 0) {
+        sendPushNotifications(pushTokens, 'New Course Available! 🎓', `Check out our new course: ${name}`);
+      }
+    } catch (pushErr) {
+      console.error('Error sending push notifications for new course:', pushErr);
+    }
 
     res.status(201).json({ message: 'Course created successfully.', course: result.rows[0] });
   } catch (error) {

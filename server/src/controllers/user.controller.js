@@ -94,4 +94,28 @@ const getUserEnrollments = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, getUserOrders, getUserEnrollments };
+// POST /api/user/push-token
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
+const savePushToken = async (req, res) => {
+  try {
+    const { pushToken } = req.body;
+    if (!pushToken) {
+      return res.status(400).json({ message: 'Push token is required.' });
+    }
+
+    await pool.query(
+      'UPDATE users SET expo_push_token = $1 WHERE id = $2',
+      [pushToken, req.user.id]
+    );
+
+    res.status(200).json({ message: 'Push token saved successfully.' });
+  } catch (error) {
+    console.error('Save push token error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getProfile, updateProfile, getUserOrders, getUserEnrollments, savePushToken };

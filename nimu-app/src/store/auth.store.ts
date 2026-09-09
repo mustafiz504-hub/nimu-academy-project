@@ -1,15 +1,17 @@
 import { create } from "zustand";
 import { authService } from "../services/auth.service";
 import { storage } from "../utils/storage";
+import api from "../services/api";
 import type { User, AuthState } from "../types/user.types";
 
 interface AuthStore extends AuthState {
   setUser: (user: User, token: string) => void;
   logout: () => Promise<void>;
   loadFromStorage: () => Promise<void>;
+  updateName: (name: string) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   token: null,
   isAuthenticated: false,
@@ -20,6 +22,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
   logout: async () => {
     await authService.logout();
     set({ user: null, token: null, isAuthenticated: false });
+  },
+
+  updateName: async (name: string) => {
+    const res = await api.put('/user/profile', { name });
+    const updatedUser = { ...get().user!, name: res.data.user?.name ?? name };
+    await storage.saveUser(updatedUser);
+    set({ user: updatedUser });
   },
 
   /**
@@ -52,3 +61,4 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 }));
+
