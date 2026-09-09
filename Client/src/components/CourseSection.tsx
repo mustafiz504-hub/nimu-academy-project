@@ -84,7 +84,7 @@ const CourseSection = () => {
                       {course.mode}
                     </Badge>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-1">
                     <h3 className="text-lg md:text-xl font-serif text-brand-dark mb-2 leading-tight group-hover/course:text-brand-gold transition-colors">{course.title}</h3>
                     <div className="flex flex-wrap gap-3 mb-3 text-xs text-brand-brown">
                       <div className="flex items-center"><Clock size={14} className="mr-1 text-brand-gold"/> {course.duration}</div>
@@ -105,7 +105,7 @@ const CourseSection = () => {
                     </div>
                     <CardFooter className="px-0 pb-0 pt-3 border-t-0">
                       <div className="text-xl font-bold text-brand-dark">₹{course.price?.replace('₹', '')}</div>
-                      <Button size="sm" onClick={(e) => handleEnrollClick(e, course)}>
+                      <Button size="sm" onClick={(e) => { e.stopPropagation(); handleCardClick(course.id); }}>
                         Enroll Now
                       </Button>
                     </CardFooter>
@@ -117,46 +117,6 @@ const CourseSection = () => {
           </motion.div>
         </div>
       </div>
-
-      {/* Contact Options Modal */}
-      <Modal
-        isOpen={showEnrollModal}
-        onClose={() => setShowEnrollModal(false)}
-        title="Enroll in Academy"
-        maxWidth="max-w-md"
-      >
-        <div className="py-6 text-center">
-          <div className="w-20 h-20 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-6">
-            <Phone size={40} />
-          </div>
-          <h3 className="text-2xl font-serif font-bold text-brand-dark mb-2">Join {selectedCourse?.title}</h3>
-          <p className="text-brand-brown mb-8 px-4">
-            Talk to Chef <span className="font-bold">Muskan Naz's</span> team to confirm your seat and batch timings.
-          </p>
-
-          <div className="grid gap-4">
-            <a 
-              href="tel:+919777240070" 
-              className="flex items-center justify-center gap-3 w-full bg-brand-dark text-brand-gold py-4 rounded-2xl font-bold hover:bg-brand-dark/90 transition-all shadow-lg group"
-            >
-              <Phone size={20} className="group-hover:animate-bounce" /> Call Now: +91 97772 40070
-            </a>
-            
-            <a 
-              href="https://wa.me/919777240070" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full bg-[#25D366] text-white py-4 rounded-2xl font-bold hover:bg-[#25D366]/90 transition-all shadow-lg group"
-            >
-              <Send size={20} className="group-hover:translate-x-1 transition-transform" /> WhatsApp Us
-            </a>
-          </div>
-          
-          <p className="mt-6 text-[10px] text-brand-brown/40 uppercase tracking-widest">
-            Available 8 AM - 10 PM IST
-          </p>
-        </div>
-      </Modal>
     </section>
   );
 };

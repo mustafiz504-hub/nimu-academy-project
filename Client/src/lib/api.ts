@@ -28,6 +28,7 @@ export interface ApiCourse {
   mode?: string | null;
   price: number | string;
   topics?: string[] | null;
+  thumbnail_url?: string | null;
   active?: boolean;
   created_at?: string;
 }

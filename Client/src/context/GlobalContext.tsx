@@ -69,7 +69,7 @@ export const mapApiCourse = (course: ApiCourse, index = 0): Course => {
     duration: course.duration || 'Flexible',
     timing: course.timing || 'Contact for batch timing',
     days: course.timing?.includes('Sat') || course.timing?.includes('Sun') ? 'Weekend' : 'Weekday',
-    image: courseImages[index % courseImages.length],
+    image: course.thumbnail_url || courseImages[index % courseImages.length],
     mode: mode.toUpperCase(),
     topics,
     learn: topics.length ? topics : ['Hands-on baking practice', 'Professional techniques', 'Recipe guidance'],
