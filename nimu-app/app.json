@@ -7,7 +7,7 @@
     "icon": "./assets/images/logo-round.png",
     "scheme": "nimucooking",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
