@@ -19,6 +19,11 @@ const RESEND_COOLDOWN_MS = 60 * 1000;
 /** Max resends per OTP session */
 const MAX_RESEND_COUNT = 3;
 
+/** Google Play Reviewer / Demo Credentials */
+const DEMO_EMAIL = 'demo@nimucooking.com';
+const DEMO_PASSWORD = 'Password@123';
+const DEMO_OTP = '123456';
+
 /**
  * Determines whether a string looks like an email or a phone number.
  * @param {string} identifier
@@ -63,6 +68,14 @@ const signupInitiate = async (req, res) => {
     let trimmedEmail = email.toLowerCase().trim();
     if (trimmedEmail.endsWith('@gamil.com')) {
       trimmedEmail = trimmedEmail.replace('@gamil.com', '@gmail.com');
+    }
+
+    if (trimmedEmail === DEMO_EMAIL) {
+      return res.status(200).json({
+        message: 'Verification code sent to your email.',
+        email: DEMO_EMAIL,
+        maskedEmail: 'd***@nimucooking.com',
+      });
     }
 
     // Check email uniqueness
@@ -139,6 +152,26 @@ const signupVerify = async (req, res) => {
       trimmedEmail = trimmedEmail.replace('@gamil.com', '@gmail.com');
     }
     const cleanOtp = String(otp).trim();
+
+    if (trimmedEmail === DEMO_EMAIL && (cleanOtp === DEMO_OTP || cleanOtp === '123456')) {
+      let demoUserRes = await pool.query('SELECT * FROM users WHERE email = $1', [DEMO_EMAIL]);
+      let demoUser = demoUserRes.rows[0];
+      if (!demoUser) {
+        const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
+        const insertRes = await pool.query(
+          `INSERT INTO users (name, email, password, role, is_verified, email_verified)
+           VALUES ($1, $2, $3, 'user', true, true) RETURNING *`,
+          ['Google Play Reviewer', DEMO_EMAIL, hashedPassword]
+        );
+        demoUser = insertRes.rows[0];
+      }
+      const token = issueToken(demoUser);
+      return res.status(200).json({
+        message: 'Account verified successfully.',
+        token,
+        user: { id: demoUser.id, name: demoUser.name, email: demoUser.email, role: demoUser.role },
+      });
+    }
 
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [trimmedEmail]);
     if (result.rows.length === 0) {
@@ -233,6 +266,62 @@ const loginInitiate = async (req, res) => {
       trimmedEmail = trimmedEmail.replace('@gamil.com', '@gmail.com');
     }
 
+    // ─── Google Play Reviewer / Demo Account Bypass ─────────────────────────
+    if (trimmedEmail === DEMO_EMAIL) {
+      if (password.trim() !== DEMO_PASSWORD && password.trim() !== '123456') {
+        return res.status(401).json({ message: 'Incorrect password.' });
+      }
+
+      const demoOtpHash = await hashOtp(DEMO_OTP);
+      const demoOtpExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      let demoUserResult = await pool.query('SELECT * FROM users WHERE email = $1', [DEMO_EMAIL]);
+      let demoUser = demoUserResult.rows[0];
+
+      if (!demoUser) {
+        const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
+        const insertRes = await pool.query(
+          `INSERT INTO users (name, email, password, is_verified, email_verified, role, otp_code, otp_expires_at)
+           VALUES ($1, $2, $3, true, true, 'user', $4, $5) RETURNING *`,
+          ['Google Play Reviewer', DEMO_EMAIL, hashedPassword, demoOtpHash, demoOtpExpiresAt]
+        );
+        demoUser = insertRes.rows[0];
+      } else {
+        await pool.query(
+          `UPDATE users SET otp_code=$1, otp_expires_at=$2, otp_attempts=0, is_verified=true WHERE id=$3`,
+          [demoOtpHash, demoOtpExpiresAt, demoUser.id]
+        );
+      }
+
+      // Ensure demo user has at least one course enrollment for testing
+      try {
+        const firstCourse = await pool.query('SELECT id FROM courses LIMIT 1');
+        if (firstCourse.rows.length > 0) {
+          const cId = firstCourse.rows[0].id;
+          const enrollCheck = await pool.query(
+            'SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2',
+            [demoUser.id, cId]
+          );
+          if (enrollCheck.rows.length === 0) {
+            await pool.query(
+              `INSERT INTO enrollments (user_id, course_id, customer_name, phone, status)
+               VALUES ($1, $2, $3, $4, 'confirmed')`,
+              [demoUser.id, cId, 'Google Play Reviewer', '9999999999']
+            );
+          }
+        }
+      } catch (enrollErr) {
+        console.warn('Demo enrollment setup warning:', enrollErr.message);
+      }
+
+      return res.status(200).json({
+        message: 'Login code sent to your email.',
+        channel: 'email',
+        maskedTarget: 'd***@nimucooking.com',
+        identifier: DEMO_EMAIL,
+      });
+    }
+
     const type = detectIdentifierType(trimmedEmail);
 
     let result;
@@ -314,6 +403,41 @@ const loginVerify = async (req, res) => {
     }
     const cleanOtp = String(otp).trim();
 
+    // ─── Google Play Reviewer / Demo Account Bypass ─────────────────────────
+    if (cleanIdentifier === DEMO_EMAIL) {
+      if (cleanOtp !== DEMO_OTP && cleanOtp !== '123456') {
+        return res.status(400).json({ message: 'Incorrect OTP. Please enter 123456.' });
+      }
+
+      let demoUserResult = await pool.query('SELECT * FROM users WHERE email = $1', [DEMO_EMAIL]);
+      let demoUser = demoUserResult.rows[0];
+
+      if (!demoUser) {
+        const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
+        const insertRes = await pool.query(
+          `INSERT INTO users (name, email, password, is_verified, email_verified, role)
+           VALUES ($1, $2, $3, true, true, 'user') RETURNING *`,
+          ['Google Play Reviewer', DEMO_EMAIL, hashedPassword]
+        );
+        demoUser = insertRes.rows[0];
+      }
+
+      const token = issueToken(demoUser);
+
+      return res.status(200).json({
+        message: 'Login successful.',
+        token,
+        user: {
+          id: demoUser.id,
+          name: demoUser.name,
+          email: demoUser.email,
+          phone: demoUser.phone,
+          phone_number: demoUser.phone_number,
+          role: demoUser.role,
+        },
+      });
+    }
+
     const type = detectIdentifierType(cleanIdentifier);
 
     let result;
@@ -393,6 +517,15 @@ const resendOtp = async (req, res) => {
     let cleanIdentifier = identifier.toLowerCase().trim();
     if (cleanIdentifier.endsWith('@gamil.com')) {
       cleanIdentifier = cleanIdentifier.replace('@gamil.com', '@gmail.com');
+    }
+
+    if (cleanIdentifier === DEMO_EMAIL) {
+      return res.status(200).json({
+        message: 'New OTP code sent.',
+        channel: 'email',
+        maskedTarget: 'd***@nimucooking.com',
+        identifier: DEMO_EMAIL,
+      });
     }
 
     const type = detectIdentifierType(cleanIdentifier);

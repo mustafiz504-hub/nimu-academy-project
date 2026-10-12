@@ -9,18 +9,21 @@ NIMU ACADEMY PROJECT ARCHITECTURE
 2. Backend (Server / API)
    - Technology: Node.js (Express.js)
    - Location: /server
+   - Hosting: Render
    - Use: Core logic, payment processing (Razorpay), auth, etc.
    - Run Command: npm run dev
 
 3. Frontend - Mobile App (Nimu Academy App)
    - Technology: React Native (Expo Router)
    - Location: /nimu-app
+   - Upload/Build: Expo EAS
    - Use: Student facing Android/iOS application.
    - Run Command: npm start
 
 4. Frontend - Web Client (Admin Panel)
    - Technology: React.js (Vite)
    - Location: /Client
+   - Hosting: Vercel
    - Use: Admin panel to manage courses, uploads, students.
    - Run Command: npm run dev
 

@@ -363,39 +363,45 @@ export default function LearnScreen({ isActive = true, selectedCourseId: propSel
       const { paymentService } = require("../../services/payment.service");
 
       // 1. Create Razorpay order on server
-      const order = await paymentService.createOrder(selectedCourseId, {
-        student_name: user?.name || "",
-        phone: (user as any)?.phone || "",
-      });
+      let order: any;
+      try {
+        order = await paymentService.createOrder(selectedCourseId, {
+          student_name: user?.name || "",
+          phone: (user as any)?.phone || "",
+        });
+      } catch (apiErr: any) {
+        const msg =
+          apiErr?.response?.data?.message ||
+          apiErr?.message ||
+          "Server se connect nahi ho pa raha. PC aur phone ek hi WiFi pe hone chahiye.";
+        Alert.alert("Server Error", msg);
+        return;
+      }
 
       setPaymentLoading(false);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 2a. NATIVE POPUP — react-native-razorpay (Custom Build / APK only)
-      //     Constants.executionEnvironment === 'storeClient'  → Expo Go
-      //     In Expo Go, native module bridge is unavailable → use browser.
-      // ─────────────────────────────────────────────────────────────────────
-      const isExpoGo = Constants.executionEnvironment === 'storeClient';
-      let useNative = false;
-      let RazorpayCheckout: any = null;
-
-      if (!isExpoGo) {
-        try {
-          RazorpayCheckout = require('react-native-razorpay').default;
-          if (typeof RazorpayCheckout?.open === 'function') {
-            useNative = true;
-          }
-        } catch {
-          useNative = false;
-        }
+      if (!order?.order_id) {
+        Alert.alert("Error", "Order create nahi hua. Dobara try karo.");
+        return;
       }
 
-      if (useNative && RazorpayCheckout) {
-        // ── Native Razorpay bottom-sheet popup (APK / custom build) ──────
+      // ── Try Native Razorpay (works in APK / custom build) ────────────────
+      let RazorpayCheckout: any = null;
+      try {
+        const rzpModule = require('react-native-razorpay');
+        RazorpayCheckout = rzpModule.default || rzpModule;
+      } catch {
+        RazorpayCheckout = null;
+      }
+      
+      const canUseNative = typeof RazorpayCheckout?.open === 'function';
+
+      if (canUseNative) {
+        // ── Native bottom-sheet popup ──────────────────────────────────────
         const RAZORPAY_KEY = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '';
         const options = {
           key: RAZORPAY_KEY,
-          amount: String(order.amount),   // already in paise
+          amount: String(order.amount),
           currency: 'INR',
           order_id: order.order_id,
           name: 'Nimu Academy',
@@ -410,7 +416,6 @@ export default function LearnScreen({ isActive = true, selectedCourseId: propSel
 
         try {
           const data = await RazorpayCheckout.open(options);
-          // Payment success
           setPaymentLoading(true);
           try {
             await paymentService.verifyPayment({
@@ -421,16 +426,14 @@ export default function LearnScreen({ isActive = true, selectedCourseId: propSel
             Alert.alert('🎉 Enrolled!', `You now have full access to "${course.name}".`);
             await handleRefresh();
           } catch {
-            // Even if verify fails, refresh enrollments (may have updated)
             await handleRefresh();
           } finally {
             setPaymentLoading(false);
           }
         } catch (payErr: any) {
-          // User dismissed or payment failed
           const desc = payErr?.code === 'PAYMENT_CANCELLED'
             ? 'Payment was cancelled.'
-            : payErr?.description || 'Payment could not be completed.';
+            : payErr?.description || payErr?.message || 'Payment could not be completed.';
           if (payErr?.code !== 'PAYMENT_CANCELLED') {
             Alert.alert('Payment Failed', desc);
           }

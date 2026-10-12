@@ -12,6 +12,10 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://nimu-academy-backend.onrender.com/api",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_TZc5okc7l6bFNU"
       }
     },
     "production": {
