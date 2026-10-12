@@ -261,6 +261,9 @@ export const api = {
     profile: () => request<{ user: ApiUser }>('/user/profile'),
     updateProfile: (body: { name: string; phone?: string }) =>
       request<{ message: string; user: ApiUser }>('/user/profile', { method: 'PUT', body }),
+    deleteAccount: () => request<{ message: string }>('/user/account', { method: 'DELETE' }),
+    submitDeletionRequest: (body: { name?: string; email: string; phone?: string; reason?: string }) =>
+      request<{ message: string }>('/user/deletion-request', { method: 'POST', body, auth: false }),
     orders: () => request<{ orders: ApiOrder[] }>('/user/orders'),
     enrollments: () => request<{ enrollments: ApiEnrollment[] }>('/user/enrollments'),
   },
@@ -374,6 +377,9 @@ export const api = {
         method: 'POST',
         body: { userId },
       }),
+    deletionRequests: () => request<{ requests: any[] }>('/admin/deletion-requests'),
+    processDeletionRequest: (id: number | string) =>
+      request<{ message: string }>(`/admin/deletion-requests/${id}/process`, { method: 'PUT' }),
   },
   superadmin: {
     dashboard: () => request<{ stats: Record<string, number> }>('/superadmin/dashboard'),

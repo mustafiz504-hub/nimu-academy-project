@@ -171,4 +171,4 @@ async function sendLoginOtpEmail(email, otpCode, userName = 'Learner') {
   );
 }
 
-module.exports = { sendOtpEmail, sendLoginOtpEmail };
+module.exports = { sendOtpEmail, sendLoginOtpEmail, sendMail };

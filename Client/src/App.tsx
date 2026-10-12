@@ -27,6 +27,7 @@ const CertificatePage = lazy(() => import('./pages/CertificatePage'));
 const TermsOfUse = lazy(() => import('./pages/TermsOfUse'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
+const DeleteAccountPage = lazy(() => import('./pages/DeleteAccountPage'));
 const LearnPage = lazy(() => import('./pages/LearnPage'));
 
 const PageSkeleton = () => (
@@ -70,6 +71,8 @@ function App() {
               <Route path="/terms" element={<TermsOfUse />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/refund" element={<RefundPolicy />} />
+              <Route path="/delete-account" element={<DeleteAccountPage />} />
+              <Route path="/account-deletion" element={<DeleteAccountPage />} />
               <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
               <Route path="/course/:id" element={<CourseDetailPage />} />
               <Route path="/learn" element={<LearnPage />} />

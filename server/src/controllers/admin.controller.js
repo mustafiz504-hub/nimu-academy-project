@@ -224,6 +224,58 @@ const sendCustomPushNotification = async (req, res) => {
   }
 };
 
+// GET /api/admin/deletion-requests
+const getDeletionRequests = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT r.*, u.id AS user_id, u.name AS user_name, u.role AS user_role
+       FROM deletion_requests r
+       LEFT JOIN users u ON LOWER(r.email) = LOWER(u.email)
+       ORDER BY r.created_at DESC`
+    );
+    res.status(200).json({ requests: result.rows });
+  } catch (error) {
+    console.error('Get deletion requests error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// PUT /api/admin/deletion-requests/:id/process
+const processDeletionRequest = async (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const reqResult = await pool.query('SELECT * FROM deletion_requests WHERE id = $1', [requestId]);
+    if (reqResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Request not found.' });
+    }
+    const requestItem = reqResult.rows[0];
+
+    // Delete user from DB if user exists
+    const userResult = await pool.query('SELECT id, role FROM users WHERE LOWER(email) = LOWER($1)', [requestItem.email]);
+    if (userResult.rows.length > 0) {
+      const targetUser = userResult.rows[0];
+      if (targetUser.role === 'superadmin') {
+        return res.status(400).json({ message: 'Superadmin cannot be deleted.' });
+      }
+      const userId = targetUser.id;
+      await pool.query('DELETE FROM activity_logs WHERE user_id = $1', [userId]);
+      try {
+        await pool.query('DELETE FROM video_progress WHERE user_id = $1', [userId]);
+      } catch (_) {}
+      await pool.query('DELETE FROM enrollments WHERE user_id = $1', [userId]);
+      await pool.query('DELETE FROM orders WHERE user_id = $1', [userId]);
+      await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+    }
+
+    await pool.query("UPDATE deletion_requests SET status = 'completed' WHERE id = $1", [requestId]);
+
+    res.status(200).json({ message: 'User account deleted and request marked as completed.' });
+  } catch (error) {
+    console.error('Process deletion request error:', error);
+    res.status(500).json({ message: 'Server error while processing deletion request.' });
+  }
+};
+
 module.exports = { 
   getDashboard, 
   getOrders, 
@@ -236,5 +288,7 @@ module.exports = {
   getCoursePurchases,
   grantCourseAccess,
   revokeCourseAccess,
-  sendCustomPushNotification
+  sendCustomPushNotification,
+  getDeletionRequests,
+  processDeletionRequest
 };

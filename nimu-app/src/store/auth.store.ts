@@ -9,6 +9,7 @@ interface AuthStore extends AuthState {
   logout: () => Promise<void>;
   loadFromStorage: () => Promise<void>;
   updateName: (name: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -20,6 +21,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ user, token, isAuthenticated: true }),
 
   logout: async () => {
+    await authService.logout();
+    set({ user: null, token: null, isAuthenticated: false });
+  },
+
+  deleteAccount: async () => {
+    await api.delete('/user/account');
     await authService.logout();
     set({ user: null, token: null, isAuthenticated: false });
   },

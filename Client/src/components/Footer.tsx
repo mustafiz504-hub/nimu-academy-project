@@ -58,6 +58,7 @@ const Footer = () => {
               <li><Link to="/terms" className="hover:text-brand-gold transition-colors">Terms of Use</Link></li>
               <li><Link to="/privacy" className="hover:text-brand-gold transition-colors">Privacy Policy</Link></li>
               <li><Link to="/refund" className="hover:text-brand-gold transition-colors">Refund Policy</Link></li>
+              <li><Link to="/delete-account" className="hover:text-brand-gold transition-colors">Delete Account</Link></li>
             </ul>
           </div>
         </div>

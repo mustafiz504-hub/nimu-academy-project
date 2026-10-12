@@ -118,4 +118,90 @@ const savePushToken = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, getUserOrders, getUserEnrollments, savePushToken };
+// DELETE /api/user/account
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const check = await pool.query('SELECT id, role FROM users WHERE id = $1', [userId]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    if (check.rows[0].role === 'superadmin') {
+      return res.status(400).json({ message: 'Superadmin account cannot be self-deleted.' });
+    }
+
+    // Clean up user data
+    await pool.query('DELETE FROM activity_logs WHERE user_id = $1', [userId]);
+    try {
+      await pool.query('DELETE FROM video_progress WHERE user_id = $1', [userId]);
+    } catch (_) {}
+    await pool.query('DELETE FROM enrollments WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM orders WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    res.status(200).json({ message: 'Your account and all associated data have been permanently deleted.' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ message: 'Server error while deleting account.' });
+  }
+};
+
+// POST /api/user/deletion-request (Public offline form)
+/**
+ * @param {Request} req
+ * @param {Response} res
+ */
+const submitDeletionRequest = async (req, res) => {
+  try {
+    const { name, email, phone, reason } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email address is required.' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const result = await pool.query(
+      `INSERT INTO deletion_requests (name, email, phone, reason) 
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [name?.trim() || null, normalizedEmail, phone?.trim() || null, reason?.trim() || null]
+    );
+
+    // Send notification email to admin
+    try {
+      const { sendMail } = require('../utils/mailer');
+      const adminEmail = process.env.ADMIN_EMAIL || 'mustafiz504@gmail.com';
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #FFD5D5; border-radius: 12px; background-color: #FFF5F5;">
+          <h2 style="color: #DC2626; margin-top: 0;">⚠️ New Account Deletion Request</h2>
+          <p style="color: #333; font-size: 14px;">A user has submitted an account and data deletion request for Nimu Cooking:</p>
+          <div style="background-color: #FFFFFF; padding: 16px; border-radius: 8px; border: 1px solid #FCA5A5; font-size: 14px; line-height: 1.6;">
+            <p><strong>Name:</strong> ${name || 'Not provided'}</p>
+            <p><strong>Registered Email:</strong> ${normalizedEmail}</p>
+            <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+            <p><strong>Reason:</strong> ${reason || 'Not specified'}</p>
+            <p><strong>Submitted At:</strong> ${new Date().toLocaleString('en-IN')}</p>
+          </div>
+          <p style="color: #666; font-size: 12px; margin-top: 16px;">
+            Google Play requires processing this request within 30 days. You can review this request in your <strong>Admin Panel &gt; Users &gt; Deletion Requests</strong> tab.
+          </p>
+        </div>
+      `;
+      await sendMail(adminEmail, `🚨 Account Deletion Request: ${normalizedEmail}`, emailHtml, 'Deletion Request Alert');
+    } catch (mailErr) {
+      console.warn('Could not send deletion alert email:', mailErr?.message);
+    }
+
+    res.status(201).json({
+      message: 'Account deletion request received successfully. It will be verified and processed within 30 days.',
+      request: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Submit deletion request error:', error);
+    res.status(500).json({ message: 'Server error while submitting request.' });
+  }
+};
+
+module.exports = { getProfile, updateProfile, getUserOrders, getUserEnrollments, savePushToken, deleteAccount, submitDeletionRequest };

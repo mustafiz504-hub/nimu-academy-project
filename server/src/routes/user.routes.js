@@ -1,8 +1,45 @@
 const express = require('express');
 const router = express.Router();
-const { getProfile, updateProfile, getUserOrders, getUserEnrollments, savePushToken } = require('../controllers/user.controller');
+const { 
+  getProfile, 
+  updateProfile, 
+  getUserOrders, 
+  getUserEnrollments, 
+  savePushToken, 
+  deleteAccount,
+  submitDeletionRequest 
+} = require('../controllers/user.controller');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
+
+/**
+ * @swagger
+ * /api/user/deletion-request:
+ *   post:
+ *     summary: Submit an offline account and data deletion request (public)
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Request received
+ */
+router.post('/deletion-request', submitDeletionRequest);
 
 /**
  * @swagger
@@ -11,7 +48,7 @@ const { checkRole } = require('../middleware/roleCheck');
  *   description: User profile and personal data management
  */
 
-// All user routes require authentication
+// Authenticated user routes
 router.use(verifyToken);
 
 /**
@@ -109,5 +146,21 @@ router.get('/enrollments', getUserEnrollments);
  *         description: Bad request
  */
 router.post('/push-token', savePushToken);
+
+/**
+ * @swagger
+ * /api/user/account:
+ *   delete:
+ *     summary: Delete user account and associated personal data
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       400:
+ *         description: Cannot delete superadmin account
+ */
+router.delete('/account', deleteAccount);
 
 module.exports = router;

@@ -16,7 +16,7 @@ import { useAuthStore } from "../../store/auth.store";
 import { useAppAlert } from "../../components/common/AppAlert";
 
 export default function ProfileScreen() {
-  const { user, logout, updateName } = useAuthStore();
+  const { user, logout, updateName, deleteAccount } = useAuthStore();
   const appAlert = useAppAlert();
 
   // Edit Profile Modal state
@@ -34,6 +34,33 @@ export default function ProfileScreen() {
       buttons: [
         { text: "Cancel", style: "secondary" },
         { text: "Sign Out", style: "danger", onPress: () => logout() },
+      ],
+    });
+  };
+
+  const handleDeleteAccount = () => {
+    appAlert.show({
+      title: "Delete Account?",
+      message: "Are you sure you want to delete your account? All your personal profile data, enrolled course progress, and certificates will be permanently deleted. This action cannot be undone.",
+      type: "danger",
+      icon: "trash-outline",
+      buttons: [
+        { text: "Cancel", style: "secondary" },
+        {
+          text: "Delete My Account",
+          style: "danger",
+          onPress: async () => {
+            try {
+              await deleteAccount();
+            } catch (err: any) {
+              appAlert.show({
+                title: "Error",
+                message: err?.response?.data?.message || "Could not delete account. Please try again or contact support.",
+                type: "danger",
+              });
+            }
+          },
+        },
       ],
     });
   };
@@ -75,6 +102,25 @@ export default function ProfileScreen() {
   const handleSettingPress = (text: string) => {
     if (text === "Edit Profile Information") {
       openEditModal();
+    } else if (text === "Security & Privacy") {
+      appAlert.show({
+        title: "Security & Privacy",
+        message: "Your data is encrypted in transit and securely stored. You can request permanent deletion of your account and personal data at any time.",
+        type: "info",
+        icon: "shield-checkmark-outline",
+        buttons: [
+          { text: "Close", style: "secondary" },
+          { text: "Delete Account", style: "danger", onPress: handleDeleteAccount },
+        ],
+      });
+    } else if (text === "Notification Preferences") {
+      appAlert.show({
+        title: "Notifications",
+        message: "Course updates and class alerts are currently active.",
+        type: "info",
+        icon: "notifications-outline",
+        buttons: [{ text: "OK", style: "primary" }],
+      });
     }
   };
 
@@ -94,7 +140,7 @@ export default function ProfileScreen() {
             {user?.email ?? ""}
           </Text>
 
-          <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", borderTopWidth: 1, borderTopColor: "#F1F5F9", paddingTop: 16 }}>
+          <View style={{ flexDirection: "row", horizontal: true, justifyContent: "space-between", width: "100%", borderTopWidth: 1, borderTopColor: "#F1F5F9", paddingTop: 16 } as any}>
             {[
               { label: "Courses", value: "12" },
               { label: "Avg Progress", value: "87%" },
@@ -136,6 +182,15 @@ export default function ProfileScreen() {
           >
             <Ionicons name="log-out-outline" size={22} color="#FF5252" />
             <Text style={{ fontSize: 13, color: "#FF5252", fontWeight: "700" }}>Sign Out</Text>
+          </TouchableOpacity>
+
+          {/* Delete Account (Required by Google Play) */}
+          <TouchableOpacity
+            onPress={handleDeleteAccount}
+            style={{ backgroundColor: "#F8FAFC", borderRadius: 16, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: "#E2E8F0", marginTop: 4 }}
+          >
+            <Ionicons name="trash-outline" size={16} color="#94A3B8" />
+            <Text style={{ fontSize: 12, color: "#64748B", fontWeight: "600" }}>Delete Account &amp; Data</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

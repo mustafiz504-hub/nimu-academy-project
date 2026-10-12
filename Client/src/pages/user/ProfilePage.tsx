@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, Save, User } from 'lucide-react';
+import { AlertCircle, Save, User, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
 import Button from '../../components/ui/Button';
@@ -88,6 +89,21 @@ const ProfilePage = () => {
             <Button type="submit" disabled={saving} className="w-full rounded-xl py-4">
               <Save size={18} className="mr-2" /> {saving ? 'Saving...' : 'Save Profile'}
             </Button>
+
+            <div className="pt-4 border-t border-red-100 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-red-600 uppercase tracking-wider flex items-center gap-1.5">
+                  <Trash2 size={14} /> Danger Zone
+                </p>
+                <p className="text-xs text-brand-brown/70 mt-0.5">Permanently delete account and all data</p>
+              </div>
+              <Link
+                to="/delete-account"
+                className="px-3.5 py-1.5 rounded-lg border border-red-200 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+              >
+                Delete Account
+              </Link>
+            </div>
           </form>
         )}
       </main>

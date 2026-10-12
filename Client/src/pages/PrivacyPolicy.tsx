@@ -2,6 +2,7 @@ import React from 'react';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
 import { ShieldCheck, Eye, Lock, Database } from 'lucide-react';
 
 const PrivacyPolicy = () => {
@@ -75,11 +76,17 @@ const PrivacyPolicy = () => {
 
             <section className="bg-white/5 border border-white/10 rounded-[2rem] p-8 md:p-12 text-center">
               <h2 className="text-2xl font-serif font-bold text-brand-gold mb-6 flex items-center justify-center gap-3">
-                <Database size={24} /> 5. Data Retention
+                <Database size={24} /> 5. Data Retention &amp; Account Deletion
               </h2>
-              <p>
-                We retain your information for as long as your account is active or as needed to provide you services (like certificate verification). You may request to delete your account at any time.
+              <p className="mb-4">
+                We retain your information for as long as your account is active or as needed to provide you services (like certificate verification). You may request to delete your account and associated personal data at any time.
               </p>
+              <Link 
+                to="/delete-account"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-xs font-semibold uppercase tracking-wider hover:bg-brand-gold hover:text-brand-dark transition-colors"
+              >
+                Request Account Deletion &rarr;
+              </Link>
             </section>
           </div>
 

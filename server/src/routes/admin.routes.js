@@ -12,7 +12,9 @@ const {
   getCoursePurchases,
   grantCourseAccess,
   revokeCourseAccess,
-  sendCustomPushNotification
+  sendCustomPushNotification,
+  getDeletionRequests,
+  processDeletionRequest
 } = require('../controllers/admin.controller');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/roleCheck');
@@ -194,5 +196,9 @@ router.get('/course-purchases', getCoursePurchases);
 router.post('/course-purchases/grant', grantCourseAccess);
 router.post('/course-purchases/revoke', revokeCourseAccess);
 router.post('/push-notification', sendCustomPushNotification);
+
+// Account Deletion Requests
+router.get('/deletion-requests', getDeletionRequests);
+router.put('/deletion-requests/:id/process', processDeletionRequest);
 
 module.exports = router;
