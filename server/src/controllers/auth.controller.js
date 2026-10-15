@@ -238,7 +238,7 @@ const signupVerify = async (req, res) => {
     return res.status(201).json({
       message: 'Account created successfully! Welcome to Nimu Academy.',
       token,
-      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, phone_number: user.phone_number, role },
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, phone_number: user.phone_number, role, avatar: user.avatar || null },
     });
   } catch (error) {
     console.error('Signup verify error:', error);
@@ -491,7 +491,7 @@ const loginVerify = async (req, res) => {
     return res.status(200).json({
       message: 'Login successful.',
       token,
-      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, phone_number: user.phone_number, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, phone_number: user.phone_number, role: user.role, avatar: user.avatar || null },
     });
   } catch (error) {
     console.error('Login verify error:', error);
@@ -634,7 +634,7 @@ const logout = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, email, phone, phone_number, country_code, role,
+      `SELECT id, name, email, phone, phone_number, country_code, role, avatar,
               is_verified, email_verified, phone_verified, marketing_opt_in, created_at
        FROM users WHERE id = $1`,
       [req.user.id]

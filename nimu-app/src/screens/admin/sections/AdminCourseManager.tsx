@@ -237,7 +237,7 @@ export default function AdminCourseManager() {
                           }}
                         >
                           <Text style={{ fontSize: 13, fontWeight: "700", color: selectedUserId === u.id ? "#FFFFFF" : "#1E1B18" }}>
-                            {u.name} {u.role === 'superadmin' ? '(Superadmin)' : ''}
+                            {u.name} {(u.role as string) === 'superadmin' ? '(Superadmin)' : ''}
                           </Text>
                           <Text style={{ fontSize: 11, color: selectedUserId === u.id ? "#FFEDD5" : "#64748B" }}>
                             {u.email}

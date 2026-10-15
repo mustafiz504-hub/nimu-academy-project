@@ -302,7 +302,7 @@ export default function AdminCourses() {
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 13, fontWeight: "600", color: "#1E1B18" }}>{c.name}</Text>
                         <Text style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>
-                          {parseFloat(c.price) === 0 ? "FREE" : `₹${c.price}`} · {c.mode || "Online"}
+                          {Number(c.price) === 0 ? "FREE" : `₹${c.price}`} · {c.mode || "Online"}
                         </Text>
                       </View>
                       {selectedCourseId === c.id && <Ionicons name="checkmark-circle" size={18} color="#FF8C00" />}
@@ -421,7 +421,7 @@ export default function AdminCourses() {
             <Text style={[lbl, { marginTop: 24, marginBottom: 10 }]}>All Courses ({courses.length})</Text>
             <View style={{ gap: 10 }}>
               {courses.map(c => {
-                  const isFree = parseFloat(c.price) === 0;
+                  const isFree = Number(c.price) === 0;
                   const isToggling = togglingCourseId === c.id;
                   return (
                     <View key={c.id} style={{ backgroundColor: "#FFFFFF", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#F0E6D8" }}>

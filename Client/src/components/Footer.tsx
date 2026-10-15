@@ -1,7 +1,7 @@
 import React from 'react';
 import { Instagram, Facebook, Twitter, MapPin, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import logo from '../assets/image.png';
+import logo from '../assets/nimulogo.jpeg';
 
 const Footer = () => {
   return (

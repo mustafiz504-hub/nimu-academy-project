@@ -12,6 +12,7 @@ export interface ApiUser {
   phone_number?: string | null;
   country_code?: string | null;
   role: 'user' | 'admin' | 'superadmin' | string;
+  avatar?: string | null;
   is_verified?: boolean;
   email_verified?: boolean;
   phone_verified?: boolean;
@@ -259,7 +260,7 @@ export const api = {
   },
   user: {
     profile: () => request<{ user: ApiUser }>('/user/profile'),
-    updateProfile: (body: { name: string; phone?: string }) =>
+    updateProfile: (body: { name: string; phone?: string; avatar?: string }) =>
       request<{ message: string; user: ApiUser }>('/user/profile', { method: 'PUT', body }),
     deleteAccount: () => request<{ message: string }>('/user/account', { method: 'DELETE' }),
     submitDeletionRequest: (body: { name?: string; email: string; phone?: string; reason?: string }) =>

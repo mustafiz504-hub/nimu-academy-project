@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/auth.store';
-import { api } from '../../services/api';
+import api from '../../services/api';
 import Constants from 'expo-constants';
 
 // Expo Go mein push notifications SDK 53 se support nahi hote
@@ -44,9 +44,7 @@ export default function PushNotificationManager() {
 
     return () => {
       if (responseListenerRef.current) {
-        import('expo-notifications').then(Notifications => {
-          Notifications.removeNotificationSubscription(responseListenerRef.current);
-        });
+        responseListenerRef.current.remove?.();
       }
     };
   }, [isAuthenticated, router]);

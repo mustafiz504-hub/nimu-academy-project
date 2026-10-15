@@ -9,6 +9,8 @@ interface AuthStore extends AuthState {
   logout: () => Promise<void>;
   loadFromStorage: () => Promise<void>;
   updateName: (name: string) => Promise<void>;
+  updateProfile: (data: { name?: string; phone?: string; avatar?: string }) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
 
@@ -29,6 +31,24 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     await api.delete('/user/account');
     await authService.logout();
     set({ user: null, token: null, isAuthenticated: false });
+  },
+
+  refreshProfile: async () => {
+    try {
+      const res = await api.get<{ user: User }>('/user/profile');
+      if (res.data?.user) {
+        const updated = { ...get().user, ...res.data.user };
+        await storage.saveUser(updated);
+        set({ user: updated });
+      }
+    } catch (_) {}
+  },
+
+  updateProfile: async (data: { name?: string; phone?: string; avatar?: string }) => {
+    const res = await api.put('/user/profile', data);
+    const updatedUser = { ...get().user!, ...(res.data.user ?? data) };
+    await storage.saveUser(updatedUser);
+    set({ user: updatedUser });
   },
 
   updateName: async (name: string) => {

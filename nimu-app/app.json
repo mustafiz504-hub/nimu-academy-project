@@ -17,6 +17,7 @@
     "android": {
       "package": "com.nimu.cooking",
       "versionCode": 1,
+      "newArchEnabled": true,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/logo-round.png"

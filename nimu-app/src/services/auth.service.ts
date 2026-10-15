@@ -157,6 +157,13 @@ export const authService = {
    * GET /api/auth/me — requires Bearer token.
    */
   async getMe(): Promise<User> {
+    try {
+      // /user/profile selects id, name, email, phone, role, avatar from DB
+      const profileRes = await api.get<{ user: User }>("/user/profile");
+      if (profileRes.data?.user) {
+        return profileRes.data.user;
+      }
+    } catch (_) {}
     const { data } = await api.get<{ user: User }>(ENDPOINTS.me);
     return data.user;
   },

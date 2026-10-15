@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ShoppingCart, User, Instagram, LayoutDashboard, ShieldCheck, LogOut, Package, BookOpen, UserCircle, ArrowRight, ChevronRight } from 'lucide-react';
-import logo from '../assets/image.png';
+import logo from '../assets/nimulogo.jpeg';
 
 import { useGlobal } from '../context/GlobalContext';
 
@@ -127,9 +127,15 @@ const Nav = () => {
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={handleUserClick}
-                className="hover:text-brand-gold transition-colors flex items-center gap-1"
+                className="hover:text-brand-gold transition-colors flex items-center gap-1.5 focus:outline-none"
               >
-                <User size={18} className="lg:w-5 lg:h-5" />
+                {isLoggedIn && user?.avatar ? (
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-brand-gold/70 bg-white/10 shadow-sm">
+                    <img src={user.avatar} alt="User Avatar" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <User size={18} className="lg:w-5 lg:h-5" />
+                )}
               </button>
 
               <AnimatePresence>
@@ -142,9 +148,20 @@ const Nav = () => {
                   >
                     {isLoggedIn ? (
                       <>
-                        <div className="px-5 py-4 border-b border-white/5 bg-white/5">
-                          <p className="text-[10px] text-brand-gold uppercase tracking-[0.2em] font-black mb-1">Academy Member</p>
-                          <p className="text-sm font-bold text-white truncate">{user?.name}</p>
+                        <div className="px-5 py-4 border-b border-white/5 bg-white/5 flex items-center gap-3">
+                          {user?.avatar ? (
+                            <div className="w-10 h-10 rounded-full overflow-hidden border border-brand-gold/50 bg-white/10 shrink-0">
+                              <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-brand-gold/15 flex items-center justify-center text-brand-gold font-bold">
+                              {user?.name?.[0]?.toUpperCase() || 'U'}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] text-brand-gold uppercase tracking-[0.2em] font-black mb-0.5">Academy Member</p>
+                            <p className="text-sm font-bold text-white truncate">{user?.name}</p>
+                          </div>
                         </div>
 
                         <div className="p-2 space-y-1">
@@ -304,9 +321,20 @@ const Nav = () => {
                   <div className="mt-6 border-t border-brand-gold/15 pt-6">
                     {isLoggedIn ? (
                       <>
-                        <div className="mb-4 px-3">
-                          <p className="text-xs uppercase tracking-widest text-brand-cream/45 font-bold">Account</p>
-                          <p className="mt-1 truncate text-sm font-semibold text-brand-gold">{user?.name}</p>
+                        <div className="mb-4 px-3 flex items-center gap-3">
+                          {user?.avatar ? (
+                            <div className="w-10 h-10 rounded-full overflow-hidden border border-brand-gold/60 bg-white/10 shrink-0">
+                              <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-brand-gold/15 flex items-center justify-center text-brand-gold font-bold shrink-0">
+                              {user?.name?.[0]?.toUpperCase() || 'U'}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs uppercase tracking-widest text-brand-cream/45 font-bold">Account</p>
+                            <p className="mt-0.5 truncate text-sm font-semibold text-brand-gold">{user?.name}</p>
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <button onClick={() => { setIsOpen(false); navigate('/profile'); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base font-semibold hover:bg-white/5 hover:text-brand-gold transition-colors">
