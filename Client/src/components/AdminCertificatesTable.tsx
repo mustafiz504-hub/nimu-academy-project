@@ -83,45 +83,60 @@ const downloadCertificatePDF = async (student: ApiStudent): Promise<void> => {
 
   // Create a temporary off-screen container
   const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;left:-99999px;top:0;width:1123px;height:794px;z-index:-1;';
+  container.style.cssText = 'position:absolute;left:-99999px;top:0;width:1123px;height:805px;z-index:-1;';
   document.body.appendChild(container);
 
-  // Build the certificate HTML
+  // Build the certificate HTML using <img> tag for background (more reliable with html2canvas)
   container.innerHTML = `
     <div
       data-cert-root
       style="
-        position:absolute;top:0;left:0;
-        width:1123px;height:794px;
-        background-image:url('/certificate-template1.jpeg');
-        background-size:100% 100%;
-        background-repeat:no-repeat;
+        position:relative;
+        width:1123px;height:805px;
+        overflow:hidden;
       "
     >
+      <img
+        src="/certificate-new.jpg"
+        crossorigin="anonymous"
+        style="position:absolute;top:0;left:0;width:1123px;height:805px;display:block;"
+        alt=""
+      />
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lora:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
-        .cert-name { font-family: 'Great Vibes', cursive; }
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Poppins:wght@400;500;600&display=swap');
+        .cert-name { font-family: 'Great Vibes', 'Dancing Script', cursive; }
+        .cert-body { font-family: 'Lora', serif; }
       </style>
-      <div style="position:absolute;left:0;width:100%;display:flex;justify-content:center;top:290px;">
-        <span class="cert-name" style="font-size:82px;color:#000;line-height:1;letter-spacing:0.01em;white-space:nowrap;">
+      <div style="position:absolute;left:0;width:100%;display:flex;justify-content:center;top:380px;">
+        <span class="cert-name" style="font-size:82px;color:#1d1f24;line-height:1.1;letter-spacing:0.01em;white-space:nowrap;">
           ${student.student_name}
         </span>
       </div>
-      <div style="position:absolute;left:0;width:100%;display:flex;flex-direction:column;align-items:center;top:430px;font-family:'Lora',serif;color:#2a3f5f;text-align:center;line-height:1.55;">
-        <p style="font-size:22px;font-weight:500;margin:0;">
-          Has successfully completed <span style="font-weight:700;">${student.course_name}</span> course
+      <div class="cert-body" style="position:absolute;left:0;width:100%;display:flex;flex-direction:column;align-items:center;top:505px;color:#2a3f5f;text-align:center;line-height:1.6;padding:0 140px;">
+        <p style="font-size:21px;font-style:italic;font-weight:400;margin:0;">
+          For successfully completing the <strong style="font-style:italic;font-weight:700;">${student.course_name}</strong>
         </p>
-        <p style="font-size:22px;font-weight:500;margin:0;">
-          conducted by <span style="font-weight:700;">nimu cooking academy</span>
+        <p style="font-size:21px;font-style:italic;font-weight:400;margin:0;">
+          conducted by NIMU Cooking Academy, in recognition of their dedication,
         </p>
-        <p style="font-size:20px;font-weight:700;margin:4px 0 0;">UDYAM-OD-30-0059753</p>
-        <p style="font-size:20px;font-weight:700;margin:2px 0 0;">Fssai no:22026032000151</p>
+        <p style="font-size:21px;font-style:italic;font-weight:400;margin:0;">
+          participation and excellent performance.
+        </p>
       </div>
-      <div style="position:absolute;bottom:73px;right:179px;font-size:15px;color:#3f5a73;font-weight:500;font-family:'Poppins',sans-serif;letter-spacing:0.03em;">
+      <div style="position:absolute;bottom:115px;right:110px;font-size:17px;color:#1a2744;font-weight:500;font-family:'Poppins',sans-serif;letter-spacing:0.03em;z-index:10;">
         ${formatDate(student.completion_date)}
       </div>
     </div>
   `;
+
+  // Wait for the background image to load
+  await new Promise<void>((resolve) => {
+    const bgImg = container.querySelector('img');
+    if (!bgImg) { resolve(); return; }
+    if (bgImg.complete && bgImg.naturalWidth > 0) { resolve(); return; }
+    bgImg.onload = () => resolve();
+    bgImg.onerror = () => resolve();
+  });
 
   await new Promise(r => setTimeout(r, 300)); // let fonts paint
 
@@ -130,19 +145,19 @@ const downloadCertificatePDF = async (student: ApiStudent): Promise<void> => {
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
+    allowTaint: true,
     backgroundColor: '#ffffff',
     width: 1123,
-    height: 794,
+    height: 805,
     logging: false,
-    onclone: (clonedDoc) => {
-      const cloned = clonedDoc.querySelector('[data-cert-root]') as HTMLElement;
-      if (cloned) { cloned.style.transform = 'none'; }
+    onclone: (_clonedDoc, clonedEl) => {
+      clonedEl.style.transform = 'none';
     }
   });
 
   const imgData = canvas.toDataURL('image/jpeg', 1.0);
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1123, 794] });
-  pdf.addImage(imgData, 'JPEG', 0, 0, 1123, 794);
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1123, 805] });
+  pdf.addImage(imgData, 'JPEG', 0, 0, 1123, 805);
   pdf.save(`${student.student_name.replace(/\s+/g, '_')}_Certificate.pdf`);
 
   document.body.removeChild(container);

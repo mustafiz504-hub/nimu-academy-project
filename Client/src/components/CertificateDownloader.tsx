@@ -41,7 +41,7 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
         // 230px accounts for modal margins, header, gap, download button, and vertical padding
         const maxAvailableHeight = window.innerHeight - 230;
         if (maxAvailableHeight > 0) {
-          const scaleH = maxAvailableHeight / 794;
+          const scaleH = maxAvailableHeight / 805;
           newScale = Math.min(scaleW, scaleH);
         }
       }
@@ -144,50 +144,63 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
   };
 
   const handleDownload = async () => {
-    if (!certificateRef.current) return;
+    if (!certificateRef.current || !wrapperRef.current) return;
     setDownloading(true);
     try {
-      // 1. Wait for all fonts (Great Vibes, Poppins, etc.) to be fully loaded and ready
+      // 1. Wait for all fonts to be fully loaded
       await document.fonts.ready;
 
       const el = certificateRef.current;
+      const wrapper = wrapperRef.current;
       const prevTransform = el.style.transform;
-      const prevMargin = el.style.marginBottom;
 
-      // 2. Temporarily set transform to 'none' so html2canvas can measure the 1:1 original bounding rect (1123x794)
+      // 2. Set transform to none AND make wrapper overflow visible
+      //    (parent overflow:hidden clips html2canvas output — date gets cut off in modal)
       el.style.transform = 'none';
-      el.style.marginBottom = '0';
+      wrapper.style.overflow = 'visible';
+      wrapper.style.height = '805px';
 
-      // 3. Give the browser a brief moment (100ms) to recalculate layout and render text at 1:1 scale before canvas capture
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // 3. Wait for background image to fully load
+      await new Promise<void>((resolve) => {
+        const bgImg = el.querySelector('img');
+        if (!bgImg) { resolve(); return; }
+        if (bgImg.complete && bgImg.naturalWidth > 0) { resolve(); return; }
+        bgImg.onload = () => resolve();
+        bgImg.onerror = () => resolve();
+      });
+
+      // 4. Small delay for browser to repaint at 1:1
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#ffffff',
         width: 1123,
-        height: 794,
+        height: 805,
         logging: false,
-        onclone: (clonedDoc) => {
-          const cloned = clonedDoc.querySelector('[data-cert-root]') as HTMLElement;
-          if (cloned) {
-            cloned.style.transform = 'none';
-            cloned.style.marginBottom = '0';
+        onclone: (_clonedDoc, clonedEl) => {
+          clonedEl.style.transform = 'none';
+          if (clonedEl.parentElement) {
+            clonedEl.parentElement.style.overflow = 'visible';
+            clonedEl.parentElement.style.height = '805px';
           }
         }
       });
 
-      // 4. Restore original scaled styles
+      // 5. Restore styles
       el.style.transform = prevTransform;
-      el.style.marginBottom = prevMargin;
+      wrapper.style.overflow = 'hidden';
+      wrapper.style.height = `${Math.round(805 * scale)}px`;
 
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1123, 794] });
-      pdf.addImage(imgData, 'JPEG', 0, 0, 1123, 794);
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1123, 805] });
+      pdf.addImage(imgData, 'JPEG', 0, 0, 1123, 805);
       pdf.save(`${studentName.replace(/\s+/g, '_')}_Certificate.pdf`);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Certificate download failed. Please try again or use a different browser.');
+      alert('Certificate download failed. Please try again.');
     } finally {
       setDownloading(false);
     }
@@ -200,7 +213,7 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
         ref={wrapperRef}
         className="w-full relative"
         style={{
-          height: `${Math.round(794 * scale)}px`,
+            height: `${Math.round(805 * scale)}px`,
           overflow: 'hidden',
         }}
       >
@@ -215,34 +228,45 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
             top: 0,
             left: `${leftOffset}px`,
             width: '1123px',
-            height: '794px',
-            backgroundImage: "url('/certificate-template1.jpeg')",
-            backgroundSize: '100% 100%',
-            backgroundRepeat: 'no-repeat',
+            height: '805px',
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
+            overflow: 'hidden',
           }}
         >
-          {/* Load fonts: Great Vibes (student name cursive), Lora (body text matching template), Poppins (date) */}
+          {/* ── Background Image (img tag — more reliable with html2canvas than CSS background) ── */}
+          <img
+            src="/certificate-new.jpg"
+            crossOrigin="anonymous"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '1123px',
+              height: '805px',
+              display: 'block',
+            }}
+            alt=""
+          />
+          {/* Load fonts: Great Vibes (name cursive), Dancing Script (fallback), Lora (body italic serif) */}
           <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lora:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
-            .cert-name { font-family: 'Great Vibes', cursive; }
+            @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Poppins:wght@400;500;600&display=swap');
+            .cert-name { font-family: 'Great Vibes', 'Dancing Script', cursive; }
+            .cert-body { font-family: 'Lora', serif; }
           `}</style>
 
           {/* ── Student Name ──
-              Overlaid in the cursive script area, below "THIS CERTIFICATE IS PRESENTED TO"
-              and above the gold divider line. Vertically ~355–445px range.                */}
+              Cursive script, dark navy — matching "Dr. Asad Mian" style in template */}
           <div
             className="absolute left-0 w-full flex justify-center"
-            style={{ top: '290px' }}
+            style={{ top: '380px' }}
           >
-            {/* Added a subtle white background to cover any placeholder name on the template */}
             <span
-              className="cert-name relative inline-block"
+              className="cert-name"
               style={{
                 fontSize: '82px',
-                color: '#000000',
-                lineHeight: 1,
+                color: '#1d1f24',
+                lineHeight: 1.1,
                 letterSpacing: '0.01em',
                 whiteSpace: 'nowrap',
               }}
@@ -251,51 +275,46 @@ const CertificateDownloader: React.FC<CertificateProps> = ({
             </span>
           </div>
 
-          {/* ── Course / Registration Details ──
-              Below gold divider line, matching the template's printed body text.
-              Lines: "Has successfully completed [course] course
-                      conducted by nimu cooking academy
-                      UDYAM-OD-30-0059753
-                      Fssai no:22026032000151"                                  */}
+          {/* ── Description Text ──
+              Italic serif body text below the gold divider line.
+              Matches: "For successfully completing the [Course Name]
+                        conducted by NIMU Cooking Academy, in recognition of their dedication,
+                        participation and excellent performance."              */}
           <div
-            className="absolute left-0 w-full flex flex-col items-center"
+            className="absolute left-0 w-full flex flex-col items-center cert-body"
             style={{
-              top: '430px',
-              fontFamily: "'Lora', serif",
+              top: '505px',
               color: '#2a3f5f',
               textAlign: 'center',
-              lineHeight: 1.55,
+              lineHeight: 1.6,
+              padding: '0 140px',
             }}
           >
-            <p style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>
-              Has successfully completed{' '}
-              <span style={{ fontWeight: 700 }}>{courseName}</span>{' '}
-              course
+            <p style={{ fontSize: '21px', fontStyle: 'italic', fontWeight: 400, margin: 0 }}>
+              For successfully completing the{' '}
+              <strong style={{ fontStyle: 'italic', fontWeight: 700 }}>{courseName}</strong>
             </p>
-            <p style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>
-              conducted by <span style={{ fontWeight: 700 }}>nimu cooking academy</span>
+            <p style={{ fontSize: '21px', fontStyle: 'italic', fontWeight: 400, margin: 0 }}>
+              conducted by NIMU Cooking Academy, in recognition of their dedication,
             </p>
-            <p style={{ fontSize: '20px', fontWeight: 700, margin: '4px 0 0' }}>
-              UDYAM-OD-30-0059753
-            </p>
-            <p style={{ fontSize: '20px', fontWeight: 700, margin: '2px 0 0' }}>
-              Fssai no:22026032000151
+            <p style={{ fontSize: '21px', fontStyle: 'italic', fontWeight: 400, margin: 0 }}>
+              participation and excellent performance.
             </p>
           </div>
 
-
           {/* ── Date ──
-              Bottom-right corner, landing on the "Date: ____" underline in the template. */}
+              Bottom-right corner on the "Date" line of the template */}
           <div
             className="absolute"
             style={{
-              bottom: '73px',
-              right: '179px',
-              fontSize: '15px',
-              color: '#3f5a73',
+              bottom: '115px',
+              right: '110px',
+              fontSize: '17px',
+              color: '#1a2744',
               fontWeight: 500,
               fontFamily: "'Poppins', sans-serif",
               letterSpacing: '0.03em',
+              zIndex: 10,
             }}
           >
             {formatDate(completionDate)}
